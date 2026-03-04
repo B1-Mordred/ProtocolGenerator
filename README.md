@@ -122,6 +122,7 @@ powershell.exe -ExecutionPolicy Bypass -File .\build_windows_exe.ps1
 ```
 
 The script invokes PyInstaller via module mode (`python -m PyInstaller`) so the build works even when `%LOCALAPPDATA%\...\Python313\Scripts` is not on `PATH`.
+It also packages a module-safe entrypoint (absolute imports in `main.py`) to prevent `ImportError: attempted relative import with no known parent package` in the generated EXE.
 
 ## Additional documentation
 
