@@ -28,3 +28,15 @@ where = ["src"]
 pythonpath = ["src"]
 testpaths = ["tests"]
 addopts = "--cov=protocol_generator_gui --cov-report=term-missing --cov-fail-under=85"
+
+
+[tool.coverage.run]
+omit = [
+  "src/protocol_generator_gui/main.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "pragma: no cover",
+  "if __name__ == .__main__.:",
+]
