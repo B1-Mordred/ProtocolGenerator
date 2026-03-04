@@ -113,6 +113,18 @@ When all steps show `✓` and status is `Valid`, use **Export ProtocolFile.json*
 - **Draft recovery prompt appears on launch**
   - Choose **Yes** to restore in-progress data from the temporary draft file.
 
+## Windows EXE build
+
+Use the provided PowerShell helper:
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File .\build_windows_exe.ps1
+```
+
+The script invokes PyInstaller via module mode (`python -m PyInstaller`) so the build works even when `%LOCALAPPDATA%\...\Python313\Scripts` is not on `PATH`.
+It also embeds `protocol.schema.json` into the executable (`--add-data`) and resolves it at runtime from bundled resources, so no external schema file is required next to the EXE.
+It packages a module-safe entrypoint (absolute imports in `main.py`) to prevent `ImportError: attempted relative import with no known parent package` in the generated EXE.
+
 ## Additional documentation
 
 - End-user guide: [`doc/user-guide.md`](doc/user-guide.md)

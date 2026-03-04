@@ -32,6 +32,9 @@ protocol-generator-gui
 
 The script creates a one-file desktop executable using PyInstaller.
 
+The Windows build uses `python -m PyInstaller`, embeds `protocol.schema.json` via `--add-data`, and resolves schema resources from bundled runtime paths so the EXE has no external schema-file dependency.
+Module-safe imports in `src/protocol_generator_gui/main.py` prevent packaged startup failures from relative-import errors.
+
 ## Testing
 
 ```bash

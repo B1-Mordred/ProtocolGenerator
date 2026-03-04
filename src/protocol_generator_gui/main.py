@@ -7,16 +7,16 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Dict
 
-from .schema_utils import (
+from protocol_generator_gui.schema_utils import (
     assay_information_schema,
     loading_step_types,
     method_information_schema,
     processing_step_types,
     load_schema,
 )
-from .persistence import DraftPersistence
-from .validation import validate_protocol
-from .wizard_logic import (
+from protocol_generator_gui.persistence import DraftPersistence
+from protocol_generator_gui.validation import validate_protocol
+from protocol_generator_gui.wizard_logic import (
     build_field_tooltip,
     categorize_schema_fields,
     make_step_help,
@@ -329,7 +329,7 @@ class ProtocolWizardApp(tk.Tk):
         super().__init__()
         self.title("Protocol Generator GUI")
         self.geometry("1200x830")
-        self.schema = load_schema(Path(__file__).resolve().parents[2] / "protocol.schema.json")
+        self.schema = load_schema()
         self.save_path: Path | None = None
         self.autosave_job: str | None = None
         self.current_tab_index = 0
