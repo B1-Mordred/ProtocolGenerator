@@ -9,6 +9,12 @@ description = "Schema-driven desktop protocol file generator"
 requires-python = ">=3.10"
 dependencies = []
 
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-cov>=5.0",
+]
+
 [project.scripts]
 protocol-generator-gui = "protocol_generator_gui.main:main"
 
@@ -20,3 +26,5 @@ where = ["src"]
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "--cov=protocol_generator_gui --cov-report=term-missing --cov-fail-under=85"

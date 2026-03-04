@@ -31,3 +31,15 @@ protocol-generator-gui
 ```
 
 The script creates a one-file desktop executable using PyInstaller.
+
+## Testing
+
+```bash
+python -m pip install -e .[dev]
+pytest
+```
+
+- Test framework: `pytest` with `pytest-cov` coverage enforcement (`--cov-fail-under=85`).
+- Unit tests cover schema parsing, dynamic field grouping, conditional `StepType` required-field behavior, and validation edge cases.
+- Integration tests use a headless wizard-flow harness to verify transition guards, processing-step reorder/edit behavior, and autosave behavior after save-path selection (no Qt helpers are required because the app is Tkinter-based).
+- CI runs the same test command on push and pull requests via GitHub Actions.

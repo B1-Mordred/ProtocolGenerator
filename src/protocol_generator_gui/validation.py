@@ -47,8 +47,21 @@ def _validate_node(root: Dict[str, Any], schema: Dict[str, Any], value: Any, pat
         errors.append((_path(path), f"expected type {expected_type}"))
         return
 
+    if "const" in schema and value != schema["const"]:
+        errors.append((_path(path), f"must be {schema['const']}"))
+
     if "enum" in schema and value not in schema["enum"]:
         errors.append((_path(path), f"must be one of {schema['enum']}"))
+
+    if "oneOf" in schema:
+        valid_options = 0
+        for option in schema["oneOf"]:
+            option_errors: List[ValidationError] = []
+            _validate_node(root, option, value, path, option_errors)
+            if not option_errors:
+                valid_options += 1
+        if valid_options != 1:
+            errors.append((_path(path), "must match exactly one allowed schema"))
 
     if isinstance(value, (int, float)) and "minimum" in schema and value < schema["minimum"]:
         errors.append((_path(path), f"must be >= {schema['minimum']}"))
@@ -77,11 +90,22 @@ def _validate_node(root: Dict[str, Any], schema: Dict[str, Any], value: Any, pat
             if key in value:
                 _validate_node(root, prop_schema, value[key], [*path, key], errors)
 
+        matched_condition = False
+        conditional_options: Dict[str, set[Any]] = {}
         for cond in schema.get("allOf", []):
             condition = cond.get("if")
             consequence = cond.get("then")
             if condition and consequence and _matches_if(condition, value):
+                matched_condition = True
                 _validate_node(root, consequence, value, path, errors)
+
+            for key, spec in condition.get("properties", {}).items() if condition else []:
+                if "const" in spec:
+                    conditional_options.setdefault(key, set()).add(spec["const"])
+
+        for key, allowed_values in conditional_options.items():
+            if key in value and value[key] not in allowed_values and not matched_condition:
+                errors.append((_path([*path, key]), f"must be one of {sorted(allowed_values)}"))
 
 
 def _matches_if(if_schema: Dict[str, Any], value: Dict[str, Any]) -> bool:

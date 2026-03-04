@@ -4,7 +4,8 @@
 
 - Added a new schema-driven Python desktop wizard package at `src/protocol_generator_gui` with three workflow steps for protocol authoring, live validation, autosave, and validated export to `ProtocolFile.json`.
 - Added packaging/build scaffolding (`pyproject.toml`, PyInstaller PowerShell build script) to generate a self-contained Windows executable.
-- Added tests for schema conditional extraction and JSON-schema validation behavior.
+- Added unit and integration test coverage for schema parsing, conditional `StepType` required-field handling, wizard-flow transitions, autosave behavior, and edge-case validation scenarios.
+- Added GitHub Actions CI test workflow with a coverage quality gate (85% minimum) to fail regressions.
 
 ## Changed
 
