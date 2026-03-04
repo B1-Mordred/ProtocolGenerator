@@ -14,6 +14,37 @@ from .schema_utils import (
     load_schema,
 )
 from .validation import validate_protocol
+from .wizard_logic import (
+    build_field_tooltip,
+    categorize_schema_fields,
+    make_step_help,
+    summarize_progress,
+)
+
+
+class ToolTip:
+    def __init__(self, widget: tk.Widget, text: str):
+        self.widget = widget
+        self.text = text
+        self.tip: tk.Toplevel | None = None
+        widget.bind("<Enter>", self.show)
+        widget.bind("<Leave>", self.hide)
+
+    def show(self, *_: Any) -> None:
+        if self.tip or not self.text.strip():
+            return
+        self.tip = tk.Toplevel(self.widget)
+        self.tip.wm_overrideredirect(True)
+        x = self.widget.winfo_rootx() + 18
+        y = self.widget.winfo_rooty() + 18
+        self.tip.wm_geometry(f"+{x}+{y}")
+        label = ttk.Label(self.tip, text=self.text, relief="solid", borderwidth=1, padding=6, wraplength=360)
+        label.pack()
+
+    def hide(self, *_: Any) -> None:
+        if self.tip:
+            self.tip.destroy()
+            self.tip = None
 
 
 class PropertyEditor(ttk.Frame):
@@ -22,32 +53,84 @@ class PropertyEditor(ttk.Frame):
         self.schema = schema
         self.on_change = on_change
         self.vars: Dict[str, tk.Variable] = {}
+        self.widgets: Dict[str, tk.Widget] = {}
+        self.required_names, self.advanced_names = categorize_schema_fields(schema)
+        self.show_advanced = tk.BooleanVar(value=False)
+        self.advanced_frame: ttk.Frame | None = None
         self.build()
 
     def build(self) -> None:
-        required = set(self.schema.get("required", []))
-        row = 0
-        for name, field in self.schema.get("properties", {}).items():
-            label = f"{name}{' *' if name in required else ''}"
-            ttk.Label(self, text=label).grid(row=row, column=0, sticky="w", padx=4, pady=2)
-            self._build_widget(row, name, field)
-            row += 1
+        basic_frame = ttk.LabelFrame(self, text="Required fields")
+        basic_frame.pack(fill="x", padx=2, pady=2)
+        self._build_fields(basic_frame, self.required_names)
 
-    def _build_widget(self, row: int, name: str, field: Dict[str, Any]) -> None:
+        self.advanced_frame = ttk.LabelFrame(self, text="Advanced options")
+        self.advanced_frame.pack(fill="x", padx=2, pady=8)
+        if self.advanced_names:
+            toggle = ttk.Checkbutton(
+                self,
+                text="Show advanced options",
+                variable=self.show_advanced,
+                command=self._toggle_advanced,
+            )
+            toggle.pack(anchor="w", padx=4, pady=(2, 0))
+            self._build_fields(self.advanced_frame, self.advanced_names)
+            self._toggle_advanced()
+        else:
+            self.advanced_frame.pack_forget()
+
+    def _toggle_advanced(self) -> None:
+        if not self.advanced_frame:
+            return
+        if self.show_advanced.get():
+            self.advanced_frame.pack(fill="x", padx=2, pady=4)
+        else:
+            self.advanced_frame.pack_forget()
+
+    def _build_fields(self, container: ttk.Frame, field_names: list[str]) -> None:
+        row = 0
+        required = set(self.schema.get("required", []))
+        for name in field_names:
+            field = self.schema.get("properties", {}).get(name, {})
+            label = f"{name}{' *' if name in required else ''}"
+            label_widget = ttk.Label(container, text=label)
+            label_widget.grid(row=row, column=0, sticky="w", padx=4, pady=2)
+            widget = self._build_widget(container, row, name, field)
+            help_text = build_field_tooltip(name, field)
+            ToolTip(label_widget, help_text)
+            ToolTip(widget, help_text)
+            row += 1
+        container.columnconfigure(1, weight=1)
+
+    def _build_widget(self, container: ttk.Frame, row: int, name: str, field: Dict[str, Any]) -> tk.Widget:
         if "enum" in field:
             var = tk.StringVar()
-            widget = ttk.Combobox(self, textvariable=var, values=field["enum"], state="readonly")
+            widget = ttk.Combobox(container, textvariable=var, values=field["enum"], state="readonly")
             if field["enum"]:
                 var.set(field["enum"][0])
             widget.grid(row=row, column=1, sticky="ew", padx=4, pady=2)
         elif field.get("type") == "boolean":
             var = tk.BooleanVar(value=False)
-            ttk.Checkbutton(self, variable=var).grid(row=row, column=1, sticky="w", padx=4, pady=2)
+            widget = ttk.Checkbutton(container, variable=var)
+            widget.grid(row=row, column=1, sticky="w", padx=4, pady=2)
         else:
             var = tk.StringVar()
-            ttk.Entry(self, textvariable=var).grid(row=row, column=1, sticky="ew", padx=4, pady=2)
+            widget = ttk.Entry(container, textvariable=var)
+            widget.grid(row=row, column=1, sticky="ew", padx=4, pady=2)
         self.vars[name] = var
+        self.widgets[name] = widget
         var.trace_add("write", lambda *_: self.on_change())
+        return widget
+
+    def focus_field(self, field_name: str) -> bool:
+        widget = self.widgets.get(field_name)
+        if widget is None:
+            return False
+        if field_name in self.advanced_names and not self.show_advanced.get():
+            self.show_advanced.set(True)
+            self._toggle_advanced()
+        widget.focus_set()
+        return True
 
     def data(self) -> Dict[str, Any]:
         out: Dict[str, Any] = {}
@@ -83,8 +166,11 @@ class StepEditor(ttk.Frame):
         hdr.pack(fill="x")
         ttk.Label(hdr, text=title).pack(side="left")
         ttk.Button(hdr, text="Add", command=self.add_step).pack(side="left", padx=4)
+        ttk.Button(hdr, text="Delete", command=self.delete_step).pack(side="left", padx=4)
+        ttk.Button(hdr, text="Move Up", command=lambda: self.move_step(-1)).pack(side="left", padx=4)
+        ttk.Button(hdr, text="Move Down", command=lambda: self.move_step(1)).pack(side="left", padx=4)
 
-        self.listbox = tk.Listbox(self, height=6)
+        self.listbox = tk.Listbox(self, height=6, exportselection=False)
         self.listbox.pack(fill="x", pady=4)
         self.listbox.bind("<<ListboxSelect>>", self.on_select)
 
@@ -106,6 +192,42 @@ class StepEditor(ttk.Frame):
         self.on_select()
         self.on_change()
 
+    def delete_step(self) -> None:
+        sel = self.listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        step_name = self.steps[idx]["StepType"]
+        if not messagebox.askyesno("Confirm delete", f"Delete workflow step '{step_name}'?"):
+            return
+        del self.steps[idx]
+        self.listbox.delete(idx)
+        for i, step in enumerate(self.steps):
+            self.listbox.delete(i)
+            self.listbox.insert(i, f"{i + 1}. {step['StepType']}")
+        if self.steps:
+            self.listbox.selection_set(min(idx, len(self.steps) - 1))
+            self.on_select()
+        self.on_change()
+
+    def move_step(self, direction: int) -> None:
+        sel = self.listbox.curselection()
+        if not sel:
+            return
+        idx = sel[0]
+        new_idx = idx + direction
+        if new_idx < 0 or new_idx >= len(self.steps):
+            return
+        if not messagebox.askyesno("Confirm reorder", "Reorder this step? This can impact runtime behavior."):
+            return
+        self.steps[idx], self.steps[new_idx] = self.steps[new_idx], self.steps[idx]
+        self.listbox.delete(0, tk.END)
+        for i, step in enumerate(self.steps):
+            self.listbox.insert(i, f"{i + 1}. {step['StepType']}")
+        self.listbox.selection_set(new_idx)
+        self.on_select()
+        self.on_change()
+
     def on_select(self, *_: Any) -> None:
         sel = self.listbox.curselection()
         if not sel:
@@ -120,6 +242,8 @@ class StepEditor(ttk.Frame):
         if not sel:
             return
         idx = sel[0]
+        if self.param_editor is not None:
+            self.steps[idx]["StepParameters"] = self.param_editor.data()
         step_type = self.type_var.get()
         self.steps[idx]["StepType"] = step_type
         self.listbox.delete(idx)
@@ -131,14 +255,32 @@ class StepEditor(ttk.Frame):
         schema = self.step_types[step_type]
         self.param_editor = PropertyEditor(self.params_container, schema, self.on_change)
         self.param_editor.pack(fill="x")
+        self._populate_param_editor(self.steps[idx].get("StepParameters", {}))
         self.on_change()
+
+    def _populate_param_editor(self, values: Dict[str, Any]) -> None:
+        if self.param_editor is None:
+            return
+        for key, value in values.items():
+            var = self.param_editor.vars.get(key)
+            if var is None:
+                continue
+            if isinstance(var, tk.BooleanVar):
+                var.set(bool(value))
+            elif isinstance(value, (dict, list)):
+                var.set(json.dumps(value))
+            else:
+                var.set(str(value))
 
     def data(self, processing: bool = False) -> list[Dict[str, Any]]:
         out = []
+        selected = self.listbox.curselection()
+        if selected and self.param_editor is not None:
+            self.steps[selected[0]]["StepParameters"] = self.param_editor.data()
         for i, step in enumerate(self.steps):
             entry: Dict[str, Any] = {
                 "StepType": step["StepType"],
-                "StepParameters": {},
+                "StepParameters": step.get("StepParameters", {}),
             }
             if processing:
                 entry["StepIndex"] = i
@@ -152,26 +294,35 @@ class ProtocolWizardApp(tk.Tk):
     def __init__(self) -> None:
         super().__init__()
         self.title("Protocol Generator GUI")
-        self.geometry("1100x800")
+        self.geometry("1200x830")
         self.schema = load_schema(Path(__file__).resolve().parents[2] / "protocol.schema.json")
         self.save_path: Path | None = None
         self.autosave_job: str | None = None
+        self.warned_unsaved_path = False
 
         self.status = tk.StringVar(value="Not validated")
+        self.progress_text = tk.StringVar(value="Step 1/3 | Completed: 0/3 | Unresolved errors: 0")
         self.step_state = {
             "general": tk.StringVar(value="✗"),
             "loading": tk.StringVar(value="✗"),
             "processing": tk.StringVar(value="✗"),
+        }
+        self.help_text = {
+            "general": tk.StringVar(value=make_step_help("general")),
+            "loading": tk.StringVar(value=make_step_help("loading")),
+            "processing": tk.StringVar(value=make_step_help("processing")),
         }
 
         toolbar = ttk.Frame(self)
         toolbar.pack(fill="x", padx=6, pady=4)
         ttk.Button(toolbar, text="Save As", command=self.save_as).pack(side="left")
         ttk.Button(toolbar, text="Export ProtocolFile.json", command=self.export_protocol).pack(side="left", padx=4)
+        ttk.Label(toolbar, textvariable=self.progress_text).pack(side="left", padx=20)
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
 
         notebook = ttk.Notebook(self)
         notebook.pack(fill="both", expand=True, padx=8, pady=8)
+        notebook.bind("<<NotebookTabChanged>>", self.on_tab_changed)
 
         general = ttk.Frame(notebook)
         loading = ttk.Frame(notebook)
@@ -179,21 +330,58 @@ class ProtocolWizardApp(tk.Tk):
         notebook.add(general, text="Step 1 General")
         notebook.add(loading, text="Step 2 Loading")
         notebook.add(processing, text="Step 3 Processing")
+        self.notebook = notebook
 
-        ttk.Label(general, textvariable=self.step_state["general"]).pack(anchor="ne")
-        self.method_editor = PropertyEditor(general, method_information_schema(self.schema), self.on_change)
+        self.general_help = self._build_step_panel(general, "general")
+        self.method_editor = PropertyEditor(self.general_help["editor_area"], method_information_schema(self.schema), self.on_change)
         self.method_editor.pack(fill="x")
-        ttk.Label(general, text="AssayInformation[0]").pack(anchor="w", pady=(12, 0))
-        self.assay_editor = PropertyEditor(general, assay_information_schema(self.schema), self.on_change)
+        ttk.Label(self.general_help["editor_area"], text="AssayInformation[0]").pack(anchor="w", pady=(12, 0))
+        self.assay_editor = PropertyEditor(self.general_help["editor_area"], assay_information_schema(self.schema), self.on_change)
         self.assay_editor.pack(fill="x")
 
-        ttk.Label(loading, textvariable=self.step_state["loading"]).pack(anchor="ne")
-        self.loading_editor = StepEditor(loading, "LoadingWorkflowSteps", loading_step_types(self.schema), self.on_change)
+        self.loading_help = self._build_step_panel(loading, "loading")
+        self.loading_editor = StepEditor(self.loading_help["editor_area"], "LoadingWorkflowSteps", loading_step_types(self.schema), self.on_change)
         self.loading_editor.pack(fill="both", expand=True)
 
-        ttk.Label(processing, textvariable=self.step_state["processing"]).pack(anchor="ne")
-        self.processing_editor = StepEditor(processing, "ProcessingWorkflowSteps", processing_step_types(self.schema), self.on_change)
+        self.processing_help = self._build_step_panel(processing, "processing")
+        self.processing_editor = StepEditor(self.processing_help["editor_area"], "ProcessingWorkflowSteps", processing_step_types(self.schema), self.on_change)
         self.processing_editor.pack(fill="both", expand=True)
+
+        self.bind_all("<Return>", self.on_enter_next)
+        self.bind_all("<Escape>", self.on_escape_cancel)
+
+    def _build_step_panel(self, container: ttk.Frame, step_key: str) -> Dict[str, ttk.Frame]:
+        panel = ttk.Panedwindow(container, orient=tk.HORIZONTAL)
+        panel.pack(fill="both", expand=True)
+
+        editor = ttk.Frame(panel)
+        help_panel = ttk.LabelFrame(panel, text="Help")
+        panel.add(editor, weight=3)
+        panel.add(help_panel, weight=2)
+
+        top = ttk.Frame(editor)
+        top.pack(fill="x")
+        ttk.Label(top, textvariable=self.step_state[step_key]).pack(anchor="ne")
+
+        help_label = ttk.Label(help_panel, textvariable=self.help_text[step_key], justify="left", wraplength=360)
+        help_label.pack(fill="both", expand=True, padx=8, pady=8)
+        return {"editor_area": editor, "help_area": help_panel}
+
+    def on_tab_changed(self, *_: Any) -> None:
+        tab_index = self.notebook.index(self.notebook.select())
+        self.progress_text.set(summarize_progress(tab_index + 1, self.step_state, self.status.get()))
+
+    def on_enter_next(self, event: tk.Event[tk.Widget]) -> None:
+        if isinstance(event.widget, ttk.Entry):
+            idx = self.notebook.index(self.notebook.select())
+            if idx < 2:
+                self.notebook.select(idx + 1)
+
+    def on_escape_cancel(self, *_: Any) -> None:
+        if self.autosave_job:
+            self.after_cancel(self.autosave_job)
+            self.autosave_job = None
+            self.status.set("Autosave cancelled for current pending write")
 
     def protocol_data(self) -> Dict[str, Any]:
         return {
@@ -203,13 +391,33 @@ class ProtocolWizardApp(tk.Tk):
             "ProcessingWorkflowSteps": [{"GroupDisplayName": "Default Group", "GroupIndex": 0, "GroupSteps": self.processing_editor.data(processing=True)}],
         }
 
+    def _focus_first_invalid(self, errors: list[tuple[str, str]]) -> None:
+        if not errors:
+            return
+        path = errors[0][0]
+        if path.startswith("MethodInformation/"):
+            field = path.split("/", 1)[1]
+            self.notebook.select(0)
+            self.method_editor.focus_field(field)
+        elif path.startswith("AssayInformation/0/"):
+            field = path.split("/", 2)[2]
+            self.notebook.select(0)
+            self.assay_editor.focus_field(field)
+
     def on_change(self) -> None:
         data = self.protocol_data()
         errors = validate_protocol(self.schema, data)
-        self.step_state["general"].set("✓" if not any(e[0].startswith(p) for e in errors for p in ["MethodInformation", "AssayInformation"]) else "✗")
-        self.step_state["loading"].set("✓" if not any(e[0].startswith("LoadingWorkflowSteps") for e in errors) else "✗")
-        self.step_state["processing"].set("✓" if not any(e[0].startswith("ProcessingWorkflowSteps") for e in errors) else "✗")
+        general_err = [e for e in errors if e[0].startswith("MethodInformation") or e[0].startswith("AssayInformation")]
+        loading_err = [e for e in errors if e[0].startswith("LoadingWorkflowSteps")]
+        processing_err = [e for e in errors if e[0].startswith("ProcessingWorkflowSteps")]
+        self.step_state["general"].set("✓" if not general_err else f"✗ ({len(general_err)})")
+        self.step_state["loading"].set("✓" if not loading_err else f"✗ ({len(loading_err)})")
+        self.step_state["processing"].set("✓" if not processing_err else f"✗ ({len(processing_err)})")
         self.status.set("Valid" if not errors else f"Errors: {len(errors)} ({errors[0][0]}: {errors[0][1]})")
+        tab_index = self.notebook.index(self.notebook.select()) + 1
+        self.progress_text.set(summarize_progress(tab_index, self.step_state, self.status.get()))
+        if errors:
+            self._focus_first_invalid(errors)
         self.schedule_autosave()
 
     def save_as(self) -> None:
@@ -217,10 +425,19 @@ class ProtocolWizardApp(tk.Tk):
         if not filename:
             return
         self.save_path = Path(filename)
+        self.warned_unsaved_path = True
         self.save_now()
 
     def schedule_autosave(self) -> None:
         if self.save_path is None:
+            if not self.warned_unsaved_path:
+                self.warned_unsaved_path = True
+                wants_path = messagebox.askyesno(
+                    "Autosave location required",
+                    "Set an output path now so autosave can protect your work?",
+                )
+                if wants_path:
+                    self.save_as()
             return
         if self.autosave_job:
             self.after_cancel(self.autosave_job)
@@ -240,6 +457,7 @@ class ProtocolWizardApp(tk.Tk):
         data = self.protocol_data()
         errors = validate_protocol(self.schema, data)
         if errors:
+            self._focus_first_invalid(errors)
             messagebox.showerror("Validation failed", "\n".join(f"{p}: {m}" for p, m in errors[:8]))
             return
         output.write_text(json.dumps(data, indent=2), encoding="utf-8")

@@ -15,9 +15,11 @@ protocol-generator-gui
   - General information (`MethodInformation`, `AssayInformation`)
   - Loading workflow steps (`LoadingWorkflowSteps`)
   - Processing workflow steps (`ProcessingWorkflowSteps`)
-- Schema-driven rendering for required flags, primitive input types, minimum-constrained numeric fields, and `StepType` conditional parameter forms.
-- Inline schema validation and section completion indicators.
-- `Save As` + autosave-on-change.
+- Schema-driven rendering for required flags, primitive input types, minimum-constrained numeric fields, and `StepType` conditional parameter forms with required-first progressive disclosure for advanced options.
+- Inline schema validation with completion/error counters, top-level progress indicator, and automatic focus on the first invalid field.
+- `Save As` + autosave-on-change, including an unsaved-path safeguard dialog before autosave can begin.
+- Per-step help panel and per-field tooltips sourced from schema descriptions (with metadata fallback when unavailable).
+- Destructive action safeguards (delete/reorder confirmation dialogs) and keyboard navigation (`Enter` advances tabs, `Esc` cancels pending autosave).
 - Export to `ProtocolFile.json` with final schema validation.
 
 ## Build Windows executable
