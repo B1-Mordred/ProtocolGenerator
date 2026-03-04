@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import logging
 import tkinter as tk
 from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
@@ -13,6 +14,7 @@ from .schema_utils import (
     processing_step_types,
     load_schema,
 )
+from .persistence import DraftPersistence
 from .validation import validate_protocol
 from .wizard_logic import (
     build_field_tooltip,
@@ -20,6 +22,8 @@ from .wizard_logic import (
     make_step_help,
     summarize_progress,
 )
+
+logger = logging.getLogger(__name__)
 
 
 class ToolTip:
@@ -152,6 +156,18 @@ class PropertyEditor(ttk.Frame):
             else:
                 out[name] = raw
         return out
+
+    def set_data(self, values: Dict[str, Any]) -> None:
+        for key, value in values.items():
+            var = self.vars.get(key)
+            if var is None:
+                continue
+            if isinstance(var, tk.BooleanVar):
+                var.set(bool(value))
+            elif isinstance(value, (dict, list)):
+                var.set(json.dumps(value))
+            else:
+                var.set(str(value))
 
 
 class StepEditor(ttk.Frame):
@@ -289,6 +305,24 @@ class StepEditor(ttk.Frame):
             out.append(entry)
         return out
 
+    def set_data(self, steps: list[Dict[str, Any]]) -> None:
+        self.steps = []
+        self.listbox.delete(0, tk.END)
+        for index, step in enumerate(steps):
+            step_type = step.get("StepType")
+            if step_type not in self.step_types:
+                continue
+            self.steps.append(
+                {
+                    "StepType": step_type,
+                    "StepParameters": step.get("StepParameters", {}),
+                }
+            )
+            self.listbox.insert(tk.END, f"{index + 1}. {step_type}")
+        if self.steps:
+            self.listbox.selection_set(0)
+            self.on_select()
+
 
 class ProtocolWizardApp(tk.Tk):
     def __init__(self) -> None:
@@ -298,9 +332,12 @@ class ProtocolWizardApp(tk.Tk):
         self.schema = load_schema(Path(__file__).resolve().parents[2] / "protocol.schema.json")
         self.save_path: Path | None = None
         self.autosave_job: str | None = None
-        self.warned_unsaved_path = False
+        self.current_tab_index = 0
+        self.autosave_delay_ms = 400
+        self.persistence = DraftPersistence(Path.home() / ".protocol_generator_last_draft.json")
 
         self.status = tk.StringVar(value="Not validated")
+        self.autosave_status = tk.StringVar(value="Autosave idle")
         self.progress_text = tk.StringVar(value="Step 1/3 | Completed: 0/3 | Unresolved errors: 0")
         self.step_state = {
             "general": tk.StringVar(value="✗"),
@@ -318,6 +355,7 @@ class ProtocolWizardApp(tk.Tk):
         ttk.Button(toolbar, text="Save As", command=self.save_as).pack(side="left")
         ttk.Button(toolbar, text="Export ProtocolFile.json", command=self.export_protocol).pack(side="left", padx=4)
         ttk.Label(toolbar, textvariable=self.progress_text).pack(side="left", padx=20)
+        ttk.Label(toolbar, textvariable=self.autosave_status).pack(side="right", padx=20)
         ttk.Label(toolbar, textvariable=self.status).pack(side="right")
 
         notebook = ttk.Notebook(self)
@@ -349,6 +387,7 @@ class ProtocolWizardApp(tk.Tk):
 
         self.bind_all("<Return>", self.on_enter_next)
         self.bind_all("<Escape>", self.on_escape_cancel)
+        self._attempt_recovery()
 
     def _build_step_panel(self, container: ttk.Frame, step_key: str) -> Dict[str, ttk.Frame]:
         panel = ttk.Panedwindow(container, orient=tk.HORIZONTAL)
@@ -369,6 +408,13 @@ class ProtocolWizardApp(tk.Tk):
 
     def on_tab_changed(self, *_: Any) -> None:
         tab_index = self.notebook.index(self.notebook.select())
+        if tab_index > 0 and self.save_path is None:
+            if messagebox.askyesno("Save location required", "Choose a save location before completing step 1?"):
+                self.save_as()
+            if self.save_path is None:
+                self.notebook.select(self.current_tab_index)
+                return
+        self.current_tab_index = tab_index
         self.progress_text.set(summarize_progress(tab_index + 1, self.step_state, self.status.get()))
 
     def on_enter_next(self, event: tk.Event[tk.Widget]) -> None:
@@ -381,7 +427,7 @@ class ProtocolWizardApp(tk.Tk):
         if self.autosave_job:
             self.after_cancel(self.autosave_job)
             self.autosave_job = None
-            self.status.set("Autosave cancelled for current pending write")
+            self.autosave_status.set("Autosave cancelled")
 
     def protocol_data(self) -> Dict[str, Any]:
         return {
@@ -417,6 +463,7 @@ class ProtocolWizardApp(tk.Tk):
         tab_index = self.notebook.index(self.notebook.select()) + 1
         self.progress_text.set(summarize_progress(tab_index, self.step_state, self.status.get()))
         if errors:
+            logger.warning("validation_errors", extra={"event": "validation_errors", "error_count": len(errors), "errors": errors[:8]})
             self._focus_first_invalid(errors)
         self.schedule_autosave()
 
@@ -425,29 +472,48 @@ class ProtocolWizardApp(tk.Tk):
         if not filename:
             return
         self.save_path = Path(filename)
-        self.warned_unsaved_path = True
         self.save_now()
 
     def schedule_autosave(self) -> None:
-        if self.save_path is None:
-            if not self.warned_unsaved_path:
-                self.warned_unsaved_path = True
-                wants_path = messagebox.askyesno(
-                    "Autosave location required",
-                    "Set an output path now so autosave can protect your work?",
-                )
-                if wants_path:
-                    self.save_as()
-            return
         if self.autosave_job:
             self.after_cancel(self.autosave_job)
-        self.autosave_job = self.after(600, self.save_now)
+        self.autosave_status.set("Saving…")
+        self.autosave_job = self.after(self.autosave_delay_ms, self.save_now)
 
     def save_now(self) -> None:
-        if self.save_path is None:
+        self.autosave_job = None
+        data = self.protocol_data()
+        self.autosave_status.set("Saving…")
+        try:
+            self.persistence.save_temp_draft(data)
+            if self.save_path is not None:
+                DraftPersistence.write_json_atomic(self.save_path, data)
+                self.autosave_status.set(f"Saved at {DraftPersistence.now_stamp()}")
+            else:
+                self.autosave_status.set(f"Saved draft at {DraftPersistence.now_stamp()}")
+        except Exception as exc:  # noqa: BLE001
+            destination = str(self.save_path) if self.save_path else "temp_draft"
+            self.persistence.log_save_failure(destination, exc)
+            self.autosave_status.set("Save failed")
+
+    def _attempt_recovery(self) -> None:
+        draft = self.persistence.load_temp_draft()
+        if not draft:
             return
-        self.save_path.write_text(json.dumps(self.protocol_data(), indent=2), encoding="utf-8")
-        self.status.set(f"Autosaved: {self.save_path}")
+        if not messagebox.askyesno("Recover draft", "A previous draft was found. Reopen it?"):
+            return
+        self.apply_protocol_data(draft)
+        self.autosave_status.set("Recovered last draft")
+
+    def apply_protocol_data(self, data: Dict[str, Any]) -> None:
+        self.method_editor.set_data(data.get("MethodInformation", {}))
+        assay = data.get("AssayInformation", [{}])
+        self.assay_editor.set_data(assay[0] if assay else {})
+        self.loading_editor.set_data(data.get("LoadingWorkflowSteps", []))
+        processing_groups = data.get("ProcessingWorkflowSteps", [])
+        first_group = processing_groups[0] if processing_groups else {}
+        self.processing_editor.set_data(first_group.get("GroupSteps", []))
+        self.on_change()
 
     def export_protocol(self) -> None:
         folder = filedialog.askdirectory()
