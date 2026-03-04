@@ -2,19 +2,18 @@
 
 ## Added
 
-- Added a new schema-driven Python desktop wizard package at `src/protocol_generator_gui` with three workflow steps for protocol authoring, live validation, autosave, and validated export to `ProtocolFile.json`.
-- Added packaging/build scaffolding (`pyproject.toml`, PyInstaller PowerShell build script) to generate a self-contained Windows executable.
-- Added unit and integration test coverage for schema parsing, conditional `StepType` required-field handling, wizard-flow transitions, autosave behavior, and edge-case validation scenarios.
-- Added GitHub Actions CI test workflow with a coverage quality gate (85% minimum) to fail regressions.
+- Added the schema-driven **Protocol Generator GUI** wizard that authors `ProtocolFile.json` through `Step 1 General`, `Step 2 Loading`, and `Step 3 Processing`.
+- Added lifecycle persistence with debounced autosave, temporary draft storage, startup draft recovery prompt, and atomic writes for target save paths.
+- Added inline validation UX including per-step completion/error indicators, top-level progress summary, and first-invalid-field focus behavior.
+- Added contextual help UX with per-step Help panels plus schema/metadata-backed field tooltips.
+- Added packaging/build scaffolding (`pyproject.toml`, `build_windows_exe.ps1`) and CI-backed pytest coverage enforcement.
 
 ## Changed
 
-- Enhanced the desktop wizard UX with step help panels, schema/metadata-backed tooltips, required-first progressive disclosure, progress/error indicators, and focus on the first invalid field.
-- Added guard dialogs for missing autosave path setup and destructive loading/processing step delete/reorder actions, plus keyboard shortcuts for Enter-next and Esc-cancel.
-- Added unit tests for wizard help/tooltip/progress logic to keep new behavior covered.
-- Reworked save lifecycle behavior to persist temp drafts before first file selection, require save-path choice before leaving Step 1, autosave with a 400ms debounce and explicit save-state messaging, recover last draft on restart, and write files atomically with structured error logging for failures/validation issues.
-
+- Changed wizard interaction flow to require **Save As** before progressing beyond Step 1 so autosave and subsequent edits target a user-selected file.
+- Changed destructive workflow-step actions to explicit confirmation dialogs (**Confirm delete**, **Confirm reorder**) and added keyboard shortcuts (`Enter` to advance tab from entry fields, `Esc` to cancel pending autosave).
+- Changed documentation set with a root README plus dedicated end-user and developer guides aligned to current command usage and UI labels.
 
 ## Fixed
 
-- Fixed CI coverage-gate configuration by excluding the Tkinter UI shell (`src/protocol_generator_gui/main.py`) from coverage measurement, while adding deeper tests for schema utilities and validator branches to keep the quality gate meaningful.
+- Fixed coverage gate reliability by excluding the Tkinter shell module from measured coverage while retaining test depth on schema, validation, persistence, and wizard logic modules.

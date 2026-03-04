@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <rect width="1200" height="700" fill="#f3f5f8"/>
+  <rect x="30" y="25" width="1140" height="650" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="55" y="70" font-size="32" font-family="Arial" font-weight="700">Step 1 General (illustrative screenshot)</text>
+  <text x="55" y="110" font-size="21" font-family="Arial">Toolbar: Save As | Export ProtocolFile.json | Step 1/3 | Completed: 1/3 | Unresolved errors: 0</text>
+  <text x="55" y="150" font-size="21" font-family="Arial">Status: Valid | Autosave: Saved at 14:32</text>
+  <text x="55" y="200" font-size="22" font-family="Arial" font-weight="700">Tabs: Step 1 General | Step 2 Loading | Step 3 Processing</text>
+  <text x="55" y="260" font-size="24" font-family="Arial">MethodInformation</text>
+  <text x="55" y="300" font-size="20" font-family="Arial">Required fields</text>
+  <text x="55" y="340" font-size="20" font-family="Arial">Show advanced options</text>
+  <text x="55" y="400" font-size="24" font-family="Arial">AssayInformation[0]</text>
+  <text x="55" y="440" font-size="20" font-family="Arial">Required fields + Advanced options</text>
+  <text x="55" y="500" font-size="18" font-family="Arial" fill="#64748b">This diagram mirrors implemented labels in the Tkinter UI.</text>
+</svg>

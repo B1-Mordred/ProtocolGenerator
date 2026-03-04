@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="700" viewBox="0 0 1200 700">
+  <rect width="1200" height="700" fill="#f3f5f8"/>
+  <rect x="30" y="25" width="1140" height="650" rx="12" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="55" y="70" font-size="32" font-family="Arial" font-weight="700">Step 3 Processing (illustrative screenshot)</text>
+  <text x="55" y="115" font-size="21" font-family="Arial">ProcessingWorkflowSteps editor</text>
+  <text x="55" y="155" font-size="21" font-family="Arial">Buttons: Add | Delete | Move Up | Move Down</text>
+  <text x="55" y="195" font-size="21" font-family="Arial">StepType examples: SingleTransfer, AliquotTransfer, StartCentrifuge, UnloadHeaterShaker</text>
+  <text x="55" y="235" font-size="21" font-family="Arial">Group metadata is assembled as GroupDisplayName/GroupIndex/GroupSteps</text>
+  <text x="55" y="275" font-size="21" font-family="Arial">Validation status and progress remain visible while editing</text>
+</svg>
