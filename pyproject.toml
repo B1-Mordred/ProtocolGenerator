@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "protocol-generator-gui"
+version = "0.1.0"
+description = "Schema-driven desktop protocol file generator"
+requires-python = ">=3.10"
+dependencies = []
+
+[project.scripts]
+protocol-generator-gui = "protocol_generator_gui.main:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
