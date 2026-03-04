@@ -32,6 +32,8 @@ protocol-generator-gui
 
 The script creates a one-file desktop executable using PyInstaller.
 
+The Windows build uses `python -m PyInstaller` and module-safe imports in `src/protocol_generator_gui/main.py` so packaged startup does not fail with relative-import errors.
+
 ## Testing
 
 ```bash
