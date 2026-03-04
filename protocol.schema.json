@@ -1,0 +1,681 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "CS.MassStar.BasicSoftware.ProtobufShared.Domain.Workflow.Protocol",
+  "title": "Protocol",
+  "description": "MassPrep Control Software: Protocol definition file",
+  "type": "object",
+  "required": ["MethodInformation", "AssayInformation", "LoadingWorkflowSteps", "ProcessingWorkflowSteps"],
+  "additionalProperties": false,
+
+  "properties": {
+    "MethodInformation": { "$ref": "#/$defs/MethodInformation" },
+    "AssayInformation":  { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/AssayInformation" } },
+    "LoadingWorkflowSteps":    { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/LoadingWorkflowStep" } },
+    "ProcessingWorkflowSteps": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ProcessingWorkflowStepGroup" } }
+  },
+
+  "$defs": {
+
+    "MethodInformation": {
+      "type": "object",
+      "required": [
+        "Id", "DisplayName", "Version",
+        "MaximumNumberOfProcessingCycles", "MainTitle", "SubTitle", "OrderNumber",
+        "MaximumNumberOfSamples", "MaximumNumberOfAssays",
+        "SamplesLayoutType", "MethodInformationType"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "Id":                              { "type": "string" },
+        "DisplayName":                     { "type": "string" },
+        "Version":                         { "type": "string" },
+        "MainTitle":                       { "type": "string" },
+        "SubTitle":                        { "type": "string" },
+        "OrderNumber":                     { "type": "string" },
+        "MaximumNumberOfSamples":          { "type": "integer", "minimum": 1 },
+        "MaximumNumberOfProcessingCycles": { "type": "integer", "minimum": 1 },
+        "MaximumNumberOfAssays":           { "type": "integer", "minimum": 1 },
+        "SamplesLayoutType":               { "enum": ["SAMPLES_LAYOUT_COMBINED", "SAMPLES_LAYOUT_SPLIT"] },
+        "MethodInformationType":           { "enum": ["REGULAR", "INACTIVE", "ADMIN"] }
+      }
+    },
+
+    "AssayInformation": {
+      "type": "object",
+      "required": [
+        "Type", "DisplayName",
+        "MinimumNumberOfPatientSamplesOnFirstPlate",
+        "StopPreparationWithFailedCalibrator",
+        "StopPreparationWithFailedControl",
+        "ValidDurationInDays",
+        "DilutionFactors",
+        "CalibratorLayoutRules",
+        "ControlLayoutRules"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "Type":                                       { "type": "string" },
+        "DisplayName":                                { "type": "string" },
+        "MinimumNumberOfPatientSamplesOnFirstPlate":  { "type": "integer", "minimum": 0 },
+        "StopPreparationWithFailedCalibrator":        { "type": "boolean" },
+        "StopPreparationWithFailedControl":           { "type": "boolean" },
+        "ValidDurationInDays":                        { "type": "integer", "minimum": 0 },
+        "DilutionFactors":      { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Dilution" } },
+        "CalibratorLayoutRules":{ "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/LayoutRule" } },
+        "ControlLayoutRules":   { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/LayoutRule" } }
+      }
+    },
+
+    "Dilution": {
+      "type": "object",
+      "required": [
+        "DilutionFactor", "IsUsed",
+        "AspirationVolumeEluate", "DispensationVolumeEluate",
+        "DispensationVolumeDilutionBuffer1",
+        "DispensationVolumeDilutionBuffer2",
+        "DispensationVolumeDilutionBuffer3"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "DilutionFactor":                  { "type": "string" },
+        "IsUsed":                          { "type": "boolean" },
+        "AspirationVolumeEluate":          { "type": "integer", "minimum": 0 },
+        "DispensationVolumeEluate":        { "type": "integer", "minimum": 0 },
+        "DispensationVolumeDilutionBuffer1": { "type": "integer", "minimum": 0 },
+        "DispensationVolumeDilutionBuffer2": { "type": "integer", "minimum": 0 },
+        "DispensationVolumeDilutionBuffer3": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "LayoutRule": {
+      "type": "object",
+      "required": [
+        "DisplayName", "Level",
+        "PrependToPatientSamples", "AppendToPatientSamples",
+        "FrequencyOfInterspersal", "OffsetOfInterspersal"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "DisplayName":             { "type": "string" },
+        "Level":                   { "type": "integer", "minimum": 0 },
+        "PrependToPatientSamples": { "type": "boolean" },
+        "AppendToPatientSamples":  { "type": "boolean" },
+        "FrequencyOfInterspersal": { "type": "integer", "minimum": 0 },
+        "OffsetOfInterspersal":    { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "AssayReference": {
+      "type": "object",
+      "required": ["Type"],
+      "additionalProperties": false,
+      "properties": {
+        "Type": { "type": "string" }
+      }
+    },
+
+    "LabwareItemBase": {
+      "type": "object",
+      "required": ["LabwareType", "DisplayName", "ArticleNumber", "BarcodeMask", "FullFilename"],
+      "properties": {
+        "LabwareType":   { "type": "string" },
+        "DisplayName":   { "type": "string" },
+        "ArticleNumber": { "type": "string" },
+        "BarcodeMask":   { "type": "string" },
+        "FullFilename":  { "type": "string" }
+      }
+    },
+
+    "PlateControlType": { "enum": ["Undefined", "DWP", "MTP", "FTP"] },
+
+    "CounterweightPlate": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": ["StackPosition", "PlateControlType"],
+      "additionalProperties": false,
+      "properties": {
+        "StackPosition":    { "type": "integer", "minimum": 0 },
+        "LabwareType":      { "type": "string" },
+        "DisplayName":      { "type": "string" },
+        "ArticleNumber":    { "type": "string" },
+        "BarcodeMask":      { "type": "string" },
+        "FullFilename":     { "type": "string" },
+        "PlateControlType": { "$ref": "#/$defs/PlateControlType" }
+      }
+    },
+
+    "CounterweightWater": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": ["RequiredVolume"],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":    { "type": "string" },
+        "DisplayName":    { "type": "string" },
+        "ArticleNumber":  { "type": "string" },
+        "BarcodeMask":    { "type": "string" },
+        "FullFilename":   { "type": "string" },
+        "RequiredVolume": { "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "RequiredPlate": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": ["IsReusable", "PlateControlType"],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":    { "type": "string" },
+        "DisplayName":    { "type": "string" },
+        "ArticleNumber":  { "type": "string" },
+        "BarcodeMask":    { "type": "string" },
+        "FullFilename":   { "type": "string" },
+        "IsReusable":     { "type": "boolean" },
+        "PlateControlType": { "$ref": "#/$defs/PlateControlType" }
+      }
+    },
+
+    "RequiredTipRack": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":   { "type": "string" },
+        "DisplayName":   { "type": "string" },
+        "ArticleNumber": { "type": "string" },
+        "BarcodeMask":   { "type": "string" },
+        "FullFilename":  { "type": "string" }
+      }
+    },
+
+    "RequiredReagent": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": ["MinimumNumberOfContainers", "MaximumNumberOfContainers", "Assays", "SafetyFactor", "ToleranceFactor", "BottleType"],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":               { "type": "string" },
+        "DisplayName":               { "type": "string" },
+        "ArticleNumber":             { "type": "string" },
+        "BarcodeMask":               { "type": "string" },
+        "FullFilename":              { "type": "string" },
+        "MinimumNumberOfContainers": { "type": "integer", "minimum": 0 },
+        "MaximumNumberOfContainers": { "type": "integer", "minimum": 1 },
+        "Assays":      { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/AssayReference" } },
+        "SafetyFactor":    { "type": "number" },
+        "ToleranceFactor": { "type": "number" },
+        "BottleType":      { "type": "string" }
+      }
+    },
+
+    "RequiredCalibrator": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": [
+        "Level", "ArticleNumberLeafletRef",
+        "MinimumNumberOfContainers", "MaximumNumberOfContainers",
+        "Assays", "SafetyFactor", "ToleranceFactor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":               { "type": "string" },
+        "DisplayName":               { "type": "string" },
+        "ArticleNumber":             { "type": "string" },
+        "BarcodeMask":               { "type": "string" },
+        "FullFilename":              { "type": "string" },
+        "Level":                     { "type": "integer", "minimum": 1 },
+        "ArticleNumberLeafletRef":   { "type": "string" },
+        "MinimumNumberOfContainers": { "type": "integer", "minimum": 0 },
+        "MaximumNumberOfContainers": { "type": "integer", "minimum": 1 },
+        "Assays":        { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/AssayReference" } },
+        "SafetyFactor":    { "type": "number" },
+        "ToleranceFactor": { "type": "number" }
+      }
+    },
+
+    "RequiredControl": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": [
+        "Level", "ArticleNumberLeafletRef",
+        "MinimumNumberOfContainers", "MaximumNumberOfContainers",
+        "Assays", "SafetyFactor", "ToleranceFactor"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":               { "type": "string" },
+        "DisplayName":               { "type": "string" },
+        "ArticleNumber":             { "type": "string" },
+        "BarcodeMask":               { "type": "string" },
+        "FullFilename":              { "type": "string" },
+        "Level":                     { "type": "integer", "minimum": 0 },
+        "ArticleNumberLeafletRef":   { "type": "string" },
+        "MinimumNumberOfContainers": { "type": "integer", "minimum": 0 },
+        "MaximumNumberOfContainers": { "type": "integer", "minimum": 1 },
+        "Assays":        { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/AssayReference" } },
+        "SafetyFactor":    { "type": "number" },
+        "ToleranceFactor": { "type": "number" }
+      }
+    },
+
+    "CalibrationControlReagent": {
+      "allOf": [{ "$ref": "#/$defs/LabwareItemBase" }],
+      "required": ["MinimumNumberOfContainers", "MaximumNumberOfContainers", "Assays", "SafetyFactor", "ToleranceFactor", "BottleType"],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":               { "type": "string" },
+        "DisplayName":               { "type": "string" },
+        "ArticleNumber":             { "type": "string" },
+        "BarcodeMask":               { "type": "string" },
+        "FullFilename":              { "type": "string" },
+        "MinimumNumberOfContainers": { "type": "integer", "minimum": 0 },
+        "MaximumNumberOfContainers": { "type": "integer", "minimum": 1 },
+        "Assays":      { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/AssayReference" } },
+        "SafetyFactor":    { "type": "number" },
+        "ToleranceFactor": { "type": "number" },
+        "BottleType":      { "type": "string" }
+      }
+    },
+
+    "MixingStep": {
+      "type": "object",
+      "required": [
+        "MixingLiquidClassName",
+        "MixingAspirationHeight", "MixingDispensationHeight",
+        "MixingCycles", "MixingLiquidFollowing"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "MixingLiquidClassName":     { "type": "string" },
+        "MixingAspirationHeight":    { "type": "integer", "minimum": 0 },
+        "MixingDispensationHeight":  { "type": "integer", "minimum": 0 },
+        "MixingCycles":              { "type": "integer", "minimum": 0 },
+        "MixingLiquidFollowing":     { "type": "boolean" }
+      }
+    },
+
+    "SampleType": {
+      "enum": ["CALIBRATOR_SAMPLE", "CONTROL_SAMPLE", "PATIENT_SAMPLE"]
+    },
+
+    "TargetLabwareUseState": {
+      "enum": ["AVAILABLE", "IN_USE"]
+    },
+
+    "TransferAssaySpecificParameters": {
+      "type": "object",
+      "required": ["AssayType"],
+      "properties": {
+        "AssayType": { "type": "string" }
+      }
+    },
+
+    "PlateStackReference": {
+      "type": "object",
+      "required": ["LabwareType", "StackPosition"],
+      "additionalProperties": false,
+      "properties": {
+        "LabwareType":  { "type": "string" },
+        "StackPosition":{ "type": "integer", "minimum": 0 }
+      }
+    },
+
+    "LoadingWorkflowStep": {
+      "type": "object",
+      "required": ["StepType", "StepParameters"],
+      "properties": {
+        "StepType":       { "type": "string" },
+        "StepParameters": { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if":   { "properties": { "StepType": { "const": "LoadCounterweight" } } },
+          "then": {
+            "properties": {
+              "StepType": {},
+              "StepParameters": {
+                "type": "object",
+                "required": ["TipLabwareType", "AspirationLiquidClassName", "RequiredCounterweightPlates", "RequiredCounterweightWater"],
+                "additionalProperties": false,
+                "properties": {
+                  "TipLabwareType":              { "type": "string" },
+                  "AspirationLiquidClassName":   { "type": "string" },
+                  "RequiredCounterweightPlates": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/CounterweightPlate" } },
+                  "RequiredCounterweightWater":  { "$ref": "#/$defs/CounterweightWater" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "LoadMfxCarriers" } } },
+          "then": {
+            "properties": {
+              "StepType": {},
+              "StepParameters": {
+                "type": "object",
+                "required": ["BarcodeMask", "FullFilename", "RequiredPlates", "RequiredTipRacks"],
+                "additionalProperties": false,
+                "properties": {
+                  "BarcodeMask":      { "type": "string" },
+                  "FullFilename":     { "type": "string" },
+                  "RequiredPlates":   { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/RequiredPlate" } },
+                  "RequiredTipRacks": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/RequiredTipRack" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "LoadReagentCarrier" } } },
+          "then": {
+            "properties": {
+              "StepType": {},
+              "StepParameters": {
+                "type": "object",
+                "required": ["BarcodeMask", "FullFilename", "TipLabwareType", "AspirationLiquidClassName", "RequiredReagents"],
+                "additionalProperties": false,
+                "properties": {
+                  "BarcodeMask":               { "type": "string" },
+                  "FullFilename":              { "type": "string" },
+                  "TipLabwareType":            { "type": "string" },
+                  "AspirationLiquidClassName": { "type": "string" },
+                  "RequiredReagents": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/RequiredReagent" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "LoadCalibratorAndControlCarrier" } } },
+          "then": {
+            "properties": {
+              "StepType": {},
+              "StepParameters": {
+                "type": "object",
+                "required": [
+                  "BarcodeMask", "FullFilename",
+                  "TipLabwareType", "AspirationLiquidClassName",
+                  "RequiredCalibrators", "RequiredControls", "RequiredReagents"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "BarcodeMask":               { "type": "string" },
+                  "FullFilename":              { "type": "string" },
+                  "TipLabwareType":            { "type": "string" },
+                  "AspirationLiquidClassName": { "type": "string" },
+                  "RequiredCalibrators": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/RequiredCalibrator" } },
+                  "RequiredControls":    { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/RequiredControl" } },
+                  "RequiredReagents":    { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/CalibrationControlReagent" } }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+
+    "ProcessingWorkflowStepGroup": {
+      "type": "object",
+      "required": ["GroupDisplayName", "GroupIndex", "GroupSteps"],
+      "additionalProperties": false,
+      "properties": {
+        "GroupDisplayName": { "type": "string" },
+        "GroupIndex":       { "type": "integer", "minimum": 0 },
+        "GroupSteps":       { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/ProcessingGroupStep" } }
+      }
+    },
+
+    "ProcessingGroupStep": {
+      "type": "object",
+      "required": ["StepIndex", "StepType", "StaticDurationInSeconds", "DynamicDurationInSeconds", "StepParameters"],
+      "properties": {
+        "StepIndex":               { "type": "integer", "minimum": 0 },
+        "StepType":                { "type": "string" },
+        "StaticDurationInSeconds": { "type": "integer", "minimum": 0 },
+        "DynamicDurationInSeconds":{ "type": "integer", "minimum": 0 },
+        "StepParameters":          { "type": "object" }
+      },
+      "allOf": [
+        {
+          "if":   { "properties": { "StepType": { "const": "SingleTransfer" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": [
+                  "TipLabwareType", "AspirationLiquidClassName", "DispensationLiquidClassName",
+                  "SourceLabwareType", "SampleTypes", "TargetLabwareType", "TargetLabwareUseState",
+                  "AssaySpecificParameters", "Density",
+                  "AspirationCapacitiveLldSensitivity", "AspirationSubmergeDepth",
+                  "AspirationLiquidFollowing", "AspirationMixingCycles",
+                  "DispensationLiquidFollowing", "DispensationSubmergeDepth", "DispensationHeight",
+                  "DispensationCapacitiveLldSensitivity",
+                  "StaticDurationInSeconds", "DynamicDurationInSeconds", "MixingSteps"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "TipLabwareType":                     { "type": "string" },
+                  "AspirationLiquidClassName":           { "type": "string" },
+                  "DispensationLiquidClassName":         { "type": "string" },
+                  "SourceLabwareType":                   { "type": "string" },
+                  "SampleTypes":      { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/SampleType" } },
+                  "TargetLabwareType":                   { "type": "string" },
+                  "TargetLabwareUseState":               { "$ref": "#/$defs/TargetLabwareUseState" },
+                  "AssaySpecificParameters": {
+                    "type": "array", "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["AssayType"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "AssayType":          { "type": "string" },
+                        "AspirationVolume":   { "type": "integer", "minimum": 0 },
+                        "DispensationVolume": { "type": "integer", "minimum": 0 },
+                        "AspirationVolumeFactorParameterName":  { "type": "string" },
+                        "DispensationVolumeFactorParameterName":{ "type": "string" }
+                      }
+                    }
+                  },
+                  "Density":                            { "type": "integer", "minimum": 0 },
+                  "AspirationCapacitiveLldSensitivity": { "type": "integer", "minimum": 0 },
+                  "AspirationSubmergeDepth":            { "type": "integer", "minimum": 0 },
+                  "AspirationLiquidFollowing":          { "type": "boolean" },
+                  "AspirationMixingCycles":             { "type": "integer", "minimum": 0 },
+                  "DispensationLiquidFollowing":        { "type": "boolean" },
+                  "DispensationSubmergeDepth":          { "type": "integer", "minimum": 0 },
+                  "DispensationHeight":                 { "type": "integer", "minimum": 0 },
+                  "DispensationCapacitiveLldSensitivity":{ "type": "integer", "minimum": 0 },
+                  "StaticDurationInSeconds":            { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":           { "type": "integer", "minimum": 0 },
+                  "MixingSteps": { "type": "array", "items": { "$ref": "#/$defs/MixingStep" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "AliquotTransfer" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": [
+                  "TipLabwareType", "MaximumNumberOfUsedChannels",
+                  "AspirationLiquidClassName", "DispensationLiquidClassName",
+                  "SourceLabwareType", "TargetLabwareType", "ExcludeLabwareTypes",
+                  "SampleTypes", "AssaySpecificParameters", "Density", "TargetLabwareUseState",
+                  "AspirationCapacitiveLldSensitivity", "AspirationSubmergeDepth", "AspirationMixingCycles",
+                  "PreAliquotVolume", "PostAliquotVolume",
+                  "DispensationLiquidFollowing", "DispensationCapacitiveLldSensitivity",
+                  "MinimizeZMove", "StaticDurationInSeconds", "DynamicDurationInSeconds", "MixingSteps"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "TipLabwareType":                     { "type": "string" },
+                  "MaximumNumberOfUsedChannels":         { "type": "integer", "minimum": 1 },
+                  "AspirationLiquidClassName":           { "type": "string" },
+                  "DispensationLiquidClassName":         { "type": "string" },
+                  "SourceLabwareType":                   { "type": "string" },
+                  "TargetLabwareType":                   { "type": "string" },
+                  "ExcludeLabwareTypes": { "type": "array", "items": { "type": "string" } },
+                  "SampleTypes": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/SampleType" } },
+                  "AssaySpecificParameters": {
+                    "type": "array", "minItems": 1,
+                    "items": {
+                      "type": "object",
+                      "required": ["AssayType"],
+                      "additionalProperties": false,
+                      "properties": {
+                        "AssayType":          { "type": "string" },
+                        "DispensationVolume": { "type": "integer", "minimum": 0 },
+                        "DispensationVolumeFactorParameterName": { "type": "string" }
+                      }
+                    }
+                  },
+                  "Density":                            { "type": "integer", "minimum": 0 },
+                  "TargetLabwareUseState":               { "$ref": "#/$defs/TargetLabwareUseState" },
+                  "AspirationCapacitiveLldSensitivity": { "type": "integer", "minimum": 0 },
+                  "AspirationSubmergeDepth":            { "type": "integer", "minimum": 0 },
+                  "AspirationMixingCycles":             { "type": "integer", "minimum": 0 },
+                  "PreAliquotVolume":                   { "type": "integer", "minimum": 0 },
+                  "PostAliquotVolume":                  { "type": "integer", "minimum": 0 },
+                  "DispensationLiquidFollowing":        { "type": "boolean" },
+                  "DispensationCapacitiveLldSensitivity":{ "type": "integer", "minimum": 0 },
+                  "MinimizeZMove":                      { "type": "boolean" },
+                  "StaticDurationInSeconds":            { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":           { "type": "integer", "minimum": 0 },
+                  "MixingSteps": { "type": "array", "items": { "$ref": "#/$defs/MixingStep" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "CounterweightTransfer" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": [
+                  "TipLabwareType", "AspirationLiquidClassName", "DispensationLiquidClassName",
+                  "SourceLabwareType", "TargetLabwareType", "ReferenceLabwareType",
+                  "AspirationCapacitiveLldSensitivity", "AspirationSubmergeDepth", "AspirationMixingCycles",
+                  "PreAliquotVolume", "PostAliquotVolume",
+                  "DispensationLiquidFollowing", "DispensationCapacitiveLldSensitivity",
+                  "MinimizeZMove", "StaticDurationInSeconds", "DynamicDurationInSeconds"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "TipLabwareType":                     { "type": "string" },
+                  "AspirationLiquidClassName":           { "type": "string" },
+                  "DispensationLiquidClassName":         { "type": "string" },
+                  "SourceLabwareType":                   { "type": "string" },
+                  "TargetLabwareType":                   { "type": "string" },
+                  "ReferenceLabwareType":                { "type": "string" },
+                  "AspirationCapacitiveLldSensitivity": { "type": "integer", "minimum": 0 },
+                  "AspirationSubmergeDepth":            { "type": "integer", "minimum": 0 },
+                  "AspirationMixingCycles":             { "type": "integer", "minimum": 0 },
+                  "PreAliquotVolume":                   { "type": "integer", "minimum": 0 },
+                  "PostAliquotVolume":                  { "type": "integer", "minimum": 0 },
+                  "DispensationLiquidFollowing":        { "type": "boolean" },
+                  "DispensationCapacitiveLldSensitivity":{ "type": "integer", "minimum": 0 },
+                  "MinimizeZMove":                      { "type": "boolean" },
+                  "StaticDurationInSeconds":            { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":           { "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "StartHeaterShaker" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": [
+                  "LabwareType", "Time", "Speed", "Temperature", "MaximumTemperature",
+                  "KeepGripperTools", "StaticDurationInSeconds", "DynamicDurationInSeconds"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "LabwareType":             { "type": "string" },
+                  "Time":                    { "type": "integer", "minimum": 0 },
+                  "Speed":                   { "type": "integer", "minimum": 0 },
+                  "Temperature":             { "type": "number" },
+                  "MaximumTemperature":      { "type": "number" },
+                  "KeepGripperTools":        { "type": "boolean" },
+                  "StaticDurationInSeconds": { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":{ "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "UnloadHeaterShaker" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": ["KeepGripperTools", "StaticDurationInSeconds", "DynamicDurationInSeconds"],
+                "additionalProperties": false,
+                "properties": {
+                  "KeepGripperTools":        { "type": "boolean" },
+                  "StaticDurationInSeconds": { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":{ "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "StartCentrifuge" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": [
+                  "Time", "Speed", "Acceleration", "Deceleration",
+                  "KeepGripperTools", "StaticDurationInSeconds", "DynamicDurationInSeconds",
+                  "Plates", "CounterweightPlates"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "Time":                    { "type": "integer", "minimum": 0 },
+                  "Speed":                   { "type": "integer", "minimum": 0 },
+                  "Acceleration":            { "type": "integer", "minimum": 0 },
+                  "Deceleration":            { "type": "integer", "minimum": 0 },
+                  "KeepGripperTools":        { "type": "boolean" },
+                  "StaticDurationInSeconds": { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":{ "type": "integer", "minimum": 0 },
+                  "Plates":             { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PlateStackReference" } },
+                  "CounterweightPlates":{ "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/PlateStackReference" } }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if":   { "properties": { "StepType": { "const": "UnloadCentrifuge" } } },
+          "then": {
+            "properties": {
+              "StepIndex": {}, "StepType": {}, "StaticDurationInSeconds": {}, "DynamicDurationInSeconds": {},
+              "StepParameters": {
+                "type": "object",
+                "required": ["KeepGripperTools", "StaticDurationInSeconds", "DynamicDurationInSeconds"],
+                "additionalProperties": false,
+                "properties": {
+                  "KeepGripperTools":        { "type": "boolean" },
+                  "StaticDurationInSeconds": { "type": "integer", "minimum": 0 },
+                  "DynamicDurationInSeconds":{ "type": "integer", "minimum": 0 }
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+
+  }
+}
