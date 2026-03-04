@@ -329,7 +329,7 @@ class ProtocolWizardApp(tk.Tk):
         super().__init__()
         self.title("Protocol Generator GUI")
         self.geometry("1200x830")
-        self.schema = load_schema(Path(__file__).resolve().parents[2] / "protocol.schema.json")
+        self.schema = load_schema()
         self.save_path: Path | None = None
         self.autosave_job: str | None = None
         self.current_tab_index = 0

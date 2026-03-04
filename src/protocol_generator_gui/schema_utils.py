@@ -1,12 +1,42 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any, Dict
 
+SCHEMA_FILENAME = "protocol.schema.json"
 
-def load_schema(schema_path: str | Path) -> Dict[str, Any]:
-    return json.loads(Path(schema_path).read_text(encoding="utf-8"))
+
+def default_schema_path() -> Path:
+    """Resolve schema path for source, installed, and PyInstaller-frozen execution."""
+    search_roots: list[Path] = []
+
+    meipass = getattr(sys, "_MEIPASS", None)
+    if meipass:
+        search_roots.append(Path(meipass))
+
+    current_file = Path(__file__).resolve()
+    search_roots.extend(
+        [
+            Path.cwd(),
+            current_file.parent,
+            current_file.parents[1],
+            current_file.parents[2],
+        ]
+    )
+
+    for root in search_roots:
+        candidate = root / SCHEMA_FILENAME
+        if candidate.exists():
+            return candidate
+
+    return search_roots[0] / SCHEMA_FILENAME
+
+
+def load_schema(schema_path: str | Path | None = None) -> Dict[str, Any]:
+    resolved = Path(schema_path) if schema_path is not None else default_schema_path()
+    return json.loads(resolved.read_text(encoding="utf-8"))
 
 
 def resolve_ref(schema: Dict[str, Any], ref: str) -> Dict[str, Any]:
