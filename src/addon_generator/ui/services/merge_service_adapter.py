@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict
 
-from addon_generator.input_models.dtos import InputDTOBundle
+from addon_generator.input_models.dtos import InputDTOBundle, SamplePrepStepInputDTO
 from addon_generator.services.input_merge_service import InputMergeService
 from addon_generator.ui.state.app_state import AppState
 
@@ -24,3 +24,25 @@ class MergeServiceAdapter:
     def _apply_override(self, merged: InputDTOBundle, key: str, value: object) -> None:
         if key.startswith("method.") and merged.method:
             setattr(merged.method, key.split(".", 1)[1], value)
+            return
+        if key == "sample_prep.steps" and isinstance(value, list):
+            merged.sample_prep_steps = []
+            for idx, step in enumerate(value, start=1):
+                if not isinstance(step, dict):
+                    continue
+                step_order = str(step.get("order") or idx)
+                merged.sample_prep_steps.append(
+                    SamplePrepStepInputDTO(
+                        key=f"sampleprep:{step_order}:{idx}",
+                        label=str(step.get("action") or "") or None,
+                        metadata={
+                            "order": step_order,
+                            "raw_action": str(step.get("action") or ""),
+                            "source": str(step.get("source") or ""),
+                            "destination": str(step.get("destination") or ""),
+                            "volume": str(step.get("volume") or ""),
+                            "duration": str(step.get("duration") or ""),
+                            "force": str(step.get("force") or ""),
+                        },
+                    )
+                )
