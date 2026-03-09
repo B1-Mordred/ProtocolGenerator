@@ -11,6 +11,7 @@ The app is a Tkinter desktop wizard with a schema-driven form engine.
 - **Schema adapters:** `src/protocol_generator_gui/schema_utils.py`
 - **Validation engine:** `src/protocol_generator_gui/validation.py`
 - **Wizard UX logic helpers:** `src/protocol_generator_gui/wizard_logic.py`
+- Mapping config contract reference for addon generation: `doc/mapping-config-reference.md`
 - **Persistence/autosave:** `src/protocol_generator_gui/persistence.py`
 
 Runtime flow:
@@ -130,3 +131,8 @@ pytest
   - **Save As**, **Export ProtocolFile.json**, **Step 1 General**, **Step 2 Loading**, **Step 3 Processing**
 - Add/update tests when logic changes.
 - Update `doc/changelog.md` for user-visible behavior changes.
+
+
+## 8) Addon mapping config reference
+
+For mapping-loader/validator-consumed config sections, field-path rules, matching modes, fallback behavior, and ID assignment semantics, see `doc/mapping-config-reference.md`.
