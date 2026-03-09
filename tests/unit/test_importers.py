@@ -147,6 +147,22 @@ def test_fixture_loader_materializes_valid_and_malformed_workbooks(tmp_path) -> 
     assert malformed_path.exists() and malformed_path.suffix == ".xlsx"
 
 
+def test_excel_importer_non_xlsx_fixture_returns_structured_diagnostics(tmp_path) -> None:
+    pytest.importorskip("openpyxl")
+    workbook_path = materialize_workbook_fixture("malformed-workbook", tmp_path)
+
+    with pytest.raises(ExcelImportValidationError) as exc_info:
+        ExcelImporter().import_workbook(workbook_path)
+
+    payload = exc_info.value.to_dict()
+    assert payload["message"] == "Workbook could not be opened"
+    diagnostics = payload["diagnostics"]
+    assert diagnostics and diagnostics[0]["rule_id"] == "invalid-workbook-format"
+    assert diagnostics[0]["sheet"] == "(workbook)"
+    assert diagnostics[0]["value"]["path"] == str(workbook_path)
+    assert diagnostics[0]["value"]["error_type"]
+    assert diagnostics[0]["value"]["error_message"]
+
 def test_fixture_alias_mapping_normalizes_and_splits_units(tmp_path) -> None:
     workbook_path = materialize_workbook_fixture("alias-driven-mapping", tmp_path)
     addon = ExcelImporter().import_workbook(workbook_path)

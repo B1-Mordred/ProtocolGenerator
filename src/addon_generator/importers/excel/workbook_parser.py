@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile
 
 from addon_generator.importers.excel_importer import ExcelImportValidationError, ImportDiagnostic
 from addon_generator.importers.excel.analytes_parser import parse_analytes_sheet
@@ -27,9 +28,28 @@ class ExcelWorkbookParser:
 
     def parse_path(self, excel_path: str | Path) -> InputDTOBundle:
         from openpyxl import load_workbook  # type: ignore
+        from openpyxl.utils.exceptions import InvalidFileException  # type: ignore
 
         workbook_path = Path(excel_path)
-        wb = load_workbook(workbook_path, data_only=True)
+        try:
+            wb = load_workbook(workbook_path, data_only=True)
+        except Exception as exc:
+            rule_id = "invalid-workbook-format" if isinstance(exc, (BadZipFile, InvalidFileException)) else "workbook-open-failed"
+            raise ExcelImportValidationError(
+                "Workbook could not be opened",
+                [
+                    ImportDiagnostic(
+                        rule_id=rule_id,
+                        message="Workbook payload is not a readable .xlsx archive",
+                        sheet="(workbook)",
+                        value={
+                            "path": str(workbook_path),
+                            "error_type": type(exc).__name__,
+                            "error_message": str(exc),
+                        },
+                    )
+                ],
+            ) from exc
         artifacts = self.parse_workbook(wb, source_name=str(workbook_path))
         if artifacts.diagnostics:
             raise ExcelImportValidationError("Workbook contains validation errors", artifacts.diagnostics)
