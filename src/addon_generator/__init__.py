@@ -1,0 +1,1 @@
+"""Addon generator domain package."""

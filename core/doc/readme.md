@@ -23,6 +23,7 @@ protocol-generator-gui
 - Per-step help panel and per-field tooltips sourced from schema descriptions (with metadata fallback when unavailable).
 - Destructive action safeguards (delete/reorder confirmation dialogs) and keyboard navigation (`Enter` advances tabs, `Esc` cancels pending autosave).
 - Export to `ProtocolFile.json` with final schema validation.
+- Addon-domain building blocks under `src/addon_generator/domain/` for deterministic internal identity handling (`method.key`, `assay.key`, `analyte.key`, `unit.key`), protocol fragment composition, and structured validation issue tracking.
 
 ## Build Windows executable
 
@@ -46,3 +47,12 @@ pytest
 - Unit tests cover schema parsing, dynamic field grouping, conditional `StepType` required-field behavior, and validation edge cases.
 - Integration tests use a headless wizard-flow harness to verify transition guards, processing-step reorder/edit behavior, and autosave behavior after save-path selection (no Qt helpers are required because the app is Tkinter-based).
 - CI runs the same test command on push and pull requests via GitHub Actions.
+
+## Addon domain package
+
+`src/addon_generator/domain/` now includes:
+
+- `models.py`: typed dataclass models (`AddonModel`, `MethodModel`, `AssayModel`, `AnalyteModel`, `AnalyteUnitModel`, `ProtocolContextModel`) with stable internal `key` identity fields separate from projection IDs.
+- `ids.py`: deterministic key/ID helpers for repeatable assignment during protocol generation.
+- `fragments.py`: protocol-fragment primitives and deterministic materialization helpers.
+- `issues.py`: structured validation issue models with typed severity/source values.
