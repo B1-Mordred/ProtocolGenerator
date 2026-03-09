@@ -2,8 +2,10 @@ from __future__ import annotations
 
 import pytest
 
-pytest.importorskip("PySide6")
-from PySide6.QtWidgets import QApplication
+try:
+    from PySide6.QtWidgets import QApplication
+except Exception as exc:  # pragma: no cover - environment/runtime dependent
+    pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
 from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
 from addon_generator.ui.models.issue_view_model import IssueViewModel
