@@ -84,34 +84,45 @@ class GenerationService:
 
     def generate_all(self, addon: AddonModel, *, dto_bundle: InputDTOBundle | None = None, xsd_path: str | Path = "AddOn.xsd", protocol_schema_path: str | Path = "protocol.schema.json") -> GenerationResult:
         self.resolver.assign_ids(addon)
-        issues = list(validate_domain(addon).issues.issues)
-        issues.extend(validate_dto_bundle(dto_bundle or self._dto_bundle_from_addon(addon)).issues.issues)
-        issues.extend(self.resolver.validate_cross_file_linkage(addon))
+        staged_issues: list[tuple[str, ValidationIssue]] = []
+
+        # Phase 1: structural/domain validation.
+        staged_issues.extend(("domain", issue) for issue in validate_domain(addon).issues.issues)
+        staged_issues.extend(("domain", issue) for issue in validate_dto_bundle(dto_bundle or self._dto_bundle_from_addon(addon)).issues.issues)
+
+        # Phase 2: unit/linkage validation.
+        staged_issues.extend(("linkage", issue) for issue in self.resolver.validate_cross_file_linkage(addon))
 
         xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
-        issues.extend(xml_result.issues.issues)
+        # Phase 3: projection/schema/cross-file validation.
+        staged_issues.extend(("projection", issue) for issue in xml_result.issues.issues)
 
         protocol_result = self.generate_protocol_json(addon)
         protocol_json = protocol_result.payload
         method_info = protocol_json.get("MethodInformation", {}) if isinstance(protocol_json.get("MethodInformation"), dict) else {}
         if not str(method_info.get("Id") or "").strip() or not str(method_info.get("Version") or "").strip():
-            issues.append(
-                ValidationIssue(
-                    code="missing-required-method-identity-after-merge",
-                    message="MethodInformation.Id and MethodInformation.Version are required after merge resolution",
-                    path="MethodInformation",
-                    entity_keys=((addon.method.key,) if addon.method else ()),
-                    source_location="ProtocolFile.json/MethodInformation",
+            staged_issues.append(
+                (
+                    "projection",
+                    ValidationIssue(
+                        code="missing-required-method-identity-after-merge",
+                        message="MethodInformation.Id and MethodInformation.Version are required after merge resolution",
+                        path="MethodInformation",
+                        entity_keys=((addon.method.key,) if addon.method else ()),
+                        source_location="ProtocolFile.json/MethodInformation",
+                    ),
                 )
             )
         protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
-        issues.extend(protocol_schema_result.issues.issues)
+        staged_issues.extend(("projection", issue) for issue in protocol_schema_result.issues.issues)
 
         cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(xml_result.xml_content))
-        issues.extend(cross_file.issues.issues)
+        staged_issues.extend(("projection", issue) for issue in cross_file.issues.issues)
 
-        warnings = [i for i in issues if i.severity.value == "warning"]
-        errors = [i for i in issues if i.severity.value == "error"]
+        sorted_issues = self._sort_issues(staged_issues)
+
+        warnings = [i for i in sorted_issues if i.severity.value == "warning"]
+        errors = [i for i in sorted_issues if i.severity.value == "error"]
         return GenerationResult(
             addon_model=addon,
             protocol_json=protocol_json,
@@ -123,6 +134,23 @@ class GenerationService:
             unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
             conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
         )
+
+    def _sort_issues(self, staged_issues: list[tuple[str, ValidationIssue]]) -> list[ValidationIssue]:
+        severity_priority = {"error": 0, "warning": 1, "info": 2}
+        phase_priority = {"domain": 0, "linkage": 1, "projection": 2}
+
+        def _issue_key(item: tuple[str, ValidationIssue]) -> tuple[Any, ...]:
+            phase, issue = item
+            return (
+                severity_priority.get(issue.severity.value, 99),
+                phase_priority.get(phase, 99),
+                issue.code,
+                issue.path,
+                issue.source_location or "",
+                issue.entity_keys,
+            )
+
+        return [issue for _, issue in sorted(staged_issues, key=_issue_key)]
 
     def _dto_bundle_from_addon(self, addon: AddonModel) -> InputDTOBundle:
         from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, DilutionSchemeInputDTO, SamplePrepStepInputDTO

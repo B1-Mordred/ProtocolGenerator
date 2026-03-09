@@ -269,10 +269,42 @@ def test_excel_fixture_invalid_scenarios_surface_expected_errors(tmp_path) -> No
         workbook_path = materialize_workbook_fixture(scenario, tmp_path)
         addon = service.import_from_excel(str(workbook_path))
         result = service.generate_all(addon)
-        expected = set(fixture_metadata(scenario)["expected"]["error_codes"])
-        codes = {issue.code for issue in result.issues}
-        assert expected.issubset(codes)
+        expected = fixture_metadata(scenario)["expected"]["error_codes"]
+        actual_codes = [issue.code for issue in result.issues]
 
+        assert set(expected).issubset(set(actual_codes))
+        expected_positions = [actual_codes.index(code) for code in expected]
+        assert expected_positions == sorted(expected_positions)
+
+
+def test_generation_pipeline_orders_domain_issues_before_projection_fallout() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-ORDER",
+            "method_version": "",
+            "assays": [
+                {"key": "assay:a", "protocol_type": "A", "xml_name": "A"},
+                {"key": "assay:b", "protocol_type": "B", "xml_name": "B"},
+            ],
+            "analytes": [
+                {"key": "analyte:1", "name": "GLU", "assay_key": "assay:a"},
+                {"key": "analyte:2", "name": "glu", "assay_key": "assay:b"},
+            ],
+            "units": [
+                {"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"},
+                {"key": "unit:2", "name": "mg/dL", "analyte_key": "analyte:2"},
+            ],
+        }
+    )
+    addon.source_metadata = {}
+
+    result = service.generate_all(addon)
+    issue_codes = [issue.code for issue in result.issues]
+
+    assert "missing-method-version" in issue_codes
+    assert "missing-method-identity" in issue_codes
+    assert issue_codes.index("missing-method-version") < issue_codes.index("missing-method-identity")
 
 
 @pytest.mark.parametrize("scenario", ["production-shape", "header-offset-and-checklist"])

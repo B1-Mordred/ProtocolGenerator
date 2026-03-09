@@ -71,7 +71,8 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
     for analyte in addon.analytes:
         if not analyte.name.strip():
             issues.add(ValidationIssue(code="empty-analyte-name", message="Analyte name must be non-empty", path=f"analytes[{analyte.key}]", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
-        if analyte.assay_key not in assay_keys:
+        linked_assay = next((assay for assay in addon.assays if assay.key == analyte.assay_key), None)
+        if linked_assay is None:
             issues.add(ValidationIssue(code="unknown-assay-key", message=f"Analyte references missing assay key '{analyte.assay_key}'", path=f"analytes[{analyte.key}].assay_key", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
             continue
 
@@ -79,7 +80,6 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
         if canonical_name:
             analyte_assay_by_name.setdefault(canonical_name, set()).add(analyte.assay_key)
 
-        linked_assay = next((assay for assay in addon.assays if assay.key == analyte.assay_key), None)
         if linked_assay is not None and analyte.assay_information_type and linked_assay.protocol_type:
             if normalize_for_matching(analyte.assay_information_type) != normalize_for_matching(linked_assay.protocol_type):
                 issues.add(ValidationIssue(code="unsupported-analyte-assay-information-type", message=f"Analyte assay_information_type '{analyte.assay_information_type}' is incompatible with assay protocol_type '{linked_assay.protocol_type}'", path=f"analytes[{analyte.key}].assay_information_type", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))

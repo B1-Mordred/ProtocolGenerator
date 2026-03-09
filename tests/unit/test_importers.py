@@ -18,6 +18,7 @@ from addon_generator.importers import (
 
 from fixture_loader import fixture_metadata, materialize_workbook_fixture
 from addon_generator.services.canonical_normalizer import canonical_addons_equal, normalize_addon_for_comparison
+from addon_generator.validation.cross_file_validator import validate_cross_file_consistency
 
 
 
@@ -215,6 +216,37 @@ def test_fixture_invalid_units_surfaces_domain_issues(tmp_path) -> None:
 
     expected = set(fixture_metadata("invalid-units")["expected"]["error_codes"])
     assert expected.issubset(issue_codes)
+
+
+def test_cross_file_validator_accumulates_multiple_analyte_errors() -> None:
+    protocol_json = {"MethodInformation": {"Id": "M", "Version": "1"}, "AssayInformation": []}
+    xml = ET.fromstring(
+        """
+        <AddOn>
+          <MethodId>M</MethodId>
+          <MethodVersion>1</MethodVersion>
+          <Assays>
+            <Assay>
+              <Id>10</Id>
+              <Name>A</Name>
+              <Analytes>
+                <Analyte>
+                  <Id />
+                  <AssayRef>999</AssayRef>
+                  <AnalyteUnits />
+                </Analyte>
+              </Analytes>
+            </Assay>
+          </Assays>
+        </AddOn>
+        """
+    )
+
+    result = validate_cross_file_consistency(protocol_json, xml)
+    issue_codes = [issue.code for issue in result.issues.issues]
+
+    assert "invalid-analyte-id" in issue_codes
+    assert "broken-assay-ref" in issue_codes
 
 
 def test_fixture_index_contains_expected_scenarios() -> None:

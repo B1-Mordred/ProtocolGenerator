@@ -1,5 +1,6 @@
 
 ### Changed
+- Reordered addon generation validation into explicit phases (domain/structural, linkage, projection/schema/cross-file), added deterministic issue sorting, and updated invalid-fixture coverage to assert stable issue-code ordering with domain linkage errors surfaced before downstream fallout.
 - Extended addon validation services to consume DTO/provenance context and emit entity-scoped errors with source-location hints; added checks for incompatible duplicate analyte scopes, unresolved `Parameter Set` assay links, hidden-vocab sample-prep actions, malformed/invalid dilution ratios, merged method identity requirements, and richer cross-file assay mismatch checks wired through `GenerationService.generate_all` before output writing.
 
 # Changelog
@@ -126,6 +127,7 @@
 ## Unreleased
 
 ### Changed
+- Reordered `GenerationService.generate_all` validation into explicit phases (domain/structural, linkage, then projection/schema/cross-file), added deterministic issue sorting, and updated validators/tests so domain linkage errors consistently surface ahead of downstream projection fallout with stable ordering.
 - Excel workbook-template sheet parsers now enforce deterministic duplicate detection per sheet with stable `duplicate-row` diagnostics and duplicate-key metadata: assay identity (`Basics`), analyte identity per assay (`Analytes`), dilution scheme name uniqueness (`Dilutions`), and sample-prep order/action uniqueness (`SamplePrep`); tests were expanded for workbook-template duplicate diagnostics.
 - Refactored assay projection/import normalization so `protocol_type`, `protocol_display_name`, and `xml_name` remain independent by default, with explicit opt-in fallback behavior via a shared normalizer used by import/projection paths.
 
