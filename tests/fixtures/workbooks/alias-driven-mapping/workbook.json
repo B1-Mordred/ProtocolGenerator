@@ -1,0 +1,9 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-ALIAS", "3.0", "Alias Units"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"], "rows": [["assay:alias", "CHEM", "Alias", "ALIAS"]]},
+    "Analytes": {"columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"], "rows": [["analyte:alias", "GLU", "assay:alias", "CHEM"]]},
+    "Units": {"columns": ["UnitKey", "UnitName", "AnalyteKey"], "rows": [["unit:alias", "mg/dl; ug/ml", "analyte:alias"]]}
+  }
+}

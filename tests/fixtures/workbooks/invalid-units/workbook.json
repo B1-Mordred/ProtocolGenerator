@@ -1,0 +1,9 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-BAD-UNIT", "1.0", "Broken Unit Link"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"], "rows": [["assay:chem", "CHEM", "Chem", "CHEM"]]},
+    "Analytes": {"columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"], "rows": [["analyte:glu", "GLU", "assay:chem", "CHEM"]]},
+    "Units": {"columns": ["UnitKey", "UnitName", "AnalyteKey"], "rows": [["unit:bad", "mg/dL", "analyte:missing"]]}
+  }
+}

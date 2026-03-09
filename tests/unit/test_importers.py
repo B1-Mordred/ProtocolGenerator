@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from pathlib import Path
+import json
 import xml.etree.ElementTree as ET
 from xml.etree.ElementTree import tostring
 
@@ -13,6 +15,9 @@ from addon_generator.importers import (
     XmlImportValidationError,
     map_gui_payload_to_addon,
 )
+
+
+from fixture_loader import fixture_metadata, materialize_workbook_fixture
 
 
 def test_gui_mapper_builds_canonical_addon() -> None:
@@ -131,3 +136,64 @@ def test_xml_importer_produces_same_canonical_entities_as_excel(tmp_path) -> Non
     addon_from_xml = XmlImporter().import_xml(xml_path)
 
     assert asdict(addon_from_xml) == asdict(addon_from_excel)
+
+
+def test_fixture_loader_materializes_valid_and_malformed_workbooks(tmp_path) -> None:
+    valid_path = materialize_workbook_fixture("multi-analyte", tmp_path)
+    malformed_path = materialize_workbook_fixture("malformed-workbook", tmp_path)
+
+    assert valid_path.exists() and valid_path.suffix == ".xlsx"
+    assert malformed_path.exists() and malformed_path.suffix == ".xlsx"
+
+
+def test_fixture_alias_mapping_normalizes_and_splits_units(tmp_path) -> None:
+    workbook_path = materialize_workbook_fixture("alias-driven-mapping", tmp_path)
+    addon = ExcelImporter().import_workbook(workbook_path)
+
+    units = sorted(unit.name for unit in addon.units)
+    assert units == ["mg/dL", "µg/mL"]
+
+
+def test_fixture_invalid_cross_file_mapping_surfaces_domain_issues(tmp_path) -> None:
+    from addon_generator.validation.domain_validator import validate_domain
+
+    workbook_path = materialize_workbook_fixture("invalid-cross-file-mapping", tmp_path)
+    addon = ExcelImporter().import_workbook(workbook_path)
+    issue_codes = {issue.code for issue in validate_domain(addon).issues.issues}
+
+    expected = set(fixture_metadata("invalid-cross-file-mapping")["expected"]["error_codes"])
+    assert expected.issubset(issue_codes)
+
+
+def test_fixture_invalid_units_surfaces_domain_issues(tmp_path) -> None:
+    from addon_generator.validation.domain_validator import validate_domain
+
+    workbook_path = materialize_workbook_fixture("invalid-units", tmp_path)
+    addon = ExcelImporter().import_workbook(workbook_path)
+    issue_codes = {issue.code for issue in validate_domain(addon).issues.issues}
+
+    expected = set(fixture_metadata("invalid-units")["expected"]["error_codes"])
+    assert expected.issubset(issue_codes)
+
+
+def test_fixture_index_contains_expected_scenarios() -> None:
+    index_path = Path("tests/fixtures/index.json")
+    data = json.loads(index_path.read_text(encoding="utf-8"))["workbook_fixtures"]
+
+    assert {
+        "minimal-valid",
+        "single-assay",
+        "multi-assay",
+        "multi-analyte",
+        "alias-driven-mapping",
+        "invalid-cross-file-mapping",
+        "invalid-units",
+        "malformed-workbook",
+    }.issubset(set(data))
+
+
+def test_fixture_malformed_workbook_fails_import(tmp_path) -> None:
+    workbook_path = materialize_workbook_fixture("malformed-workbook", tmp_path)
+
+    with pytest.raises(Exception):
+        ExcelImporter().import_workbook(workbook_path)

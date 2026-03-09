@@ -41,6 +41,7 @@
 ## Unreleased
 
 ### Added
+- Added scenario-indexed integration workbook fixtures under `tests/fixtures/workbooks/` with index metadata (`tests/fixtures/index.json`) and docs (`tests/fixtures/README.md`) for valid and failure-path importer pipelines.
 - Added deterministic addon package export support in `GenerationService.build_package`, including `<method-id>-<method-version>` folder naming, explicit collision handling (`error` and `increment`), overwrite policy enforcement, and temp-write + atomic move behavior for final artifact publishing.
 - Added regression coverage for deterministic linkage and generation pipeline edge cases in `tests/unit/test_addon_determinism_and_linkage.py` and `tests/integration/test_addon_generation_pipeline.py` (ambiguity failures, multi-assay processing behavior, and multi-unit normalization).
 - Added fragment-definition domain contracts (`FragmentMetadata`, selectors, loader/renderer protocols) and deterministic selection logic for assay/loading/processing protocol fragments based on assay family, reagent, dilution, instrument, and config metadata.
@@ -51,6 +52,7 @@
 - Added import/output preview models surfacing imported vs current values, provenance hints, unresolved field blockers, and export target readiness messages.
 - Added deterministic merge provenance output for protocol generation with required-field conflict/unresolved reporting and explicit precedence (`GUI > imported > config default > built-in default`).
 ### Changed
+- Changed fixture consumption to a shared loader helper (`tests/fixture_loader.py`) so unit/integration tests materialize workbook scenarios consistently, including malformed-workbook handling and expected domain-error assertions.
 - Changed canonical import/validation/generation boundaries to enforce explicit assay↔analyte constraints, normalize/expand multi-unit inputs, and render conditional protocol behavior for multi-assay methods (`SamplesLayoutType` + per-assay processing groups).
 - Changed protocol JSON generation to resolve GUI workflow output via fragment definitions instead of direct placeholder lists, preserving deterministic precedence and schema-valid rendering.
 
@@ -69,6 +71,7 @@
 - Changed test fixtures to enforce deterministic ordering and stable output diffs for addon XML/JSON generation.
 - Changed `doc/implementation-plan.md` Task 1.4 to split E2.1–E2.5 execution details, add explicit E2.4 UI display areas, align acceptance criteria wording to backlog requirements, and enumerate E2.4 assertions in wizard/validation test plans.
 ### Added
+- Added scenario-indexed integration workbook fixtures under `tests/fixtures/workbooks/` with index metadata (`tests/fixtures/index.json`) and docs (`tests/fixtures/README.md`) for valid and failure-path importer pipelines.
 - Added addon validation modules (`domain_validator`, `protocol_schema_validator`, `xsd_validator`, `cross_file_validator`) with hard-failure checks (linkage/ref/duplicate/uniqueness/schema/XSD) and warning-level quality checks, all returning structured issue metadata.
 - Introduced `src/addon_generator/importers/` with Excel, GUI, and XML importers that normalize inputs into `AddonModel`/`ProtocolContextModel` and optionally attach loading/processing/dilution/reagent/calibrator/control context fragments for downstream generation (PR pending).
 

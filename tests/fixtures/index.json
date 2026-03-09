@@ -1,0 +1,44 @@
+{
+  "workbook_fixtures": {
+    "minimal-valid": {
+      "intent": "Smallest sheeted workbook that passes full import+generation pipeline.",
+      "workbook": "tests/fixtures/workbooks/minimal-valid/workbook.json",
+      "expected": {"import": "success", "error_codes": []}
+    },
+    "single-assay": {
+      "intent": "One assay with multiple analytes and one unit per analyte.",
+      "workbook": "tests/fixtures/workbooks/single-assay/workbook.json",
+      "expected": {"import": "success", "error_codes": []}
+    },
+    "multi-assay": {
+      "intent": "Two assays to exercise per-assay processing grouping behavior.",
+      "workbook": "tests/fixtures/workbooks/multi-assay/workbook.json",
+      "expected": {"import": "success", "error_codes": []}
+    },
+    "multi-analyte": {
+      "intent": "Single assay with three analytes and heterogeneous units.",
+      "workbook": "tests/fixtures/workbooks/multi-analyte/workbook.json",
+      "expected": {"import": "success", "error_codes": []}
+    },
+    "alias-driven-mapping": {
+      "intent": "Alias-style unit tokens exercise importer normalization and multi-unit splitting.",
+      "workbook": "tests/fixtures/workbooks/alias-driven-mapping/workbook.json",
+      "expected": {"import": "success", "error_codes": [], "normalized_units": ["mg/dL", "µg/mL"]}
+    },
+    "invalid-cross-file-mapping": {
+      "intent": "Analyte references a missing assay key and should fail domain linkage checks.",
+      "workbook": "tests/fixtures/workbooks/invalid-cross-file-mapping/workbook.json",
+      "expected": {"import": "success", "error_codes": ["unknown-assay-key", "assay-missing-analytes"]}
+    },
+    "invalid-units": {
+      "intent": "Unit references a missing analyte key and should fail domain unit linkage checks.",
+      "workbook": "tests/fixtures/workbooks/invalid-units/workbook.json",
+      "expected": {"import": "success", "error_codes": ["unknown-analyte-key", "missing-analyte-units"]}
+    },
+    "malformed-workbook": {
+      "intent": "Non-zip payload with .xlsx extension should fail workbook loading.",
+      "workbook": "tests/fixtures/workbooks/malformed-workbook/not-a-workbook.xlsx",
+      "expected": {"import": "failure", "error_type": "invalid-workbook"}
+    }
+  }
+}

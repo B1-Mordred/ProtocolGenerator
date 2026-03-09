@@ -61,6 +61,7 @@ pytest
 - Unit tests cover schema parsing, dynamic field grouping, conditional `StepType` required-field behavior, and validation edge cases.
 - Integration tests use a headless wizard-flow harness to verify transition guards, processing-step reorder/edit behavior, and autosave behavior after save-path selection (no Qt helpers are required because the app is Tkinter-based).
 - Addon-generation tests now include deterministic field-path/linkage behavior, matching-mode/alias-map coverage, deterministic ID assignment checks, domain and cross-file validator checks, import-to-canonical integration scenarios, and golden fixture assertions for stable `Analytes.xml` and `ProtocolFile.json` outputs.
+- Integration workbook fixtures under `tests/fixtures/workbooks/` are now scenario-indexed (`index.json` + `README.md`) covering minimal valid, single-assay, multi-assay, multi-analyte, alias-normalization, invalid cross-file linkage, invalid unit linkage, and malformed workbook cases, with shared test loader helpers in `tests/fixture_loader.py` for consistent fixture materialization across integration/unit suites.
 - CI runs the same test command on push and pull requests via GitHub Actions.
 
 ## Addon domain package

@@ -1,0 +1,15 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-MULTI-AN", "1.5", "Multi Analyte"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"], "rows": [["assay:a", "CHEM", "Chem", "CHEM"]]},
+    "Analytes": {
+      "columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"],
+      "rows": [["a:1", "GLU", "assay:a", "CHEM"], ["a:2", "LAC", "assay:a", "CHEM"], ["a:3", "BUN", "assay:a", "CHEM"]]
+    },
+    "Units": {
+      "columns": ["UnitKey", "UnitName", "AnalyteKey"],
+      "rows": [["u:1", "mg/dL", "a:1"], ["u:2", "mmol/L", "a:2"], ["u:3", "mg/dL", "a:3"]]
+    }
+  }
+}
