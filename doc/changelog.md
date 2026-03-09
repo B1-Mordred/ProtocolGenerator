@@ -45,6 +45,7 @@
 
 ### Added
 - Added DTO-first addon input model modules (`input_models/dtos.py`, `input_models/provenance.py`) and canonical conversion boundary (`services/canonical_model_builder.py`) to centralize DTO→domain transformation.
+- Added workbook-template Excel import parsing under `src/addon_generator/importers/excel/` with `workbook_parser.py` orchestration and dedicated basics/sample-prep/dilutions/analytes parsers using header-driven start detection, blank-row termination, `Hidden_Lists` vocabulary validation/normalization, and explicit ignore behavior for `AddOn CheckList`.
 - Added `services/input_merge_service.py` with deterministic precedence ordering and structured conflict capture across multi-source DTO bundles.
 
 ### Changed
