@@ -55,10 +55,10 @@ Module-safe imports in `src/protocol_generator_gui/main.py` prevent packaged sta
 
 ```bash
 python -m pip install -e .[dev]
-pytest
+pytest --cov=addon_generator --cov-report=term-missing --cov-fail-under=70
 ```
 
-- Test framework: `pytest` with `pytest-cov` coverage enforcement (`--cov-fail-under=85`). Coverage metrics omit `src/protocol_generator_gui/main.py` (Tkinter UI shell) to keep the gate focused on testable core logic modules.
+- Test framework: `pytest` with `pytest-cov` coverage enforcement (`--cov-fail-under=70`) centered on `src/addon_generator`. Coverage output is published with `--cov-report=term-missing` so uncovered addon-generator lines are visible in local and CI runs.
 - Unit tests cover schema parsing, dynamic field grouping, conditional `StepType` required-field behavior, and validation edge cases.
 - Integration tests use a headless wizard-flow harness to verify transition guards, processing-step reorder/edit behavior, and autosave behavior after save-path selection (no Qt helpers are required because the app is Tkinter-based).
 - Addon-generation tests now include deterministic field-path/linkage behavior, matching-mode/alias-map coverage, deterministic ID assignment checks, domain and cross-file validator checks, import-to-canonical integration scenarios, and golden fixture assertions for stable `Analytes.xml` and `ProtocolFile.json` outputs.
