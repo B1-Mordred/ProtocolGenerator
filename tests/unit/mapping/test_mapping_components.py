@@ -11,47 +11,43 @@ def test_field_path_resolution_and_normalize() -> None:
     assert normalize_for_matching("  A   B  ") == "a b"
 
 
-def test_config_validation() -> None:
+def test_config_validation_returns_typed_wrapper() -> None:
     cfg = load_mapping_config("config/mapping.v1.yaml")
+    assert cfg.model.version == 1
     assert cfg.raw["version"] == 1
 
-    bad = {"version": 1}
-    with pytest.raises(MappingConfigError):
-        validate_mapping_config(bad)
+
+def test_config_validation_requires_mandatory_sections() -> None:
+    with pytest.raises(MappingConfigError, match="Missing mandatory section: ids"):
+        validate_mapping_config({"version": 1})
 
 
-def test_config_validation_rejects_invalid_semantics() -> None:
+def test_config_validation_rejects_unknown_keys() -> None:
     cfg = load_mapping_config("config/mapping.v1.yaml").raw
-
-    bad_alias_mode = {
-        **cfg,
-        "assay_mapping": {
-            **cfg["assay_mapping"],
-            "cross_file_match": {"mode": "alias_map", "alias_map": {}},
-        },
-    }
-    with pytest.raises(MappingConfigError, match="alias_map must not be empty"):
-        validate_mapping_config(bad_alias_mode)
-
-    bad_ids = {
-        **cfg,
-        "ids": {
-            **cfg["ids"],
-            "assay": {"strategy": "random", "start": -1},
-        },
-    }
-    with pytest.raises(MappingConfigError, match="strategy"):
-        validate_mapping_config(bad_ids)
+    cfg["method_mapping"]["protocol"]["unknown_field"] = "bad"
+    with pytest.raises(MappingConfigError, match=r"Unknown key\(s\) under method_mapping\.protocol"):
+        validate_mapping_config(cfg)
 
 
-def test_config_validation_requires_mapping_shapes() -> None:
+def test_config_validation_rejects_bad_field_path_syntax() -> None:
     cfg = load_mapping_config("config/mapping.v1.yaml").raw
-    bad = {
-        **cfg,
-        "method_mapping": {"protocol": "method.method_id", "analytes_xml": cfg["method_mapping"]["analytes_xml"]},
-    }
-    with pytest.raises(MappingConfigError, match="method_mapping.protocol must be an object"):
-        validate_mapping_config(bad)
+    cfg["unit_mapping"]["analytes_xml"]["id"] = "unit.["
+    with pytest.raises(MappingConfigError, match="Invalid field path"):
+        validate_mapping_config(cfg)
+
+
+def test_config_validation_rejects_invalid_enum_mode() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml").raw
+    cfg["assay_mapping"]["cross_file_match"]["mode"] = "fuzzy"
+    with pytest.raises(MappingConfigError, match="Unknown match mode"):
+        validate_mapping_config(cfg)
+
+
+def test_config_validation_rejects_invalid_id_mode() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml").raw
+    cfg["ids"]["assay"]["strategy"] = "random"
+    with pytest.raises(MappingConfigError, match="ids.assay.strategy"):
+        validate_mapping_config(cfg)
 
 
 def test_config_loader_parses_yaml_without_pyyaml(monkeypatch):
