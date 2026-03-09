@@ -212,7 +212,10 @@ class ExcelImporter:
                     protocol_type=self._to_string(row.get("ProtocolType")),
                     protocol_display_name=self._to_string(row.get("AssayDisplayName")),
                     xml_name=self._to_string(row.get("XmlAssayName")),
-                    fallback_order={"xml_name": ("protocol_display_name", "protocol_type")},
+                    fallback_order={
+                        "xml_name": ("protocol_display_name", "protocol_type"),
+                        "protocol_display_name": ("xml_name", "protocol_type"),
+                    },
                 )
                 if any((protocol_type, protocol_display_name, xml_name)):
                     payload["assays"].append(

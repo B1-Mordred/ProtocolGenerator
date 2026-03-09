@@ -116,3 +116,4 @@ Core now includes a canonical `addon_generator` pipeline:
 - Generation issue sorting now keeps validation emission order inside each severity/phase class (instead of code alphabetization), preserving root-cause-first diagnostics in integration reports.
 - V2 workbook normalization no longer creates placeholder analytes from unit-only rows, preserving precise invalid-unit diagnostics (`unknown-analyte-key`) and avoiding secondary noise issues.
 - Excel row normalization now restores assay XML-name fallback from protocol type for flat layouts and v2 sheet parsing now evaluates duplicate-row diagnostics per sheet even when earlier sheets already emitted errors.
+- Excel flat-row normalization now also restores missing assay display labels from XML/protocol identity fallback paths to keep canonical parity with XML imports when assay display columns are absent.
