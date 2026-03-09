@@ -11,6 +11,11 @@ protocol-generator-gui
 
 ## Features
 
+- New business-oriented PySide6 UI foundation under `src/addon_generator/ui/` with a `QMainWindow` shell, section navigation, stacked domain editors (Method/Assays/Analytes/Sample Prep/Dilutions/Import Review/Validation/Preview/Export), reusable widgets, UI state containers, and thin service adapters that orchestrate import→merge→validate→preview→export through backend services.
+- Draft persistence now supports save/load/restore of editor selection, preview/validation state, and imported method identity metadata to continue unresolved work across sessions.
+- MainShell now wires toolbar actions and screen controls through injected UI service adapters (import/merge/validate/preview/export/draft), updates status/issue badges, disables export on validation blockers, and restores section selection from draft state.
+- Coverage note: the addon coverage gate currently excludes `src/addon_generator/ui/**` for headless backend CI jobs; GUI behavior is validated by dedicated UI tests (`tests/unit/ui/`, `tests/integration/test_ui_authoring_flow.py`) and should move into a Qt-enabled CI lane.
+- UI Qt tests now perform runtime-safe module-level skips when Qt shared libraries (for example `libEGL.so.1`) are unavailable on CI runners, avoiding hard collection failures while preserving GUI checks on capable environments.
 - 5-stage wizard UI:
   - Method setup
   - Assay/analyte setup
