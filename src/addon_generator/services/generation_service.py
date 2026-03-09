@@ -25,6 +25,9 @@ class GenerationResult:
     issues: list[ValidationIssue]
     warnings: list[ValidationIssue]
     resolved_mapping_snapshot: dict[str, Any]
+    merge_report: dict[str, Any]
+    unresolved_required_fields: list[str]
+    conflicting_required_fields: list[str]
 
 
 class GenerationService:
@@ -60,7 +63,8 @@ class GenerationService:
         xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
         issues.extend(xml_result.issues.issues)
 
-        protocol_json = self.generate_protocol_json(addon).payload
+        protocol_result = self.generate_protocol_json(addon)
+        protocol_json = protocol_result.payload
         protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
         issues.extend(protocol_schema_result.issues.issues)
 
@@ -76,6 +80,9 @@ class GenerationService:
             issues=errors,
             warnings=warnings,
             resolved_mapping_snapshot=self.mapping.raw,
+            merge_report=protocol_result.merge_report,
+            unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
+            conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
         )
 
 

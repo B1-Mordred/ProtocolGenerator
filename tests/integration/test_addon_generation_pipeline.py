@@ -59,3 +59,27 @@ def test_excel_import_pipeline_flow_with_sheeted_layout(tmp_path) -> None:
     assert addon.units[0].analyte_key == "analyte-1"
     assert result.protocol_json["MethodInformation"]["Id"] == "M-2"
     assert result.issues == []
+
+
+def test_generation_pipeline_reproducible_merged_output() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-R",
+            "method_version": "3.0",
+            "MethodInformation": {"DisplayName": "GUI Preferred"},
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    fragments = {"MethodInformation": {"DisplayName": "Imported", "SubTitle": "Imported Sub"}}
+
+    run1 = service.generate_protocol_json(addon, fragments)
+    run2 = service.generate_protocol_json(addon, fragments)
+
+    assert run1.payload == run2.payload
+    assert run1.merge_report == run2.merge_report
+    assert run1.payload["MethodInformation"]["DisplayName"] == "GUI Preferred"
+    assert run1.payload["MethodInformation"]["SubTitle"] == "Imported Sub"

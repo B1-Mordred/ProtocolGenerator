@@ -10,37 +10,55 @@ from addon_generator.mapping.link_resolver import LinkResolver
 @dataclass(slots=True)
 class ProtocolJsonGenerationResult:
     payload: dict[str, Any]
+    merge_report: dict[str, Any]
 
 
 class ProtocolJsonGenerator:
+    REQUIRED_METHOD_FIELDS = ("Id", "DisplayName", "Version", "MainTitle", "SubTitle", "OrderNumber")
+
     def __init__(self, resolver: LinkResolver):
         self.resolver = resolver
 
     def generate(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None) -> ProtocolJsonGenerationResult:
         defaults = self.resolver.config.raw.get("protocol_defaults", {})
-        payload = {
-            "MethodInformation": self._build_method_information(addon, defaults.get("method_information", {})),
-            "AssayInformation": self._build_assay_information(addon, defaults.get("assay_information", {})),
-            "LoadingWorkflowSteps": self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])),
-            "ProcessingWorkflowSteps": self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])),
+        builtin_method_defaults = {
+            "DisplayName": "Method",
+            "MainTitle": "Main",
+            "SubTitle": "Sub",
+            "OrderNumber": "O-1",
+            "MaximumNumberOfSamples": 1,
+            "MaximumNumberOfProcessingCycles": 1,
+            "MaximumNumberOfAssays": max(1, len(addon.assays) if addon.assays else 1),
+            "SamplesLayoutType": "SAMPLES_LAYOUT_COMBINED",
+            "MethodInformationType": "REGULAR",
         }
+        built_method = self._build_method_information(addon, defaults.get("method_information", {}))
+        built_assay = self._build_assay_information(addon, defaults.get("assay_information", {}))
 
         context = addon.protocol_context
-        if context:
-            payload["MethodInformation"].update(context.method_information_overrides)
-            if context.assay_fragments:
-                payload["AssayInformation"] = context.assay_fragments
-            if context.loading_fragments:
-                payload["LoadingWorkflowSteps"] = context.loading_fragments
-            if context.processing_fragments:
-                payload["ProcessingWorkflowSteps"] = context.processing_fragments
+        gui_method = dict(context.method_information_overrides) if context else {}
+        gui_assay = list(context.assay_fragments) if context and context.assay_fragments else None
+        gui_loading = list(context.loading_fragments) if context and context.loading_fragments else None
+        gui_processing = list(context.processing_fragments) if context and context.processing_fragments else None
 
-        if protocol_fragments:
-            for key in ("MethodInformation", "AssayInformation", "LoadingWorkflowSteps", "ProcessingWorkflowSteps"):
-                if key in protocol_fragments and protocol_fragments[key]:
-                    payload[key] = protocol_fragments[key]
+        imported_method = dict(protocol_fragments.get("MethodInformation", {})) if protocol_fragments and isinstance(protocol_fragments.get("MethodInformation"), dict) else {}
+        imported_assay = list(protocol_fragments.get("AssayInformation", [])) if protocol_fragments and isinstance(protocol_fragments.get("AssayInformation"), list) and protocol_fragments.get("AssayInformation") else None
+        imported_loading = list(protocol_fragments.get("LoadingWorkflowSteps", [])) if protocol_fragments and isinstance(protocol_fragments.get("LoadingWorkflowSteps"), list) and protocol_fragments.get("LoadingWorkflowSteps") else None
+        imported_processing = list(protocol_fragments.get("ProcessingWorkflowSteps", [])) if protocol_fragments and isinstance(protocol_fragments.get("ProcessingWorkflowSteps"), list) and protocol_fragments.get("ProcessingWorkflowSteps") else None
 
-        return ProtocolJsonGenerationResult(payload=payload)
+        method, method_merge = self._merge_method_information(built_method, gui_method, imported_method, defaults.get("method_information", {}), builtin_method_defaults)
+        assay_info, assay_merge = self._resolve_section("AssayInformation", gui_assay, imported_assay, built_assay, [{"Type": "A", "DisplayName": "Assay"}])
+        loading, loading_merge = self._resolve_section("LoadingWorkflowSteps", gui_loading, imported_loading, self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])), [])
+        processing, processing_merge = self._resolve_section("ProcessingWorkflowSteps", gui_processing, imported_processing, self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])), [])
+
+        payload = {
+            "MethodInformation": method,
+            "AssayInformation": assay_info,
+            "LoadingWorkflowSteps": loading,
+            "ProcessingWorkflowSteps": processing,
+        }
+        merge_report = self._build_merge_report(method, [*method_merge, assay_merge, loading_merge, processing_merge])
+        return ProtocolJsonGenerationResult(payload=payload, merge_report=merge_report)
 
     def _build_method_information(self, addon: AddonModel, defaults: dict[str, Any]) -> dict[str, Any]:
         projection = self.resolver.resolve_method_projection(addon)
@@ -80,6 +98,102 @@ class ProtocolJsonGenerator:
 
     def _build_processing_workflow_steps(self, addon: AddonModel, defaults: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return defaults if defaults else []
+
+    def _merge_method_information(
+        self,
+        generated: dict[str, Any],
+        gui_overrides: dict[str, Any],
+        imported_overrides: dict[str, Any],
+        config_defaults: dict[str, Any],
+        builtin_defaults: dict[str, Any],
+    ) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+        merged = dict(generated)
+        records: list[dict[str, Any]] = []
+        candidate_keys = sorted(set(generated) | set(gui_overrides) | set(imported_overrides) | set(config_defaults) | set(builtin_defaults))
+        for key in candidate_keys:
+            values = {
+                "gui": gui_overrides.get(key),
+                "imported": imported_overrides.get(key),
+                "generated": generated.get(key),
+                "config_default": config_defaults.get(key),
+                "built_in_default": builtin_defaults.get(key),
+            }
+            selected_source = "generated"
+            selected_value = values["generated"]
+            for source in ("gui", "imported", "generated", "config_default", "built_in_default"):
+                if self._has_value(values[source]):
+                    selected_source = source
+                    selected_value = values[source]
+                    break
+            merged[key] = selected_value
+
+            present = {source: value for source, value in values.items() if self._has_value(value)}
+            conflict_sources = sorted([source for source, value in present.items() if value != selected_value])
+            records.append({
+                "path": f"MethodInformation.{key}",
+                "source": selected_source,
+                "value": selected_value,
+                "conflict": bool(conflict_sources),
+                "conflict_sources": conflict_sources,
+            })
+        return merged, records
+
+    def _resolve_section(self, section: str, gui: Any, imported: Any, config_default: Any, built_in_default: Any) -> tuple[Any, dict[str, Any]]:
+        values = {
+            "gui": gui,
+            "imported": imported,
+            "config_default": config_default,
+            "built_in_default": built_in_default,
+        }
+        selected_source = "built_in_default"
+        selected_value = values["built_in_default"]
+        for source in ("gui", "imported", "config_default", "built_in_default"):
+            if self._has_value(values[source]):
+                selected_source = source
+                selected_value = values[source]
+                break
+        present = {source: value for source, value in values.items() if self._has_value(value)}
+        conflict_sources = sorted([source for source, value in present.items() if value != selected_value])
+        return selected_value, {
+            "path": section,
+            "source": selected_source,
+            "value": selected_value,
+            "conflict": bool(conflict_sources),
+            "conflict_sources": conflict_sources,
+        }
+
+    def _build_merge_report(self, method_information: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
+        unresolved_required = sorted(
+            [
+                f"MethodInformation.{field}"
+                for field in self.REQUIRED_METHOD_FIELDS
+                if not self._has_value(method_information.get(field))
+            ]
+        )
+        conflicting_required = sorted(
+            [
+                record["path"]
+                for record in records
+                if record["path"] in {f"MethodInformation.{field}" for field in self.REQUIRED_METHOD_FIELDS} and record["conflict"]
+            ]
+        )
+        return {
+            "field_provenance": sorted(records, key=lambda item: item["path"]),
+            "required_fields": {
+                "unresolved": unresolved_required,
+                "conflicting": conflicting_required,
+            },
+        }
+
+    @staticmethod
+    def _has_value(value: Any) -> bool:
+        if value is None:
+            return False
+        if isinstance(value, str):
+            return value.strip() != ""
+        if isinstance(value, (list, dict)):
+            return len(value) > 0
+        return True
 
     @staticmethod
     def _resolve_required_default(primary: Any, fallback: Any, hard_default: Any) -> Any:
