@@ -83,3 +83,58 @@ def test_generation_pipeline_reproducible_merged_output() -> None:
     assert run1.merge_report == run2.merge_report
     assert run1.payload["MethodInformation"]["DisplayName"] == "GUI Preferred"
     assert run1.payload["MethodInformation"]["SubTitle"] == "Imported Sub"
+
+
+
+def test_generation_pipeline_reports_ambiguity_errors() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-ERR",
+            "method_version": "1.0",
+            "assays": [
+                {"key": "assay:1", "protocol_type": "A", "xml_name": "A"},
+                {"key": "assay:2", "protocol_type": "B", "xml_name": "B"},
+            ],
+            "analytes": [
+                {"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"},
+                {"key": "analyte:2", "name": "glu", "assay_key": "assay:2"},
+            ],
+            "units": [
+                {"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"},
+                {"key": "unit:2", "name": "mg/dL", "analyte_key": "analyte:2"},
+            ],
+        }
+    )
+
+    result = service.generate_all(addon)
+
+    assert any(issue.code == "ambiguous-analyte-assay-linkage" for issue in result.issues)
+
+
+def test_generation_pipeline_multi_assay_processing_groups() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-2A",
+            "method_version": "2.0",
+            "assays": [
+                {"key": "assay:chem", "protocol_type": "CHEM", "xml_name": "CHEM", "protocol_display_name": "Chem"},
+                {"key": "assay:immuno", "protocol_type": "IMM", "xml_name": "IMM", "protocol_display_name": "Immuno"},
+            ],
+            "analytes": [
+                {"key": "a1", "name": "GLU", "assay_key": "assay:chem"},
+                {"key": "a2", "name": "TSH", "assay_key": "assay:immuno"},
+            ],
+            "units": [
+                {"key": "u1", "name": "mg/dL", "analyte_key": "a1"},
+                {"key": "u2", "name": "uIU/mL", "analyte_key": "a2"},
+            ],
+        }
+    )
+
+    result = service.generate_all(addon)
+
+    assert result.protocol_json["MethodInformation"]["SamplesLayoutType"] == "SAMPLES_LAYOUT_SEPARATE"
+    assert len(result.protocol_json["ProcessingWorkflowSteps"]) == 2
+    assert {step["GroupDisplayName"] for step in result.protocol_json["ProcessingWorkflowSteps"]} == {"Chem", "Immuno"}

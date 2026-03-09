@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 from addon_generator.domain.issues import IssueSeverity, IssueSource, ValidationIssue, ValidationIssueCollection
 from addon_generator.domain.models import AddonModel
+from addon_generator.mapping.normalizers import normalize_for_matching
 
 
 @dataclass(slots=True)
@@ -36,10 +37,19 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
     if len({a.xml_id for a in addon.assays if a.xml_id is not None}) != len([a for a in addon.assays if a.xml_id is not None]):
         issues.add(ValidationIssue(code="duplicate-assay-xml-ids", message="Assay xml_id values must be unique", path="assays", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
 
+    analyte_counts_by_assay: dict[str, int] = {assay.key: 0 for assay in addon.assays}
+    for analyte in addon.analytes:
+        if analyte.assay_key in analyte_counts_by_assay:
+            analyte_counts_by_assay[analyte.assay_key] += 1
+    for assay_key, analyte_count in analyte_counts_by_assay.items():
+        if analyte_count == 0:
+            issues.add(ValidationIssue(code="assay-missing-analytes", message=f"Assay '{assay_key}' must include at least one analyte", path=f"assays[{assay_key}]", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
+
     analyte_keys = {a.key for a in addon.analytes}
     if len(analyte_keys) != len(addon.analytes):
         issues.add(ValidationIssue(code="duplicate-analyte-keys", message="Analyte keys must be unique", path="analytes", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
 
+    analyte_assay_by_name: dict[str, set[str]] = {}
     for analyte in addon.analytes:
         if not analyte.name.strip():
             issues.add(ValidationIssue(code="empty-analyte-name", message="Analyte name must be non-empty", path=f"analytes[{analyte.key}]", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
@@ -47,10 +57,27 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
             issues.add(ValidationIssue(code="unknown-assay-key", message=f"Analyte references missing assay key '{analyte.assay_key}'", path=f"analytes[{analyte.key}].assay_key", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
             continue
 
+        canonical_name = normalize_for_matching(analyte.name)
+        if canonical_name:
+            analyte_assay_by_name.setdefault(canonical_name, set()).add(analyte.assay_key)
+
         linked_assay = next((assay for assay in addon.assays if assay.key == analyte.assay_key), None)
         if linked_assay is not None and analyte.assay_information_type and linked_assay.protocol_type:
-            if analyte.assay_information_type.strip() != linked_assay.protocol_type.strip():
+            if normalize_for_matching(analyte.assay_information_type) != normalize_for_matching(linked_assay.protocol_type):
                 issues.add(ValidationIssue(code="unsupported-analyte-assay-information-type", message=f"Analyte assay_information_type '{analyte.assay_information_type}' is incompatible with assay protocol_type '{linked_assay.protocol_type}'", path=f"analytes[{analyte.key}].assay_information_type", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
+
+
+    for analyte_name, linked_assays in sorted(analyte_assay_by_name.items()):
+        if len(linked_assays) > 1:
+            issues.add(
+                ValidationIssue(
+                    code="ambiguous-analyte-assay-linkage",
+                    message=f"Analyte '{analyte_name}' is linked to multiple assays: {sorted(linked_assays)}",
+                    path="analytes",
+                    severity=IssueSeverity.ERROR,
+                    source=IssueSource.DOMAIN,
+                )
+            )
 
     unit_keys = {u.key for u in addon.units}
     if len(unit_keys) != len(addon.units):

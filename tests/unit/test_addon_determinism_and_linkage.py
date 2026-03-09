@@ -24,3 +24,52 @@ def test_method_linkage_and_ids_are_deterministic() -> None:
     assert protocol["MethodInformation"]["Id"] == root.findtext("MethodId")
     assert protocol["MethodInformation"]["Version"] == root.findtext("MethodVersion")
     assert [a.xml_id for a in sorted(addon.assays, key=lambda x: x.key)] == [0, 1]
+
+
+
+def test_domain_validation_rejects_ambiguous_analyte_assay_linkage() -> None:
+    from addon_generator.validation.domain_validator import validate_domain
+
+    addon = AddonModel(
+        method=MethodModel(key="method", method_id="METHOD-X", method_version="3.1"),
+        assays=[
+            AssayModel(key="assay:a", protocol_type="A", xml_name="A"),
+            AssayModel(key="assay:b", protocol_type="B", xml_name="B"),
+        ],
+        analytes=[
+            AnalyteModel(key="n1", name="GLU", assay_key="assay:a"),
+            AnalyteModel(key="n2", name=" glu ", assay_key="assay:b"),
+        ],
+        units=[
+            AnalyteUnitModel(key="u1", name="mg/dL", analyte_key="n1"),
+            AnalyteUnitModel(key="u2", name="mg/dL", analyte_key="n2"),
+        ],
+    )
+
+    result = validate_domain(addon)
+
+    assert result.is_valid is False
+    assert any(issue.code == "ambiguous-analyte-assay-linkage" for issue in result.issues.issues)
+
+
+def test_excel_normalization_expands_multi_unit_cells() -> None:
+    from addon_generator.importers.excel_importer import ExcelImporter
+
+    rows = [
+        {
+            "MethodId": "M-1",
+            "MethodVersion": "1.0",
+            "AssayKey": "assay:1",
+            "ProtocolType": "A",
+            "AnalyteKey": "analyte:1",
+            "AnalyteName": "GLU",
+            "UnitKey": "unit:mg",
+            "UnitName": "mg/dl; mmol/L",
+        }
+    ]
+
+    payload = ExcelImporter().normalize_workbook_rows(rows)
+
+    assert len(payload["units"]) == 2
+    assert payload["units"][0]["name"] == "mg/dL"
+    assert payload["units"][1]["name"] == "mmol/L"
