@@ -3,77 +3,81 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree as ET
 
-from addon_generator.domain.fragments import FragmentCollection, ProtocolFragment
-from addon_generator.domain.issues import IssueSource, IssueSeverity, ValidationIssue, ValidationIssueCollection
-from addon_generator.domain.models import ProtocolContextModel
-from addon_generator.generators.analytes_xml_generator import AddonXmlGenerationResult, generate_analytes_addon_xml
-from addon_generator.importers import ExcelImporter, map_gui_payload_to_context
-from addon_generator.generators.protocol_generator import ProtocolJsonGenerationResult, generate_protocol_json as materialize_protocol_json
+from addon_generator.domain.issues import ValidationIssue
+from addon_generator.domain.models import AddonModel
+from addon_generator.generators.analytes_xml_generator import generate_analytes_addon_xml
+from addon_generator.generators.protocol_json_generator import generate_protocol_json
+from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_addon
+from addon_generator.mapping.config_loader import load_mapping_config
+from addon_generator.mapping.link_resolver import LinkResolver
+from addon_generator.validation.cross_file_validator import validate_cross_file_consistency
+from addon_generator.validation.domain_validator import validate_domain
+from addon_generator.validation.protocol_schema_validator import validate_protocol_schema
 
 
 @dataclass(slots=True)
-class GenerationArtifacts:
-    domain_issues: ValidationIssueCollection
-    analytes_xml: AddonXmlGenerationResult
-    protocol_json: ProtocolJsonGenerationResult
+class GenerationResult:
+    addon_model: AddonModel
+    protocol_json: dict[str, Any]
+    analytes_xml_string: str
+    issues: list[ValidationIssue]
+    warnings: list[ValidationIssue]
+    resolved_mapping_snapshot: dict[str, Any]
 
 
 class GenerationService:
-    def import_from_excel(self, excel_path: str | Path) -> ProtocolContextModel:
-        return ExcelImporter().import_workbook(excel_path)
+    def __init__(self, mapping_path: str | Path = "config/mapping.v1.yaml"):
+        self.mapping = load_mapping_config(mapping_path)
+        self.resolver = LinkResolver(self.mapping)
 
-    def import_from_gui_payload(self, payload: dict[str, Any]) -> ProtocolContextModel:
-        return map_gui_payload_to_context(payload)
+    def import_from_excel(self, path: str) -> AddonModel:
+        return ExcelImporter().import_workbook(path)
 
-    def validate_domain(self, context: ProtocolContextModel) -> ValidationIssueCollection:
-        issues = ValidationIssueCollection()
-        if not context.addon.addon_name:
-            issues.add(
-                ValidationIssue(
-                    code="missing-addon-name",
-                    message="Addon name is required",
-                    path="addon.addon_name",
-                    severity=IssueSeverity.ERROR,
-                    source=IssueSource.DOMAIN,
-                )
-            )
-        if not context.addon.assays:
-            issues.add(
-                ValidationIssue(
-                    code="missing-assays",
-                    message="At least one assay is required",
-                    path="addon.assays",
-                    severity=IssueSeverity.ERROR,
-                    source=IssueSource.DOMAIN,
-                )
-            )
-        return issues
+    def import_from_gui_payload(self, payload: dict[str, Any]) -> AddonModel:
+        return map_gui_payload_to_addon(payload)
 
-    def generate_analytes_xml(
-        self, context: ProtocolContextModel, xsd_path: str | Path, output_path: str | Path | None = None
-    ) -> AddonXmlGenerationResult:
-        return generate_analytes_addon_xml(context.addon, xsd_path=xsd_path, output_path=output_path)
+    def import_from_xml(self, path: str) -> AddonModel:
+        return XmlImporter().import_xml(path)
 
-    def generate_protocol_json(self, context: ProtocolContextModel, protocol_fragments: FragmentCollection) -> ProtocolJsonGenerationResult:
-        return materialize_protocol_json(context, protocol_fragments)
+    def validate_domain(self, addon: AddonModel):
+        return validate_domain(addon).issues
 
-    def generate_all(
-        self,
-        context: ProtocolContextModel,
-        protocol_fragments: FragmentCollection,
-        xsd_path: str | Path,
-        xml_output_path: str | Path | None = None,
-    ) -> GenerationArtifacts:
-        domain_issues = self.validate_domain(context)
-        xml_result = self.generate_analytes_xml(context=context, xsd_path=xsd_path, output_path=xml_output_path)
-        protocol_result = self.generate_protocol_json(context=context, protocol_fragments=protocol_fragments)
-        return GenerationArtifacts(domain_issues=domain_issues, analytes_xml=xml_result, protocol_json=protocol_result)
+    def generate_analytes_xml(self, addon: AddonModel, xsd_path: str | Path = "AddOn.xsd") -> str:
+        self.resolver.assign_ids(addon)
+        return generate_analytes_addon_xml(addon, xsd_path=xsd_path).xml_content
+
+    def generate_protocol_json(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None):
+        self.resolver.assign_ids(addon)
+        return generate_protocol_json(addon, self.resolver, protocol_fragments)
+
+    def generate_all(self, addon: AddonModel, *, xsd_path: str | Path = "AddOn.xsd", protocol_schema_path: str | Path = "protocol.schema.json") -> GenerationResult:
+        self.resolver.assign_ids(addon)
+        issues = list(validate_domain(addon).issues.issues)
+        issues.extend(self.resolver.validate_cross_file_linkage(addon))
+
+        xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
+        issues.extend(xml_result.issues.issues)
+
+        protocol_json = self.generate_protocol_json(addon).payload
+        protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
+        issues.extend(protocol_schema_result.issues.issues)
+
+        cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(xml_result.xml_content))
+        issues.extend(cross_file.issues.issues)
+
+        warnings = [i for i in issues if i.severity.value == "warning"]
+        errors = [i for i in issues if i.severity.value == "error"]
+        return GenerationResult(
+            addon_model=addon,
+            protocol_json=protocol_json,
+            analytes_xml_string=xml_result.xml_content,
+            issues=errors,
+            warnings=warnings,
+            resolved_mapping_snapshot=self.mapping.raw,
+        )
 
 
-def fragments_from_protocol_payload(payload: dict[str, Any]) -> FragmentCollection:
-    fragments = FragmentCollection()
-    for key in ("MethodInformation", "AssayInformation", "LoadingWorkflowSteps", "ProcessingWorkflowSteps"):
-        if key in payload:
-            fragments.add(ProtocolFragment(path=(key,), value=payload[key], origin="ui"))
-    return fragments
+def fragments_from_protocol_payload(payload: dict[str, Any]) -> dict[str, Any]:
+    return payload
