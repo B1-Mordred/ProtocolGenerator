@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 
+from addon_generator.domain.fragments import FragmentCollection
+
 
 @dataclass(slots=True)
 class MethodModel:
@@ -61,3 +63,4 @@ class ProtocolContextModel:
     assay_index: dict[str, AssayModel] = field(default_factory=dict)
     analyte_index: dict[str, AnalyteModel] = field(default_factory=dict)
     unit_index: dict[str, AnalyteUnitModel] = field(default_factory=dict)
+    context_fragments: dict[str, FragmentCollection] = field(default_factory=dict)

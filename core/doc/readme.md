@@ -27,6 +27,7 @@ protocol-generator-gui
 - Addon mapping package under `src/addon_generator/mapping/` for v1 mapping-config loading/validation, safe dotted-path evaluation, normalization helpers, projection resolution across method/assay/analyte records, ID assignment, and cross-file linkage checks.
 - Addon XML generation pipeline under `src/addon_generator/generators/`, `src/addon_generator/serialization/`, and `src/addon_generator/validation/` for deterministic analyte XML (`AddOn -> Assays -> Assay -> Analytes -> Analyte -> AnalyteUnits -> AnalyteUnit`) with required reference elements (`AddOnRef`, `AssayRef`, `AnalyteRef`) and pre-write XSD validation issue reporting.
 - Addon protocol JSON generation pipeline under `src/addon_generator/generators/protocol_generator.py` and `src/addon_generator/services/generation_service.py` that builds output strictly from canonical domain context plus explicit protocol fragments, with service entrypoints for GUI payload import, Excel import, domain validation, JSON/XML generation, and combined generation orchestration.
+- Addon importer package under `src/addon_generator/importers/` with `gui_mapper.py` (UI payload to canonical `AddonModel`/`ProtocolContextModel`), `excel_importer.py` (legacy workbook-compatible row import baseline), and `xml_importer.py` (architecture-ready AddOn XML import) that can optionally capture loading/processing/dilution/reagent/calibrator/control context fragments without generating final XML/JSON in the importer layer.
 
 ## Build Windows executable
 
