@@ -75,7 +75,7 @@ class MainShell(QMainWindow):
         self.stack.addWidget(MethodView(self))
         self.stack.addWidget(AssaysView(self))
         self.stack.addWidget(AnalytesView(self))
-        self.stack.addWidget(SamplePrepView(self))
+        self.stack.addWidget(SamplePrepView(self, app_state=self.app_state, merge_service=self.merge_service))
         self.stack.addWidget(DilutionsView(self))
         self.stack.addWidget(ImportReviewView(self))
         self.validation_view = ValidationView(self)
