@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from addon_generator.domain.issues import IssueSeverity, ValidationIssue, ValidationIssueCollection
+from addon_generator.domain.issues import IssueSeverity, IssueSource, ValidationIssue, ValidationIssueCollection
 
 
 @dataclass(slots=True)
@@ -25,12 +25,13 @@ def validate_xml_against_xsd(xml_content: str, xsd_path: Path | str) -> XsdValid
                 message=f"XSD file not found: {schema_path}",
                 path=str(schema_path),
                 severity=IssueSeverity.ERROR,
+                source=IssueSource.VALIDATION,
             )
         )
         return XsdValidationResult(is_valid=False, issues=issues)
 
     try:
-        from lxml import etree  # type: ignore
+        from lxml import etree
     except ImportError:
         issues.add(
             ValidationIssue(
@@ -38,6 +39,7 @@ def validate_xml_against_xsd(xml_content: str, xsd_path: Path | str) -> XsdValid
                 message="lxml is not installed; skipped XSD validation.",
                 path=str(schema_path),
                 severity=IssueSeverity.WARNING,
+                source=IssueSource.VALIDATION,
             )
         )
         return XsdValidationResult(is_valid=True, issues=issues)
@@ -52,6 +54,7 @@ def validate_xml_against_xsd(xml_content: str, xsd_path: Path | str) -> XsdValid
                 message=f"Failed to load XSD: {exc}",
                 path=str(schema_path),
                 severity=IssueSeverity.ERROR,
+                source=IssueSource.VALIDATION,
             )
         )
         return XsdValidationResult(is_valid=False, issues=issues)
@@ -65,6 +68,8 @@ def validate_xml_against_xsd(xml_content: str, xsd_path: Path | str) -> XsdValid
                 message=f"Generated XML is invalid: {exc}",
                 path="/",
                 severity=IssueSeverity.ERROR,
+                source=IssueSource.VALIDATION,
+                source_location=f"line {exc.lineno}, column {exc.offset}",
             )
         )
         return XsdValidationResult(is_valid=False, issues=issues)
@@ -76,8 +81,10 @@ def validate_xml_against_xsd(xml_content: str, xsd_path: Path | str) -> XsdValid
             ValidationIssue(
                 code="xsd-validation",
                 message=entry.message,
-                path=f"line {entry.line}",
+                path="/",
                 severity=severity,
+                source=IssueSource.VALIDATION,
+                source_location=f"line {entry.line}, column {entry.column}",
             )
         )
 
