@@ -66,3 +66,14 @@ def test_assay_projection_fields_remain_independent_with_stable_linkage() -> Non
     assert addon.assays[0].protocol_display_name == "Display A"
     assert addon.assays[0].xml_name == "XML-A"
     assert addon.analytes[0].assay_key == addon.assays[0].key
+
+
+def test_merge_service_treats_empty_optional_text_as_none() -> None:
+    xml_bundle = InputDTOBundle(source_type="xml", source_name="x", method=MethodInputDTO(key="method:M", method_id="M", method_version="1", display_name=""))
+    gui_bundle = InputDTOBundle(source_type="gui", source_name="g", method=MethodInputDTO(key="method:M", method_id="M", method_version="1", display_name=None))
+
+    merged, report = InputMergeService().merge([xml_bundle, gui_bundle])
+
+    assert merged.method is not None
+    assert merged.method.display_name is None
+    assert not any(item["path"] == "method.display_name" for item in report["conflicts"])

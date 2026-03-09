@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import asdict
 from pathlib import Path
 import json
 import xml.etree.ElementTree as ET
@@ -18,6 +17,8 @@ from addon_generator.importers import (
 
 
 from fixture_loader import fixture_metadata, materialize_workbook_fixture
+from addon_generator.services.canonical_normalizer import canonical_addons_equal, normalize_addon_for_comparison
+
 
 
 def test_gui_mapper_builds_canonical_addon() -> None:
@@ -135,7 +136,7 @@ def test_xml_importer_produces_same_canonical_entities_as_excel(tmp_path) -> Non
     addon_from_excel = ExcelImporter().import_workbook(excel_path)
     addon_from_xml = XmlImporter().import_xml(xml_path)
 
-    assert asdict(addon_from_xml) == asdict(addon_from_excel)
+    assert canonical_addons_equal(addon_from_xml, addon_from_excel)
 
 
 def test_fixture_loader_materializes_valid_and_malformed_workbooks(tmp_path) -> None:
@@ -236,3 +237,81 @@ def test_fixture_malformed_workbook_failure_diagnostics_matrix(scenario: str, tm
             all(actual.get(key) == value for key, value in expected.items())
             for actual in diagnostics
         ), f"Missing expected diagnostic for {scenario}: {expected}"
+
+
+def test_canonical_comparison_normalizes_empty_string_and_whitespace() -> None:
+    left = map_gui_payload_to_addon(
+        {
+            "method_id": "M-1",
+            "method_version": "1.0",
+            "MethodInformation": {"DisplayName": ""},
+            "assays": [{"key": "assay:1", "protocol_type": " Chem ", "protocol_display_name": "", "xml_name": "Chem"}],
+            "analytes": [{"key": "analyte:1", "name": "Glucose", "assay_key": "assay:1", "assay_information_type": ""}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+    right = map_gui_payload_to_addon(
+        {
+            "method_id": "M-1",
+            "method_version": "1.0",
+            "MethodInformation": {"DisplayName": None},
+            "assays": [{"key": "assay:1", "protocol_type": "Chem", "protocol_display_name": None, "xml_name": "Chem"}],
+            "analytes": [{"key": "analyte:1", "name": "Glucose", "assay_key": "assay:1", "assay_information_type": None}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    assert canonical_addons_equal(left, right)
+
+
+def test_excel_assay_label_normalization_matches_xml(tmp_path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+
+    wb = openpyxl.Workbook()
+    sheet = wb.active
+    sheet.append(["MethodId", "MethodVersion", "AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName", "AnalyteKey", "AnalyteName", "UnitKey", "UnitName"])
+    sheet.append(["M-42", "2.0", "assay:7", "  Chem  ", "", "Chem", "analyte:9", "Glucose", "unit:11", "mg/dL"])
+    excel_path = tmp_path / "assay-normalized.xlsx"
+    wb.save(excel_path)
+
+    xml_content = (
+        "<AddOn><Id>42</Id><MethodId>M-42</MethodId><MethodVersion>2.0</MethodVersion>"
+        "<Assays><Assay><Id>7</Id><Name>Chem</Name><AddOnRef>42</AddOnRef>"
+        "<Analytes><Analyte><Id>9</Id><Name>Glucose</Name><AssayRef>7</AssayRef>"
+        "<AnalyteUnits><AnalyteUnit><Id>11</Id><Name>mg/dL</Name><AnalyteRef>9</AnalyteRef>"
+        "</AnalyteUnit></AnalyteUnits></Analyte></Analytes></Assay></Assays></AddOn>"
+    )
+    xml_path = tmp_path / "assay-normalized.xml"
+    xml_path.write_text(xml_content, encoding="utf-8")
+
+    addon_from_excel = ExcelImporter().import_workbook(excel_path)
+    addon_from_xml = XmlImporter().import_xml(xml_path)
+
+    assert canonical_addons_equal(addon_from_excel, addon_from_xml)
+
+
+def test_canonical_comparison_excludes_source_only_metadata_fields() -> None:
+    left = map_gui_payload_to_addon(
+        {
+            "method_id": "M-1",
+            "method_version": "1.0",
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "X", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "U", "analyte_key": "analyte:1"}],
+        }
+    )
+    right = map_gui_payload_to_addon(
+        {
+            "method_id": "M-1",
+            "method_version": "1.0",
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "X", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "U", "analyte_key": "analyte:1"}],
+        }
+    )
+    left.source_metadata["provenance"] = {"path": [{"source": "excel"}]}
+    left.source_metadata["source_name"] = "file-a.xlsx"
+    right.source_metadata["provenance"] = {"path": [{"source": "xml"}]}
+    right.source_metadata["source_name"] = "file-b.xml"
+
+    assert normalize_addon_for_comparison(left) == normalize_addon_for_comparison(right)

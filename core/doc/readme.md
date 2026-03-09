@@ -105,3 +105,4 @@ Core now includes a canonical `addon_generator` pipeline:
 - Output stage previews `ProtocolFile.json` and `Analytes.xml` export readiness with blocker-aware messaging and target-selection requirements.
 
 - Import ingestion is now DTO-first: Excel/XML/GUI importers emit `InputDTOBundle` payloads with field-level provenance metadata, then `InputMergeService` applies deterministic source precedence and conflict capture before `CanonicalModelBuilder` performs the single DTO→`AddonModel` conversion boundary used by `GenerationService`.
+- Canonical normalization now trims imported text values, collapses optional empty strings (`""`) to `None`, normalizes empty containers, and exposes canonical addon comparison helpers that intentionally exclude source-only metadata (for example `source_metadata.provenance`) so XML/Excel parity checks stay stable across importer-specific provenance differences.
