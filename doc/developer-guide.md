@@ -165,3 +165,6 @@ Use this when introducing a new protocol context fragment category (for example 
 - Keep docs aligned with runtime behavior and generated artifact structure.
 - Add/update tests when logic changes.
 - Update `doc/changelog.md` for user-visible behavior or contract updates.
+For mapping-loader/validator-consumed config sections, field-path rules, matching modes, fallback behavior, and ID assignment semantics, see `doc/mapping-config-reference.md`.
+
+For canonical addon entities, required vs optional fields, identity/defaulting semantics, and projection-to-output rules, see `doc/canonical-model-reference.md`.
