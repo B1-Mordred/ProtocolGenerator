@@ -6,6 +6,7 @@ from typing import Any
 
 from addon_generator.domain.fragments import FragmentSelectionContext
 from addon_generator.domain.models import AddonModel
+from addon_generator.fragments.assembler import WorkflowAssembler
 from addon_generator.fragments.registry import FragmentResolverRegistry
 from addon_generator.mapping.link_resolver import LinkResolver
 from addon_generator.mapping.normalizers import normalize_for_matching
@@ -24,6 +25,7 @@ class ProtocolJsonGenerator:
     def __init__(self, resolver: LinkResolver):
         self.resolver = resolver
         self.fragment_registry = FragmentResolverRegistry()
+        self.workflow_assembler = WorkflowAssembler()
 
     def generate(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None) -> ProtocolJsonGenerationResult:
         defaults = self.resolver.config.raw.get("protocol_defaults", {})
@@ -45,9 +47,10 @@ class ProtocolJsonGenerator:
         gui_method = dict(context.method_information_overrides) if context else {}
         selection_context = self._build_fragment_selection_context(addon)
         registry_fragments = self.fragment_registry.collect(addon, selection_context)
-        gui_assay = registry_fragments.get("AssayInformation")
-        gui_loading = registry_fragments.get("LoadingWorkflowSteps")
-        gui_processing = registry_fragments.get("ProcessingWorkflowSteps")
+        assembled_fragments = self.workflow_assembler.assemble_sections(registry_fragments)
+        gui_assay = assembled_fragments.get("AssayInformation")
+        gui_loading = assembled_fragments.get("LoadingWorkflowSteps")
+        gui_processing = assembled_fragments.get("ProcessingWorkflowSteps")
 
         imported_method = dict(protocol_fragments.get("MethodInformation", {})) if protocol_fragments and isinstance(protocol_fragments.get("MethodInformation"), dict) else {}
         imported_assay = list(protocol_fragments.get("AssayInformation", [])) if protocol_fragments and isinstance(protocol_fragments.get("AssayInformation"), list) and protocol_fragments.get("AssayInformation") else None
@@ -58,6 +61,10 @@ class ProtocolJsonGenerator:
         assay_info, assay_merge = self._resolve_section("AssayInformation", gui_assay, imported_assay, built_assay, [{"Type": "A", "DisplayName": "Assay"}])
         loading, loading_merge = self._resolve_section("LoadingWorkflowSteps", gui_loading, imported_loading, self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])), [], allow_empty=False)
         processing, processing_merge = self._resolve_section("ProcessingWorkflowSteps", gui_processing, imported_processing, self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])), [], allow_empty=False)
+
+        assay_info = self.workflow_assembler.normalize_assay_information(assay_info)
+        loading = self.workflow_assembler.normalize_loading_steps(loading)
+        processing = self.workflow_assembler.normalize_processing_steps(processing)
 
         payload = {
             "MethodInformation": method,

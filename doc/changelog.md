@@ -1,13 +1,9 @@
-
-### Changed
-- Reordered addon generation validation into explicit phases (domain/structural, linkage, projection/schema/cross-file), added deterministic issue sorting, and updated invalid-fixture coverage to assert stable issue-code ordering with domain linkage errors surfaced before downstream fallout.
-- Extended addon validation services to consume DTO/provenance context and emit entity-scoped errors with source-location hints; added checks for incompatible duplicate analyte scopes, unresolved `Parameter Set` assay links, hidden-vocab sample-prep actions, malformed/invalid dilution ratios, merged method identity requirements, and richer cross-file assay mismatch checks wired through `GenerationService.generate_all` before output writing.
-
 # Changelog
 
 ## 2026-03-09
 
 ### Changed
+- Changed addon protocol JSON generation to pass resolver output through a dedicated workflow assembler stage (`src/addon_generator/fragments/assembler.py`) that normalizes processing/loading schema shape, applies deterministic ordering, and enforces sequential group/step index and duration defaults.
 - Stabilized canonical importer parity by adding shared DTO/domain normalization (trimmed text, optional `""` → `None`, empty-container cleanup) and canonical addon comparison helpers that exclude source-only metadata such as `source_metadata.provenance`; parity tests now compare normalized canonical forms and include explicit None/empty-string, assay-label normalization, and metadata-exclusion coverage.
 
 ### Added
