@@ -5,7 +5,10 @@ from pathlib import Path
 from typing import Any
 
 from addon_generator.domain.models import AddonModel
-from addon_generator.importers.gui_mapper import map_gui_payload_to_addon
+from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
+from addon_generator.input_models.dtos import InputDTOBundle
+from addon_generator.input_models.provenance import FieldProvenance
+from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 
 
 @dataclass(frozen=True, slots=True)
@@ -173,12 +176,24 @@ class ExcelImporter:
                 )
         return payload
 
+    def map_workbook_rows_to_dto_bundle(self, rows: list[dict[str, Any]], *, source_name: str | None = None) -> InputDTOBundle:
+        bundle = map_gui_payload_to_bundle(self.normalize_workbook_rows(rows))
+        bundle.source_type = "excel"
+        bundle.source_name = source_name
+        bundle.provenance.setdefault("method.method_id", []).append(
+            FieldProvenance(source_type="excel", source_file=source_name, source_sheet="(workbook)", field_key="MethodId")
+        )
+        return bundle
+
     def map_workbook_rows_to_canonical_model(self, rows: list[dict[str, Any]]) -> AddonModel:
-        return map_gui_payload_to_addon(self.normalize_workbook_rows(rows))
+        return CanonicalModelBuilder().build(self.map_workbook_rows_to_dto_bundle(rows))
+
+    def import_workbook_bundle(self, excel_path: str | Path) -> InputDTOBundle:
+        rows = self.read_workbook_rows(excel_path)
+        return self.map_workbook_rows_to_dto_bundle(rows, source_name=str(excel_path))
 
     def import_workbook(self, excel_path: str | Path) -> AddonModel:
-        rows = self.read_workbook_rows(excel_path)
-        return self.map_workbook_rows_to_canonical_model(rows)
+        return CanonicalModelBuilder().build(self.import_workbook_bundle(excel_path))
 
     def _parse_workbook_rows(self, excel_path: str | Path) -> dict[str, Any]:
         from openpyxl import load_workbook  # type: ignore
