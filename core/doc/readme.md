@@ -96,3 +96,5 @@ Core now includes a canonical `addon_generator` pipeline:
 - Method editor now enforces `Id` / `Version` / `DisplayName` rules with live propagation into validation and preview stages.
 - Import preview now shows imported/current values, unresolved required conflicts, provenance hints, and progression gating until required conflicts are resolved.
 - Output stage previews `ProtocolFile.json` and `Analytes.xml` export readiness with blocker-aware messaging and target-selection requirements.
+
+- Import ingestion is now DTO-first: Excel/XML/GUI importers emit `InputDTOBundle` payloads with field-level provenance metadata, then `InputMergeService` applies deterministic source precedence and conflict capture before `CanonicalModelBuilder` performs the single DTO→`AddonModel` conversion boundary used by `GenerationService`.

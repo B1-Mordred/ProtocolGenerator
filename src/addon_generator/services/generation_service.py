@@ -13,9 +13,11 @@ from addon_generator.domain.issues import ValidationIssue
 from addon_generator.domain.models import AddonModel
 from addon_generator.generators.analytes_xml_generator import generate_analytes_addon_xml
 from addon_generator.generators.protocol_json_generator import generate_protocol_json
-from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_addon
+from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_bundle
 from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.link_resolver import LinkResolver
+from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
+from addon_generator.services.input_merge_service import InputMergeService
 from addon_generator.validation.cross_file_validator import validate_cross_file_consistency
 from addon_generator.validation.domain_validator import validate_domain
 from addon_generator.validation.protocol_schema_validator import validate_protocol_schema
@@ -49,15 +51,23 @@ class GenerationService:
     def __init__(self, mapping_path: str | Path = "config/mapping.v1.yaml"):
         self.mapping = load_mapping_config(mapping_path)
         self.resolver = LinkResolver(self.mapping)
+        self.merge_service = InputMergeService()
+        self.builder = CanonicalModelBuilder()
 
     def import_from_excel(self, path: str) -> AddonModel:
-        return ExcelImporter().import_workbook(path)
+        bundle = ExcelImporter().import_workbook_bundle(path)
+        merged, _ = self.merge_service.merge([bundle])
+        return self.builder.build(merged)
 
     def import_from_gui_payload(self, payload: dict[str, Any]) -> AddonModel:
-        return map_gui_payload_to_addon(payload)
+        bundle = map_gui_payload_to_bundle(payload)
+        merged, _ = self.merge_service.merge([bundle])
+        return self.builder.build(merged)
 
     def import_from_xml(self, path: str) -> AddonModel:
-        return XmlImporter().import_xml(path)
+        bundle = XmlImporter().import_xml_bundle(path)
+        merged, _ = self.merge_service.merge([bundle])
+        return self.builder.build(merged)
 
     def validate_domain(self, addon: AddonModel):
         return validate_domain(addon).issues
@@ -115,11 +125,7 @@ class GenerationService:
         package_name = self._package_name_for(addon)
         destination_root_path = Path(destination_root)
         destination_root_path.mkdir(parents=True, exist_ok=True)
-        final_root = self._resolve_package_path(
-            destination_root_path / package_name,
-            overwrite=overwrite,
-            collision_policy=collision_policy,
-        )
+        final_root = self._resolve_package_path(destination_root_path / package_name, overwrite=overwrite, collision_policy=collision_policy)
 
         temp_dir = Path(tempfile.mkdtemp(prefix=f".{package_name}.", dir=destination_root_path))
         temp_package_root = temp_dir / final_root.name
@@ -150,11 +156,7 @@ class GenerationService:
         temp_package_root.replace(final_root)
         shutil.rmtree(temp_dir, ignore_errors=True)
 
-        return PackageBuildResult(
-            package_root=final_root,
-            package_name=final_root.name,
-            artifacts={name: final_root / path.name for name, path in artifacts.items()},
-        )
+        return PackageBuildResult(package_root=final_root, package_name=final_root.name, artifacts={name: final_root / path.name for name, path in artifacts.items()})
 
     def _package_name_for(self, addon: AddonModel) -> str:
         method_id = addon.method.method_id if addon.method else "unknown-method"
@@ -178,7 +180,6 @@ class GenerationService:
             if not candidate.exists():
                 return candidate
             counter += 1
-
 
 
 def fragments_from_protocol_payload(payload: dict[str, Any]) -> dict[str, Any]:

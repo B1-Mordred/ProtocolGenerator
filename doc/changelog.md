@@ -43,6 +43,15 @@
 
 ## Unreleased
 
+### Added
+- Added DTO-first addon input model modules (`input_models/dtos.py`, `input_models/provenance.py`) and canonical conversion boundary (`services/canonical_model_builder.py`) to centralize DTO→domain transformation.
+- Added `services/input_merge_service.py` with deterministic precedence ordering and structured conflict capture across multi-source DTO bundles.
+
+### Changed
+- Refactored Excel/XML/GUI importers to emit DTO bundles with provenance while preserving domain import entry points via the canonical model builder.
+- Updated `GenerationService` import entry points to consume importer DTO bundles through the canonical builder/merge path.
+- Added unit coverage for merge precedence/conflict behavior and canonical DTO-to-domain conversion.
+
 ### Changed
 - Updated `doc/user-guide.md` to document the full 5-stage GUI workflow (import preview/conflicts, editing inputs, validation, output preview/export), align wording to current tab/button labels, and add blocker-focused troubleshooting and examples for validation/export failures.
 
