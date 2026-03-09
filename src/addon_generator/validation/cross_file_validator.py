@@ -69,15 +69,13 @@ def validate_cross_file_consistency(protocol_json: dict[str, Any], analytes_xml_
     duplicate_analyte_ids: set[int] = set()
     for idx, analyte in enumerate(analytes_xml_root.findall("./Assays/Assay/Analytes/Analyte")):
         analyte_id = _parse_int(analyte.findtext("Id"), path=f"Analyte[{idx}].Id", code="invalid-analyte-id")
-        if analyte_id is None:
-            continue
-        if analyte_id in analyte_ids:
-            duplicate_analyte_ids.add(analyte_id)
-        analyte_ids.add(analyte_id)
+        if analyte_id is not None:
+            if analyte_id in analyte_ids:
+                duplicate_analyte_ids.add(analyte_id)
+            analyte_ids.add(analyte_id)
+
         assay_ref = _parse_int(analyte.findtext("AssayRef"), path=f"Analyte[{idx}].AssayRef", code="invalid-assay-ref")
-        if assay_ref is None:
-            continue
-        if assay_ref not in assay_ids:
+        if assay_ref is not None and assay_ref not in assay_ids:
             issues.add(ValidationIssue(code="broken-assay-ref", message=f"Analyte AssayRef {assay_ref} does not exist", path="Analyte.AssayRef", severity=IssueSeverity.ERROR, source=IssueSource.VALIDATION))
     for analyte_id in sorted(duplicate_analyte_ids):
         issues.add(ValidationIssue(code="duplicate-analyte-id", message=f"Duplicate analyte Id detected: {analyte_id}", path="Analyte.Id", severity=IssueSeverity.ERROR, source=IssueSource.VALIDATION))
