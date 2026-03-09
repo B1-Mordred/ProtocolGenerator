@@ -13,6 +13,7 @@
 - Fixed export adapter test coverage by adding explicit validation-blocked export behavior assertions (`ExportService` now guarded by a focused unit test).
 - Fixed the PySide6 shell to orchestrate Validate/Preview/Export/Draft actions through service adapters, keep sidebar issue badges synchronized, and enforce validation-gated export button state in the UI shell layer.
 - Added shell orchestration tests for validate/preview/export state transitions and draft-based section restoration (`tests/unit/ui/test_shell_orchestration.py`).
+- Fixed coverage-gate instability for backend-focused CI jobs by excluding the new PySide6 UI package (`src/addon_generator/ui/**`) from the addon coverage target until a Qt-enabled GUI test lane is enforced.
 
 ### Changed
 - Changed addon protocol JSON generation to pass resolver output through a dedicated workflow assembler stage (`src/addon_generator/fragments/assembler.py`) that normalizes processing/loading schema shape, applies deterministic ordering, and enforces sequential group/step index and duration defaults.
