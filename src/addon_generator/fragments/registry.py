@@ -28,10 +28,10 @@ class FragmentResolverRegistry:
         indexed.sort(
             key=lambda entry: (
                 entry[0],
-                entry[1],
-                entry[2],
                 entry[3].section,
                 json.dumps(entry[3].payload, sort_keys=True, default=str),
+                entry[1],
+                entry[2],
             )
         )
 
@@ -44,12 +44,4 @@ class FragmentResolverRegistry:
             else:
                 bucket.append(payload)
 
-        return {section: self._normalize_section(section, payload) for section, payload in sections.items()}
-
-    @staticmethod
-    def _normalize_section(section: str, payload: list[Any]) -> Any:
-        if section in {"LoadingWorkflowSteps", "ProcessingWorkflowSteps"}:
-            return sorted(payload, key=lambda item: json.dumps(item, sort_keys=True, default=str))
-        if section == "AssayInformation":
-            return sorted(payload, key=lambda item: json.dumps(item, sort_keys=True, default=str))
-        return payload
+        return sections

@@ -101,8 +101,23 @@ def test_protocol_generator_uses_fragment_definitions_for_deterministic_workflow
     payload = generate_protocol_json(addon, resolver).payload
 
     assert payload["AssayInformation"] == [{"Type": "CHEM", "DisplayName": "Chemistry RG1"}]
-    assert payload["LoadingWorkflowSteps"] == [{"StepName": "SPECIFIC"}]
-    assert payload["ProcessingWorkflowSteps"] == [{"StepName": "PROC-SPECIFIC"}]
+    assert payload["LoadingWorkflowSteps"] == [{"StepName": "SPECIFIC", "StepParameters": {}}]
+    assert payload["ProcessingWorkflowSteps"] == [
+        {
+            "GroupDisplayName": "Default",
+            "GroupIndex": 0,
+            "GroupSteps": [
+                {
+                    "StepName": "PROC-SPECIFIC",
+                    "StepType": "PROC-SPECIFIC",
+                    "StepIndex": 0,
+                    "StaticDurationInSeconds": 0,
+                    "DynamicDurationInSeconds": 0,
+                    "StepParameters": {"StaticDurationInSeconds": 0, "DynamicDurationInSeconds": 0},
+                }
+            ],
+        }
+    ]
 
     validation = validate_protocol_schema(payload, schema_path="protocol.schema.json")
     assert validation.is_valid is True
