@@ -1,138 +1,167 @@
 # Developer Guide
 
-This document describes the architecture and implementation strategy of the Protocol Generator GUI.
+This guide documents the end-to-end architecture for addon generation, from importers to canonical model to generated artifacts. It also defines extension boundaries, validator internals, and implementation workflows for adding new assay families and protocol fragments.
 
-## 1) Architecture overview
+## 1) End-to-end flow: import → canonical model → generation
 
-The app is a Tkinter desktop wizard with a schema-driven form engine.
+The addon pipeline uses a strict three-stage flow:
 
-- **UI shell:** `ProtocolWizardApp` in `src/protocol_generator_gui/main.py`
-- **Dynamic form primitives:** `PropertyEditor` and `StepEditor`
-- **Schema adapters:** `src/protocol_generator_gui/schema_utils.py`
-- **Validation engine:** `src/protocol_generator_gui/validation.py`
-- **Wizard UX logic helpers:** `src/protocol_generator_gui/wizard_logic.py`
-- Mapping config contract reference for addon generation: `doc/mapping-config-reference.md`
-- **Persistence/autosave:** `src/protocol_generator_gui/persistence.py`
+1. **Import stage** (source-specific parsing)
+   - Excel: `src/addon_generator/importers/excel_importer.py`
+   - XML: `src/addon_generator/importers/xml_importer.py`
+   - GUI payload: `src/addon_generator/importers/gui_mapper.py`
+2. **Canonical stage** (normalized domain model)
+   - `AddonModel` and child entities in `src/addon_generator/domain/models.py`
+3. **Generation stage** (artifact projection)
+   - `Analytes.xml`: `src/addon_generator/generators/analytes_xml_generator.py`
+   - `ProtocolFile.json`: `src/addon_generator/generators/protocol_json_generator.py`
 
-Runtime flow:
+`GenerationService` in `src/addon_generator/services/generation_service.py` orchestrates this flow and is the preferred entry point for integration code.
 
-1. Load `protocol.schema.json`.
-2. Derive StepType→StepParameters maps from schema `allOf` rules.
-3. Render forms dynamically for required/advanced properties.
-4. Validate on every change and update per-step indicators.
-5. Persist temporary drafts and save target JSON atomically.
-6. Export `ProtocolFile.json` only after successful validation.
+### Runtime sequence (generation)
 
-## 2) Module layout
+1. Build/load canonical `AddonModel` using importer APIs.
+2. Resolve mapping config and deterministic IDs via `LinkResolver`.
+3. Run domain + cross-file + schema/XSD validators.
+4. Generate XML and protocol JSON projections.
+5. Return artifacts plus structured issues and merge provenance report.
 
-```text
-src/protocol_generator_gui/
-  __init__.py
-  main.py               # Tk app shell, widgets, interactions
-  schema_utils.py       # schema loading, refs, step mapping
-  wizard_logic.py       # progress summary, help text, field categorization
-  validation.py         # schema validation entry points
-  persistence.py        # autosave, draft recovery, atomic writes
+## 2) Canonical model boundaries and extension rules
 
-tests/
-  unit/                 # focused logic tests
-  integration/          # cross-module workflow tests
-  test_*.py             # additional suite coverage
-```
+The canonical model is the contract between importers and generators. Importers may be source-specific; generators must remain source-agnostic.
 
-## 3) Schema-mapping strategy
+- **Importer boundary:** normalize source data into canonical entities; do not emit generation-format payloads.
+- **Canonical boundary:** all business identity/linkage semantics live in `AddonModel` graph.
+- **Generator boundary:** only read canonical model + mapping/default config; do not parse source-specific formats.
+- **Validator boundary:** validators report structured issues and should not mutate canonical state.
 
-### Loading schema
+For full entity reference, see [Canonical Model Reference](./canonical-model-reference.md).
+For mapping-path and matching config behavior, see [Mapping Config Reference](./mapping-config-reference.md).
 
-- `load_schema` reads `protocol.schema.json` into memory.
-- `$ref` paths are resolved by `resolve_ref`/`dereference` for schema traversal.
+## 3) Generator internals
 
-### Mapping StepType to parameter schema
+### 3.1 `Analytes.xml` generator internals
 
-- `extract_step_type_map` walks each `allOf` branch.
-- It extracts `if.properties.StepType.const` as the discriminator.
-- It binds that discriminator to `then.properties.StepParameters`.
+`generate_analytes_addon_xml`:
 
-This powers dynamic step editors:
+- Requires `AddonModel.method`.
+- Emits AddOn root with method identity.
+- Groups analytes by `assay_key`, units by `analyte_key`.
+- Sorts assays/analytes/units deterministically (ID-first, then key fallback).
+- Performs XSD validation before writing output path.
+- Returns XML + `ValidationIssueCollection` (warnings/errors) rather than throwing for validation issues.
 
-- **Step 2 Loading** uses `loading_step_types(schema)`.
-- **Step 3 Processing** uses `processing_step_types(schema)`.
+### 3.2 `ProtocolFile.json` generator internals
 
-### Required-first rendering
+`generate_protocol_json`:
 
-`categorize_schema_fields` partitions properties into:
+- Uses `LinkResolver` projection APIs for method/assay mappings.
+- Merges method information from GUI/imported/config/built-in defaults with provenance tracking.
+- Produces merge report containing unresolved/conflicting required fields.
+- Emits protocol sections and optional context fragments from `ProtocolContextModel`.
 
-- Required fields (always visible)
-- Advanced options (hidden until user enables **Show advanced options**)
+### 3.3 Service orchestration
 
-## 4) Validation pipeline
+`GenerationService.generate_all`:
 
-Validation is intentionally continuous and user-visible:
+- Assigns IDs once through resolver.
+- Runs validators in layers (domain, cross-file, protocol schema, XSD).
+- Returns a single structured `GenerationResult` containing artifacts, issues, warnings, mapping snapshot, and merge diagnostics.
 
-1. Any variable change in `PropertyEditor` triggers `on_change`.
-2. `on_change` builds assembled protocol data via `protocol_data()`.
-3. `validate_protocol` returns a list of `(path, message)` errors.
-4. Errors are split into General, Loading, and Processing scopes.
-5. Step badges show `✓` or `✗ (N)`.
-6. Main status shows either `Valid` or first-error context.
-7. `_focus_first_invalid` attempts to focus the first invalid General field.
+## 4) Validator architecture
 
-Export path:
+Validation is layered to isolate concerns and improve diagnostics:
 
-- `export_protocol` re-runs validation.
-- If invalid: show **Validation failed** dialog and abort export.
-- If valid: write pretty-printed `ProtocolFile.json`.
+1. **Domain validator** (`validation/domain_validator.py`)
+   - Entity-level canonical invariants (required fields, duplicates, alias normalization, linkage assumptions).
+2. **Cross-file validator** (`validation/cross_file_validator.py`)
+   - Consistency between protocol projection and analytes projection.
+3. **Protocol schema validator** (`validation/protocol_schema_validator.py`)
+   - JSON Schema conformance for protocol JSON.
+4. **XSD validator** (`validation/xsd_validator.py`)
+   - XML schema conformance for `Analytes.xml`.
 
-## 5) Persistence and autosave lifecycle
+All validator outputs are normalized into issue collections with metadata (severity, rule identifiers, and contextual paths/fields where available).
 
-- Autosave is scheduled with a debounce (`autosave_delay_ms = 400`).
-- Pending jobs are cancellable via `Esc` (`on_escape_cancel`).
-- `save_now` always writes temp draft first.
-- If save path exists, data is also persisted atomically to target file.
-- On startup `_attempt_recovery` can restore last temp draft.
+## 5) Extension points
 
-## 6) Test strategy
+### 5.1 Import extension points
 
-The test strategy emphasizes deterministic logic coverage and user workflow safety.
+- Add new source importers under `src/addon_generator/importers/`.
+- Convert source records to canonical entities only.
+- Reuse shared normalization/parsing helpers where possible.
 
-### Unit tests
+### 5.2 Mapping extension points
 
-Cover isolated logic branches:
+- Extend `config/mapping.v1.yaml` with new safe mapping keys.
+- Update mapping loader/path validation when adding new validated field-path keys.
+- Keep matching modes and fallback rules deterministic.
 
-- schema parsing/ref handling and StepType extraction
-- required/advanced field partition behavior
-- validation edge cases and error messages
-- JSON assembly and step metadata behavior
+### 5.3 Generation extension points
 
-### Integration tests
+- Add projection logic to generators without embedding source-specific assumptions.
+- Keep sort order deterministic for stable outputs and test fixtures.
+- Extend `ProtocolContextModel` when new fragment families are needed.
 
-Exercise wizard-level workflows:
+### 5.4 Validation extension points
 
-- step transition guards (save-path requirement)
-- loading/processing add/edit/reorder/delete behavior
-- autosave behavior tied to state changes
+- Add new validators for orthogonal concerns.
+- Keep each validator pure (read-only canonical/projection input).
+- Return structured issues, not ad-hoc exceptions for expected validation failures.
 
-### Quality gate
+## 6) Workflow: add a new assay family
 
-- `pytest` + `pytest-cov`
-- Coverage fail-under set to **85%**
-- Tkinter shell module (`main.py`) omitted from coverage gate to prioritize pure logic modules
+Use this workflow when introducing a new assay type/category with distinct mapping or projection behavior.
 
-Run locally:
+1. **Define canonical semantics**
+   - Confirm assay identity keys, aliases, and required metadata in canonical terms.
+   - Update `AssayModel.metadata` usage docs when needed.
+2. **Importer updates**
+   - Map source fields for the new family into canonical assay/analyte relationships.
+   - Add coercion/normalization rules and diagnostics for missing/invalid family-specific fields.
+3. **Mapping config updates**
+   - Add mapping keys in `config/mapping.v1.yaml` if family-specific projections are required.
+   - Update mapping loader validation for any new required field-path keys.
+4. **Resolver updates**
+   - Extend `LinkResolver` matching/projection behavior if linkage strategy differs.
+5. **Generator updates**
+   - Ensure XML/JSON output includes family-specific projections while preserving deterministic ordering.
+6. **Validator updates**
+   - Add/extend rules for family-specific invariants (identity uniqueness, linkage completeness, name/alias conflicts).
+7. **Tests**
+   - Add unit tests for importer mapping, resolver logic, and validators.
+   - Add integration fixture/golden coverage for full pipeline outputs.
+8. **Docs**
+   - Update this guide, canonical reference, and mapping reference if contract changed.
 
-```bash
-python -m pip install -e .[dev]
-pytest
-```
+## 7) Workflow: add a new fragment template
 
-## 7) Contribution checklist
+Use this when introducing a new protocol context fragment category (for example a new processing fragment template type).
 
-- Keep docs and command examples aligned with visible UI labels:
-  - **Save As**, **Export ProtocolFile.json**, **Step 1 General**, **Step 2 Loading**, **Step 3 Processing**
+1. **Model layer**
+   - Add a typed container/list in `ProtocolContextModel` if a new fragment family is needed.
+2. **Importer layer**
+   - Populate canonical fragment entries from supported sources (GUI/Excel/XML where applicable).
+3. **Merge/provenance logic**
+   - Update protocol generator merge selection rules if fragment fields participate in precedence.
+4. **Generator projection**
+   - Add fragment emission in protocol JSON structure at the correct section path.
+5. **Validation**
+   - Add schema/domain checks for required fragment attributes and supported value ranges.
+6. **Fixtures/tests**
+   - Add unit tests for merge/projection behavior and edge cases.
+   - Add integration fixtures proving end-to-end output shape.
+7. **Documentation**
+   - Document fragment schema and precedence behavior in canonical/mapping references as needed.
+
+## 8) Related references
+
+- [Mapping Config Reference](./mapping-config-reference.md)
+- [Canonical Model Reference](./canonical-model-reference.md)
+- `doc/implementation-plan.md` (execution/task context)
+
+## 9) Contribution checklist
+
+- Keep docs aligned with runtime behavior and generated artifact structure.
 - Add/update tests when logic changes.
-- Update `doc/changelog.md` for user-visible behavior changes.
-
-
-## 8) Addon mapping config reference
-
-For mapping-loader/validator-consumed config sections, field-path rules, matching modes, fallback behavior, and ID assignment semantics, see `doc/mapping-config-reference.md`.
+- Update `doc/changelog.md` for user-visible behavior or contract updates.

@@ -42,6 +42,7 @@
 ## Unreleased
 
 ### Added
+- Expanded `doc/developer-guide.md` with end-to-end import → canonical model → generation flow, generator/validator internals, extension boundaries, and step-by-step contributor workflows for adding assay families and fragment templates; added `doc/canonical-model-reference.md` and linked both reference docs.
 - Added addon-generation golden snapshot fixtures for representative GUI scenarios and canonical integration assertions for `Analytes.xml` and `ProtocolFile.json`, plus a documented update workflow (`scripts/update_addon_generation_goldens.py`).
 - Added scenario-indexed integration workbook fixtures under `tests/fixtures/workbooks/` with index metadata (`tests/fixtures/index.json`) and docs (`tests/fixtures/README.md`) for valid and failure-path importer pipelines.
 - Added deterministic addon package export support in `GenerationService.build_package`, including `<method-id>-<method-version>` folder naming, explicit collision handling (`error` and `increment`), overwrite policy enforcement, and temp-write + atomic move behavior for final artifact publishing.
