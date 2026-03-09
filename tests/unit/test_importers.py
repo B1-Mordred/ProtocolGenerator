@@ -313,6 +313,12 @@ def test_canonical_comparison_normalizes_empty_string_and_whitespace() -> None:
     assert canonical_addons_equal(left, right)
 
 
+def test_normalize_optional_text_treats_empty_string_as_none() -> None:
+    from addon_generator.services.canonical_normalizer import normalize_optional_text
+
+    assert normalize_optional_text("") is None
+    assert normalize_optional_text("   ") is None
+
 def test_excel_assay_label_normalization_matches_xml(tmp_path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
 

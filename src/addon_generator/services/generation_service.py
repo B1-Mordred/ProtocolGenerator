@@ -113,11 +113,11 @@ class GenerationService:
                     ),
                 )
             )
-        protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
-        staged_issues.extend(("projection", issue) for issue in protocol_schema_result.issues.issues)
-
         cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(xml_result.xml_content))
         staged_issues.extend(("projection", issue) for issue in cross_file.issues.issues)
+
+        protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
+        staged_issues.extend(("projection", issue) for issue in protocol_schema_result.issues.issues)
 
         sorted_issues = self._sort_issues(staged_issues)
 

@@ -117,3 +117,6 @@ Core now includes a canonical `addon_generator` pipeline:
 - V2 workbook normalization no longer creates placeholder analytes from unit-only rows, preserving precise invalid-unit diagnostics (`unknown-analyte-key`) and avoiding secondary noise issues.
 - Excel row normalization now restores assay XML-name fallback from protocol type for flat layouts and v2 sheet parsing now evaluates duplicate-row diagnostics per sheet even when earlier sheets already emitted errors.
 - Excel flat-row normalization now also restores missing assay display labels from XML/protocol identity fallback paths to keep canonical parity with XML imports when assay display columns are absent.
+- Canonical addon comparison now case-normalizes assay label fields, treats empty strings as null-equivalent values, and ignores source-specific metadata so Excel/XML import parity checks compare only canonical entities.
+- Generation projection checks now evaluate cross-file consistency before protocol JSON schema validation so domain/linkage issue ordering remains root-cause-first for invalid fixture scenarios.
+- Workflow fragment assembly now keeps deterministic processing-step ordering with `StepIndex` precedence while still omitting empty `StepParameters` payloads and enforcing required duration defaults on generated processing steps.

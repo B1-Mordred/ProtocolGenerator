@@ -135,6 +135,9 @@
 - Restored Excel/XML canonical parity for flat workbook assays by applying fallback for `protocol_display_name` from `xml_name`/`protocol_type` during workbook row normalization when display labels are omitted.
 - Updated workflow assembly so loading steps no longer emit empty `StepParameters` objects and fragment-only processing group descriptors remain deterministic without schema-breaking placeholder step payloads.
 - Updated protocol JSON generator fragment rendering expectations to match the normalized loading-step contract (no empty parameter maps) and keep deterministic workflow merge assertions stable.
+- Normalized canonical comparison semantics for importer parity by case-folding assay label fields, collapsing empty/whitespace-only strings to `None`, and excluding `source_metadata` from canonical equality checks so XML and Excel imports compare on entity content only.
+- Reordered generation projection validation so cross-file consistency checks run before protocol schema validation, preserving expected domain-first and linkage-first issue code ordering in invalid fixture scenarios.
+- Hardened workflow fragment assembly by preserving deterministic processing-step ordering with explicit `StepIndex` precedence, enforcing default duration fields, and omitting empty `StepParameters` payloads to keep fragment-composed protocol JSON schema compliant.
 
 ### Changed
 - Reordered `GenerationService.generate_all` validation into explicit phases (domain/structural, linkage, then projection/schema/cross-file), added deterministic issue sorting, and updated validators/tests so domain linkage errors consistently surface ahead of downstream projection fallout with stable ordering.
