@@ -189,6 +189,18 @@ class ExcelImporter:
         return CanonicalModelBuilder().build(self.map_workbook_rows_to_dto_bundle(rows))
 
     def import_workbook_bundle(self, excel_path: str | Path) -> InputDTOBundle:
+        from openpyxl import load_workbook  # type: ignore
+
+        from addon_generator.importers.excel.workbook_parser import ExcelWorkbookParser
+
+        workbook_path = Path(excel_path)
+        workbook = load_workbook(workbook_path, data_only=True)
+        if ExcelWorkbookParser.supports_workbook_template(workbook.sheetnames):
+            artifacts = ExcelWorkbookParser().parse_workbook(workbook, source_name=str(excel_path))
+            if artifacts.diagnostics:
+                raise ExcelImportValidationError("Workbook contains validation errors", artifacts.diagnostics)
+            return artifacts.bundle
+
         rows = self.read_workbook_rows(excel_path)
         return self.map_workbook_rows_to_dto_bundle(rows, source_name=str(excel_path))
 
