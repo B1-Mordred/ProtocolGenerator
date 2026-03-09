@@ -7,9 +7,21 @@ from addon_generator.domain.models import AddonModel
 from addon_generator.importers.gui_mapper import map_gui_payload_to_addon
 
 
+class XmlImportValidationError(ValueError):
+    """Raised when XML import cannot proceed due to schema or parsing errors."""
+
+
 class XmlImporter:
+    XSD_NS = {"xs": "http://www.w3.org/2001/XMLSchema"}
+
+    def __init__(self, xsd_path: str | Path = "AddOn.xsd"):
+        self.xsd_path = Path(xsd_path)
+
     def import_xml(self, xml_path: str | Path) -> AddonModel:
-        root = ET.parse(Path(xml_path)).getroot()
+        xml_file = Path(xml_path)
+        xml_content = xml_file.read_text(encoding="utf-8")
+        root = self._validate_against_schema(xml_content)
+
         payload: dict[str, object] = {
             "method_id": root.findtext("MethodId") or "",
             "method_version": root.findtext("MethodVersion") or "",
@@ -53,3 +65,64 @@ class XmlImporter:
                         }
                     )
         return map_gui_payload_to_addon(payload)
+
+    def _validate_against_schema(self, xml_content: str) -> ET.Element:
+        if not self.xsd_path.exists():
+            raise XmlImportValidationError(f"Schema file not found: {self.xsd_path}")
+
+        try:
+            root = ET.fromstring(xml_content)
+        except ET.ParseError as exc:
+            raise XmlImportValidationError(f"Unable to parse XML input: {exc}") from exc
+
+        if root.tag != "AddOn":
+            raise XmlImportValidationError("XML does not conform to schema AddOn.xsd: root element must be AddOn")
+
+        xsd_root = ET.parse(self.xsd_path).getroot()
+        self._validate_required_children(root, xsd_root, "AddOn", "AddOn")
+
+        for assay in root.findall("./Assays/Assay"):
+            self._validate_required_children(assay, xsd_root, "Assay", "AddOn/Assays/Assay")
+        for analyte in root.findall("./Assays/Assay/Analytes/Analyte"):
+            self._validate_required_children(analyte, xsd_root, "Analyte", "AddOn/Assays/Assay/Analytes/Analyte")
+        for unit in root.findall("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit"):
+            self._validate_required_children(unit, xsd_root, "AnalyteUnit", "AddOn/.../AnalyteUnit")
+
+        return root
+
+    def _validate_required_children(self, xml_element: ET.Element, xsd_root: ET.Element, complex_type_name: str, path: str) -> None:
+        required = self._required_children_from_xsd(xsd_root, complex_type_name)
+        missing = [name for name in required if xml_element.find(name) is None]
+        if missing:
+            missing_text = ", ".join(missing)
+            raise XmlImportValidationError(
+                f"XML does not conform to schema {self.xsd_path}: {path} is missing required element(s): {missing_text}"
+            )
+
+    def _required_children_from_xsd(self, xsd_root: ET.Element, complex_type_name: str) -> list[str]:
+        complex_type = xsd_root.find(f"./xs:complexType[@name='{complex_type_name}']", self.XSD_NS)
+        if complex_type is None:
+            return []
+
+        sequence = complex_type.find("./xs:sequence", self.XSD_NS)
+        if sequence is None:
+            extension = complex_type.find("./xs:complexContent/xs:extension", self.XSD_NS)
+            sequence = extension.find("./xs:sequence", self.XSD_NS) if extension is not None else None
+        if sequence is None:
+            return []
+
+        required: list[str] = []
+        extension = complex_type.find("./xs:complexContent/xs:extension", self.XSD_NS)
+        if extension is not None:
+            base = extension.get("base")
+            if base:
+                required.extend(self._required_children_from_xsd(xsd_root, base))
+
+        for element in sequence.findall("./xs:element", self.XSD_NS):
+            min_occurs = element.get("minOccurs", "1")
+            if min_occurs == "0":
+                continue
+            name = element.get("name")
+            if name:
+                required.append(name)
+        return required
