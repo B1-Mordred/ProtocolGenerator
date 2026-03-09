@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -7,22 +8,113 @@ from addon_generator.domain.models import AddonModel
 from addon_generator.importers.gui_mapper import map_gui_payload_to_addon
 
 
-class ExcelImporter:
-    def read_workbook_rows(self, excel_path: str | Path) -> list[dict[str, Any]]:
-        from openpyxl import load_workbook  # type: ignore
+@dataclass(frozen=True, slots=True)
+class ImportDiagnostic:
+    rule_id: str
+    message: str
+    sheet: str
+    row: int | None = None
+    column: str | None = None
+    value: Any | None = None
 
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "rule_id": self.rule_id,
+            "message": self.message,
+            "sheet": self.sheet,
+            "row": self.row,
+            "column": self.column,
+            "value": self.value,
+        }
+
+
+class ExcelImportValidationError(ValueError):
+    def __init__(self, message: str, diagnostics: list[ImportDiagnostic]):
+        super().__init__(message)
+        self.diagnostics = diagnostics
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"message": str(self), "diagnostics": [d.to_dict() for d in self.diagnostics]}
+
+
+class ExcelImporter:
+    COLUMN_MAPPINGS: dict[str, dict[str, dict[str, str]]] = {
+        "v1-flat": {
+            "*": {
+                "MethodId": "method_id",
+                "MethodVersion": "method_version",
+                "MethodDisplayName": "method_display_name",
+                "AssayKey": "assay_key",
+                "ProtocolType": "protocol_type",
+                "AssayDisplayName": "assay_display_name",
+                "XmlAssayName": "xml_assay_name",
+                "AnalyteKey": "analyte_key",
+                "AnalyteName": "analyte_name",
+                "AssayInformationType": "assay_information_type",
+                "UnitKey": "unit_key",
+                "UnitName": "unit_name",
+            }
+        },
+        "v2-sheeted": {
+            "Method": {"MethodId": "method_id", "MethodVersion": "method_version", "MethodDisplayName": "method_display_name"},
+            "Assays": {
+                "AssayKey": "assay_key",
+                "ProtocolType": "protocol_type",
+                "AssayDisplayName": "assay_display_name",
+                "XmlAssayName": "xml_assay_name",
+            },
+            "Analytes": {
+                "AnalyteKey": "analyte_key",
+                "AnalyteName": "analyte_name",
+                "AssayKey": "assay_key",
+                "AssayInformationType": "assay_information_type",
+            },
+            "Units": {"UnitKey": "unit_key", "UnitName": "unit_name", "AnalyteKey": "analyte_key"},
+        },
+    }
+
+    REQUIRED_COLUMNS: dict[str, dict[str, set[str]]] = {
+        "v1-flat": {"*": {"MethodId", "MethodVersion", "AssayKey", "ProtocolType", "AnalyteKey", "AnalyteName", "UnitKey", "UnitName"}},
+        "v2-sheeted": {
+            "Method": {"MethodId", "MethodVersion"},
+            "Assays": {"AssayKey", "ProtocolType"},
+            "Analytes": {"AnalyteKey", "AnalyteName", "AssayKey"},
+            "Units": {"UnitKey", "UnitName", "AnalyteKey"},
+        },
+    }
+
+    def read_workbook_rows(self, excel_path: str | Path) -> list[dict[str, Any]]:
+        workbook_data = self._parse_workbook_rows(excel_path)
+        if workbook_data["layout_version"] == "v1-flat":
+            return workbook_data["rows"]
         rows: list[dict[str, Any]] = []
-        wb = load_workbook(Path(excel_path), data_only=True)
-        for sheet in wb.worksheets:
-            header_row = next(sheet.iter_rows(min_row=1, max_row=1), None)
-            if not header_row:
-                continue
-            headers = [str(c.value or "").strip() for c in header_row]
-            for row in sheet.iter_rows(min_row=2):
-                values = [c.value for c in row]
-                if not any(v is not None and str(v).strip() for v in values):
-                    continue
-                rows.append({headers[i]: values[i] for i in range(min(len(headers), len(values))) if headers[i]})
+        method = workbook_data["method"]
+        analytes_by_assay: dict[str, list[dict[str, Any]]] = {}
+        for analyte in workbook_data["analytes"]:
+            analytes_by_assay.setdefault(analyte["assay_key"], []).append(analyte)
+        units_by_analyte: dict[str, list[dict[str, Any]]] = {}
+        for unit in workbook_data["units"]:
+            units_by_analyte.setdefault(unit["analyte_key"], []).append(unit)
+
+        for assay in workbook_data["assays"]:
+            for analyte in analytes_by_assay.get(assay["assay_key"], []):
+                for unit in units_by_analyte.get(analyte["analyte_key"], [{}]):
+                    rows.append(
+                        {
+                            "MethodId": method.get("method_id"),
+                            "MethodVersion": method.get("method_version"),
+                            "MethodDisplayName": method.get("method_display_name"),
+                            "AssayKey": assay.get("assay_key"),
+                            "ProtocolType": assay.get("protocol_type"),
+                            "AssayDisplayName": assay.get("assay_display_name"),
+                            "XmlAssayName": assay.get("xml_assay_name"),
+                            "AnalyteKey": analyte.get("analyte_key"),
+                            "AnalyteName": analyte.get("analyte_name"),
+                            "AssayInformationType": analyte.get("assay_information_type"),
+                            "UnitKey": unit.get("unit_key"),
+                            "UnitName": unit.get("unit_name"),
+                        }
+                    )
         return rows
 
     def normalize_workbook_rows(self, rows: list[dict[str, Any]]) -> dict[str, Any]:
@@ -31,40 +123,40 @@ class ExcelImporter:
 
         first = rows[0]
         payload: dict[str, Any] = {
-            "method_id": str(first.get("MethodId") or ""),
-            "method_version": str(first.get("MethodVersion") or ""),
-            "MethodInformation": {"DisplayName": str(first.get("MethodDisplayName") or "")},
+            "method_id": self._to_string(first.get("MethodId")),
+            "method_version": self._to_string(first.get("MethodVersion")),
+            "MethodInformation": {"DisplayName": self._to_string(first.get("MethodDisplayName"))},
             "assays": [],
             "analytes": [],
             "units": [],
         }
         for row in rows:
-            assay_key = str(row.get("AssayKey") or row.get("AssayDisplayName") or "").strip()
-            analyte_key = str(row.get("AnalyteKey") or row.get("AnalyteName") or "").strip()
-            unit_key = str(row.get("UnitKey") or row.get("UnitName") or "").strip()
+            assay_key = self._to_string(row.get("AssayKey")) or self._to_string(row.get("AssayDisplayName"))
+            analyte_key = self._to_string(row.get("AnalyteKey")) or self._to_string(row.get("AnalyteName"))
+            unit_key = self._to_string(row.get("UnitKey")) or self._to_string(row.get("UnitName"))
             if assay_key:
                 payload["assays"].append(
                     {
                         "key": assay_key,
-                        "protocol_type": str(row.get("ProtocolType") or row.get("AssayDisplayName") or ""),
-                        "protocol_display_name": row.get("AssayDisplayName"),
-                        "xml_name": str(row.get("XmlAssayName") or row.get("ProtocolType") or row.get("AssayDisplayName") or ""),
+                        "protocol_type": self._to_string(row.get("ProtocolType") or row.get("AssayDisplayName")),
+                        "protocol_display_name": self._to_string(row.get("AssayDisplayName")),
+                        "xml_name": self._to_string(row.get("XmlAssayName") or row.get("ProtocolType") or row.get("AssayDisplayName")),
                     }
                 )
             if analyte_key:
                 payload["analytes"].append(
                     {
                         "key": analyte_key,
-                        "name": str(row.get("AnalyteName") or ""),
+                        "name": self._to_string(row.get("AnalyteName")),
                         "assay_key": assay_key,
-                        "assay_information_type": row.get("AssayInformationType"),
+                        "assay_information_type": self._to_string(row.get("AssayInformationType")),
                     }
                 )
             if unit_key:
                 payload["units"].append(
                     {
                         "key": unit_key,
-                        "name": str(row.get("UnitName") or ""),
+                        "name": self._to_string(row.get("UnitName")),
                         "analyte_key": analyte_key,
                     }
                 )
@@ -74,4 +166,160 @@ class ExcelImporter:
         return map_gui_payload_to_addon(self.normalize_workbook_rows(rows))
 
     def import_workbook(self, excel_path: str | Path) -> AddonModel:
-        return self.map_workbook_rows_to_canonical_model(self.read_workbook_rows(excel_path))
+        rows = self.read_workbook_rows(excel_path)
+        return self.map_workbook_rows_to_canonical_model(rows)
+
+    def _parse_workbook_rows(self, excel_path: str | Path) -> dict[str, Any]:
+        from openpyxl import load_workbook  # type: ignore
+
+        wb = load_workbook(Path(excel_path), data_only=True)
+        layout_version = self._detect_layout_version(wb.sheetnames)
+        if layout_version == "v2-sheeted":
+            return self._parse_v2_workbook(wb)
+        return self._parse_v1_workbook(wb)
+
+    def _detect_layout_version(self, sheet_names: list[str]) -> str:
+        if {"Method", "Assays", "Analytes", "Units"}.issubset(set(sheet_names)):
+            return "v2-sheeted"
+        return "v1-flat"
+
+    def _parse_v1_workbook(self, workbook: Any) -> dict[str, Any]:
+        rows: list[dict[str, Any]] = []
+        diagnostics: list[ImportDiagnostic] = []
+        for sheet in workbook.worksheets:
+            headers, header_map = self._sheet_headers(sheet)
+            self._validate_required_columns("v1-flat", sheet.title, headers, diagnostics)
+            if diagnostics:
+                continue
+            mapping = self.COLUMN_MAPPINGS["v1-flat"]["*"]
+            seen_rows: set[tuple[str, str, str]] = set()
+            for row_idx, row in enumerate(sheet.iter_rows(min_row=2), start=2):
+                raw_values = [row[header_map[h]].value for h in headers]
+                if not any(self._to_string(v) for v in raw_values):
+                    continue
+                normalized = {src: self._coerce_cell(row[header_map[src]].value) for src in mapping if src in header_map}
+                duplicate_key = (
+                    self._to_string(normalized.get("AssayKey")),
+                    self._to_string(normalized.get("AnalyteKey")),
+                    self._to_string(normalized.get("UnitKey")),
+                )
+                if duplicate_key in seen_rows:
+                    diagnostics.append(
+                        ImportDiagnostic(
+                            rule_id="duplicate-row",
+                            message="Duplicate assay/analyte/unit row detected",
+                            sheet=sheet.title,
+                            row=row_idx,
+                            column="AssayKey,AnalyteKey,UnitKey",
+                            value={"AssayKey": duplicate_key[0], "AnalyteKey": duplicate_key[1], "UnitKey": duplicate_key[2]},
+                        )
+                    )
+                    continue
+                seen_rows.add(duplicate_key)
+                rows.append(normalized)
+
+        if diagnostics:
+            raise ExcelImportValidationError("Workbook contains validation errors", diagnostics)
+        return {"layout_version": "v1-flat", "rows": rows}
+
+    def _parse_v2_workbook(self, workbook: Any) -> dict[str, Any]:
+        diagnostics: list[ImportDiagnostic] = []
+
+        method_rows = self._parse_sheet_rows(workbook["Method"], "v2-sheeted", diagnostics)
+        assay_rows = self._parse_sheet_rows(workbook["Assays"], "v2-sheeted", diagnostics)
+        analyte_rows = self._parse_sheet_rows(workbook["Analytes"], "v2-sheeted", diagnostics)
+        unit_rows = self._parse_sheet_rows(workbook["Units"], "v2-sheeted", diagnostics)
+
+        if diagnostics:
+            raise ExcelImportValidationError("Workbook contains validation errors", diagnostics)
+
+        return {
+            "layout_version": "v2-sheeted",
+            "method": method_rows[0] if method_rows else {},
+            "assays": assay_rows,
+            "analytes": analyte_rows,
+            "units": unit_rows,
+        }
+
+    def _parse_sheet_rows(self, sheet: Any, layout_version: str, diagnostics: list[ImportDiagnostic]) -> list[dict[str, Any]]:
+        headers, header_map = self._sheet_headers(sheet)
+        self._validate_required_columns(layout_version, sheet.title, headers, diagnostics)
+        if diagnostics:
+            return []
+        mapping = self.COLUMN_MAPPINGS[layout_version][sheet.title]
+        records: list[dict[str, Any]] = []
+        seen: set[tuple[Any, ...]] = set()
+
+        mapped_fields = [mapping[h] for h in mapping if h in header_map]
+        for row_idx, row in enumerate(sheet.iter_rows(min_row=2), start=2):
+            raw_record = {src: row[header_map[src]].value for src in mapping if src in header_map}
+            if not any(self._to_string(v) for v in raw_record.values()):
+                continue
+            record = {mapping[src]: self._coerce_cell(value) for src, value in raw_record.items()}
+            duplicate_key = tuple(record.get(field) for field in mapped_fields)
+            if duplicate_key in seen:
+                diagnostics.append(
+                    ImportDiagnostic(
+                        rule_id="duplicate-row",
+                        message="Duplicate row detected in worksheet",
+                        sheet=sheet.title,
+                        row=row_idx,
+                        column=",".join(mapping.keys()),
+                        value=record,
+                    )
+                )
+                continue
+            seen.add(duplicate_key)
+            records.append(record)
+        return records
+
+    def _validate_required_columns(self, layout_version: str, sheet_name: str, headers: list[str], diagnostics: list[ImportDiagnostic]) -> None:
+        required = self.REQUIRED_COLUMNS[layout_version][sheet_name if layout_version == "v2-sheeted" else "*"]
+        missing = sorted(required - set(headers))
+        for column in missing:
+            diagnostics.append(
+                ImportDiagnostic(
+                    rule_id="missing-required-column",
+                    message="Required column is missing",
+                    sheet=sheet_name,
+                    column=column,
+                )
+            )
+
+    def _sheet_headers(self, sheet: Any) -> tuple[list[str], dict[str, int]]:
+        header_row = next(sheet.iter_rows(min_row=1, max_row=1), None)
+        if not header_row:
+            return [], {}
+        headers = [self._to_string(c.value) for c in header_row]
+        return headers, {name: idx for idx, name in enumerate(headers) if name}
+
+    def _to_string(self, value: Any) -> str:
+        if value is None:
+            return ""
+        if isinstance(value, bool):
+            return "true" if value else "false"
+        if isinstance(value, (int, float)):
+            return str(value)
+        return str(value).strip()
+
+    def _coerce_cell(self, value: Any) -> str | bool | int | float | None:
+        if value is None:
+            return None
+        if isinstance(value, bool):
+            return value
+        if isinstance(value, (int, float)):
+            return value
+        text = str(value).strip()
+        if text == "":
+            return None
+        lowered = text.lower()
+        if lowered in {"true", "yes", "y", "1"}:
+            return True
+        if lowered in {"false", "no", "n", "0"}:
+            return False
+        try:
+            if "." in text:
+                return float(text)
+            return int(text)
+        except ValueError:
+            return text

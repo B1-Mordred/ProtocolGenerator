@@ -41,6 +41,11 @@
 ## Unreleased
 
 ### Added
+### Changed
+
+- Improved `src/addon_generator/importers/excel_importer.py` with worksheet-specific parsing paths, deterministic layout/version column registries, canonical value coercion, and structured diagnostics (`rule_id`, `sheet`, `row`, `column`, `value`) for missing required columns and duplicate rows.
+- Extended importer tests for valid workbook parsing, required-column validation, duplicate detection metadata, coercion edge cases, and importer-to-canonical integration flow through `GenerationService.import_from_excel`.
+
 - Added `doc/implementation-plan.md`, an executable phased delivery plan that converts `doc/backlog.md` epics/tasks into concrete implementation steps, target files, and runnable validation commands.
 - Added additive unit/integration coverage for deterministic field-path resolution, matching modes (`exact`, `normalized`, `alias_map`, `explicit_key`), stable ID assignment, domain/cross-file validators, and canonical generation golden fixtures for `Analytes.xml` and `ProtocolFile.json` outputs.
 
