@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+import re
+import shutil
+import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -28,6 +32,17 @@ class GenerationResult:
     merge_report: dict[str, Any]
     unresolved_required_fields: list[str]
     conflicting_required_fields: list[str]
+
+
+@dataclass(slots=True, frozen=True)
+class PackageBuildResult:
+    package_root: Path
+    package_name: str
+    artifacts: dict[str, Path]
+
+
+class PackageCollisionError(FileExistsError):
+    """Raised when a package target exists and collision policy forbids replacement."""
 
 
 class GenerationService:
@@ -84,6 +99,86 @@ class GenerationService:
             unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
             conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
         )
+
+    def build_package(
+        self,
+        addon: AddonModel,
+        destination_root: str | Path,
+        *,
+        overwrite: bool = False,
+        collision_policy: str = "error",
+        include_metadata: bool = True,
+        xsd_path: str | Path = "AddOn.xsd",
+        protocol_schema_path: str | Path = "protocol.schema.json",
+    ) -> PackageBuildResult:
+        result = self.generate_all(addon, xsd_path=xsd_path, protocol_schema_path=protocol_schema_path)
+        package_name = self._package_name_for(addon)
+        destination_root_path = Path(destination_root)
+        destination_root_path.mkdir(parents=True, exist_ok=True)
+        final_root = self._resolve_package_path(
+            destination_root_path / package_name,
+            overwrite=overwrite,
+            collision_policy=collision_policy,
+        )
+
+        temp_dir = Path(tempfile.mkdtemp(prefix=f".{package_name}.", dir=destination_root_path))
+        temp_package_root = temp_dir / final_root.name
+        temp_package_root.mkdir(parents=True, exist_ok=True)
+
+        artifacts: dict[str, Path] = {}
+        protocol_path = temp_package_root / "ProtocolFile.json"
+        protocol_path.write_text(json.dumps(result.protocol_json, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+        artifacts["ProtocolFile.json"] = protocol_path
+
+        analytes_path = temp_package_root / "Analytes.xml"
+        analytes_path.write_text(result.analytes_xml_string, encoding="utf-8")
+        artifacts["Analytes.xml"] = analytes_path
+
+        if include_metadata:
+            metadata_path = temp_package_root / "package-metadata.json"
+            metadata_payload = {
+                "package_name": final_root.name,
+                "method_id": addon.method.method_id if addon.method else "",
+                "method_version": addon.method.method_version if addon.method else "",
+                "artifacts": ["Analytes.xml", "ProtocolFile.json", "package-metadata.json"],
+            }
+            metadata_path.write_text(json.dumps(metadata_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
+            artifacts["package-metadata.json"] = metadata_path
+
+        if final_root.exists():
+            shutil.rmtree(final_root)
+        temp_package_root.replace(final_root)
+        shutil.rmtree(temp_dir, ignore_errors=True)
+
+        return PackageBuildResult(
+            package_root=final_root,
+            package_name=final_root.name,
+            artifacts={name: final_root / path.name for name, path in artifacts.items()},
+        )
+
+    def _package_name_for(self, addon: AddonModel) -> str:
+        method_id = addon.method.method_id if addon.method else "unknown-method"
+        method_version = addon.method.method_version if addon.method else "0"
+        raw_name = f"{method_id}-{method_version}"
+        return re.sub(r"[^A-Za-z0-9._-]", "_", raw_name)
+
+    def _resolve_package_path(self, base_path: Path, *, overwrite: bool, collision_policy: str) -> Path:
+        if collision_policy not in {"error", "increment"}:
+            raise ValueError("collision_policy must be one of: error, increment")
+        if not base_path.exists():
+            return base_path
+        if overwrite:
+            return base_path
+        if collision_policy == "error":
+            raise PackageCollisionError(f"Package destination already exists: {base_path}")
+
+        counter = 2
+        while True:
+            candidate = base_path.with_name(f"{base_path.name}-{counter}")
+            if not candidate.exists():
+                return candidate
+            counter += 1
+
 
 
 def fragments_from_protocol_payload(payload: dict[str, Any]) -> dict[str, Any]:

@@ -3,7 +3,7 @@ from addon_generator.services.generation_service import GenerationService
 
 def test_generation_service_import_and_domain_validation() -> None:
     service = GenerationService()
-    addon = service.import_from_gui_payload({"method_id": "M", "method_version": "1", "assays": [], "analytes": [], "units": []})
+    addon = service.import_from_gui_payload({"method_id": "M", "method_version": "1", "MethodInformation": {"DisplayName": "Method"}, "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}], "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}], "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}]})
     issues = service.validate_domain(addon)
     assert issues.has_errors() is False
 

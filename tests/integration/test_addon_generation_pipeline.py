@@ -138,3 +138,61 @@ def test_generation_pipeline_multi_assay_processing_groups() -> None:
     assert result.protocol_json["MethodInformation"]["SamplesLayoutType"] == "SAMPLES_LAYOUT_SEPARATE"
     assert len(result.protocol_json["ProcessingWorkflowSteps"]) == 2
     assert {step["GroupDisplayName"] for step in result.protocol_json["ProcessingWorkflowSteps"]} == {"Chem", "Immuno"}
+
+
+def test_package_builder_emits_deterministic_layout(tmp_path) -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-PKG",
+            "method_version": "1.2",
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    first = service.build_package(addon, tmp_path)
+    second = service.build_package(addon, tmp_path, collision_policy="increment")
+
+    assert first.package_name == "M-PKG-1.2"
+    assert second.package_name == "M-PKG-1.2-2"
+
+    first_files = sorted(path.name for path in first.package_root.iterdir())
+    second_files = sorted(path.name for path in second.package_root.iterdir())
+    assert first_files == ["Analytes.xml", "ProtocolFile.json", "package-metadata.json"]
+    assert second_files == first_files
+
+    assert first.artifacts["ProtocolFile.json"].read_text(encoding="utf-8") == second.artifacts["ProtocolFile.json"].read_text(encoding="utf-8")
+    assert first.artifacts["Analytes.xml"].read_text(encoding="utf-8") == second.artifacts["Analytes.xml"].read_text(encoding="utf-8")
+
+
+def test_package_builder_overwrite_and_collision_policy(tmp_path) -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-OW",
+            "method_version": "9",
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    first = service.build_package(addon, tmp_path)
+    (first.package_root / "stale.txt").write_text("stale", encoding="utf-8")
+
+    with pytest.raises(FileExistsError):
+        service.build_package(addon, tmp_path)
+
+    overwritten = service.build_package(addon, tmp_path, overwrite=True)
+    assert overwritten.package_root == first.package_root
+    assert (overwritten.package_root / "stale.txt").exists() is False
+
+
+def test_package_builder_rejects_unknown_collision_policy(tmp_path) -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload({"method_id": "M", "method_version": "1", "assays": [], "analytes": [], "units": []})
+
+    with pytest.raises(ValueError):
+        service.build_package(addon, tmp_path, collision_policy="rename")
