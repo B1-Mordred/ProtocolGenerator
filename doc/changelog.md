@@ -2,6 +2,18 @@
 
 ## 2026-03-09
 
+### Added
+- Added a new PySide6 business-oriented GUI package at `src/addon_generator/ui/` with modular shell/state/services/models/views/widgets structure, stale-aware validation/preview state handling, draft persistence service, and navigation-ready section scaffolding for Method, Assays, Analytes, Sample Prep, Dilutions, Import Review, Validation, Output Preview, and Export workflows.
+- Added GUI-focused tests for shell navigation, state propagation, stale-preview defaults, draft save/restore, and an end-to-end UI orchestration flow (`import → edit → validate → preview → export`) under `tests/unit/ui/` and `tests/integration/test_ui_authoring_flow.py`.
+
+### Fixed
+- Fixed PySide6 shell dock-area wiring to use Qt dock enums and persist current sidebar section in `EditorState.selected_section_index` for reliable non-linear navigation restoration.
+- Fixed UI import provenance mapping to emit stable location strings from `FieldProvenance` (`file:sheet:row:column`) instead of missing attributes.
+- Fixed draft restore behavior to rebuild import/editor/preview/validation slices from saved JSON and preserve draft source path metadata for subsequent saves.
+- Fixed export adapter test coverage by adding explicit validation-blocked export behavior assertions (`ExportService` now guarded by a focused unit test).
+- Fixed the PySide6 shell to orchestrate Validate/Preview/Export/Draft actions through service adapters, keep sidebar issue badges synchronized, and enforce validation-gated export button state in the UI shell layer.
+- Added shell orchestration tests for validate/preview/export state transitions and draft-based section restoration (`tests/unit/ui/test_shell_orchestration.py`).
+
 ### Changed
 - Changed addon protocol JSON generation to pass resolver output through a dedicated workflow assembler stage (`src/addon_generator/fragments/assembler.py`) that normalizes processing/loading schema shape, applies deterministic ordering, and enforces sequential group/step index and duration defaults.
 - Stabilized canonical importer parity by adding shared DTO/domain normalization (trimmed text, optional `""` → `None`, empty-container cleanup) and canonical addon comparison helpers that exclude source-only metadata such as `source_metadata.provenance`; parity tests now compare normalized canonical forms and include explicit None/empty-string, assay-label normalization, and metadata-exclusion coverage.

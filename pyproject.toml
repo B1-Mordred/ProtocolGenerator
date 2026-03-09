@@ -9,6 +9,7 @@ description = "Schema-driven desktop protocol file generator"
 requires-python = ">=3.10"
 dependencies = [
   "PyYAML>=6.0",
+  "PySide6>=6.6",
 ]
 
 [project.optional-dependencies]
