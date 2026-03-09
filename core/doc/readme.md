@@ -24,6 +24,7 @@ protocol-generator-gui
 - Destructive action safeguards (delete/reorder confirmation dialogs) and keyboard navigation (`Enter` advances tabs, `Esc` cancels pending autosave).
 - Export to `ProtocolFile.json` with final schema validation.
 - Addon-domain building blocks under `src/addon_generator/domain/` for deterministic internal identity handling (`method.key`, `assay.key`, `analyte.key`, `unit.key`), protocol fragment composition, and structured validation issue tracking.
+- Addon mapping package under `src/addon_generator/mapping/` for v1 mapping-config loading/validation, safe dotted-path evaluation, normalization helpers, projection resolution across method/assay/analyte records, ID assignment, and cross-file linkage checks.
 
 ## Build Windows executable
 
@@ -56,3 +57,8 @@ pytest
 - `ids.py`: deterministic key/ID helpers for repeatable assignment during protocol generation.
 - `fragments.py`: protocol-fragment primitives and deterministic materialization helpers.
 - `issues.py`: structured validation issue models with typed severity/source values.
+- `mapping/field_path.py`: safe dotted/bracket path parser and accessor (`a.b[0].c`).
+- `mapping/normalizers.py`: match normalizers (trim, whitespace collapse, case-fold) and combined normalized token generation.
+- `mapping/config_loader.py`: v1 mapping config loader + safety validation (unknown modes, invalid paths, ambiguous projections, alias contradictions).
+- `mapping/link_resolver.py`: projection APIs (`assign_ids`, `resolve_method_projection`, `resolve_assay_projection`, `resolve_analyte_projection`, `validate_cross_file_linkage`) supporting `exact`, `normalized`, `alias_map`, and `explicit_key` matching modes.
+- `config/mapping.v1.yaml`: baseline v1 defaults and ID strategy configuration.

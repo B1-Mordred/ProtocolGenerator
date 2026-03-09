@@ -1,0 +1,28 @@
+version: v1
+defaults:
+  matching_mode: normalized
+  normalizers:
+    - trim
+    - collapse_whitespace
+    - case_fold
+id_strategies:
+  method: sequential
+  assay: sequential
+  analyte: sequential
+projections:
+  method:
+    mode: normalized
+    source_path: method.display_name
+    target_path: MethodInformation.DisplayName
+  assay:
+    mode: alias_map
+    source_path: assay.name
+    target_path: AssayInformation[0].DisplayName
+    alias_map:
+      CBC: Complete Blood Count
+      CMP: Comprehensive Metabolic Panel
+  analyte:
+    mode: explicit_key
+    source_path: analyte.name
+    target_path: name
+    explicit_key_path: analyte.external_key
