@@ -6,6 +6,9 @@
 
 ## 2026-03-09
 
+### Changed
+- Stabilized canonical importer parity by adding shared DTO/domain normalization (trimmed text, optional `""` → `None`, empty-container cleanup) and canonical addon comparison helpers that exclude source-only metadata such as `source_metadata.provenance`; parity tests now compare normalized canonical forms and include explicit None/empty-string, assay-label normalization, and metadata-exclusion coverage.
+
 ### Added
 - Added workbook-template fixture scenarios for production workbook shape and edge cases (`production-shape`, `header-offset-and-checklist`, `invalid-hidden-vocab`) under `tests/fixtures/workbooks/`, plus index metadata for deterministic materialization and expectation tracking.
 - Added workbook-template focused parser tests for successful import, header row detection, analyte/assay linkage, sample prep ordering, dilution parsing, checklist exclusion, and hidden-list vocabulary validation in `tests/unit/test_excel_workbook_parser.py`.
