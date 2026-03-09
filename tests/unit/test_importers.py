@@ -363,3 +363,21 @@ def test_canonical_comparison_excludes_source_only_metadata_fields() -> None:
     right.source_metadata["source_name"] = "file-b.xml"
 
     assert normalize_addon_for_comparison(left) == normalize_addon_for_comparison(right)
+
+
+def test_read_workbook_rows_v2_preserves_unlinked_records() -> None:
+    importer = ExcelImporter()
+
+    importer._parse_workbook_rows = lambda _path: {  # type: ignore[method-assign]
+        "layout_version": "v2-sheeted",
+        "method": {"method_id": "M-1", "method_version": "1.0", "method_display_name": "Method"},
+        "assays": [{"assay_key": "assay:real", "protocol_type": "CHEM", "assay_display_name": "Chem", "xml_assay_name": "Chem"}],
+        "analytes": [{"analyte_key": "analyte:oops", "analyte_name": "GLU", "assay_key": "assay:missing", "assay_information_type": "CHEM"}],
+        "units": [{"unit_key": "unit:oops", "unit_name": "mg/dL", "analyte_key": "analyte:missing"}],
+    }
+
+    rows = importer.read_workbook_rows("ignored.xlsx")
+
+    assert any(row.get("AssayKey") == "assay:real" and not row.get("AnalyteKey") for row in rows)
+    assert any(row.get("AnalyteKey") == "analyte:oops" and row.get("AssayKey") == "assay:missing" for row in rows)
+    assert any(row.get("UnitKey") == "unit:oops" and row.get("AnalyteKey") == "analyte:missing" for row in rows)

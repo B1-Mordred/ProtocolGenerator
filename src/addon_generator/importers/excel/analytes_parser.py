@@ -32,7 +32,7 @@ def parse_analytes_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostics:
         parameter_set = _text(row[headers["parameter_set"]].value)
         assay_key = _text(row[headers.get("assay_key", headers["analyte"])].value)
         if not any((analyte_name, unit_name, parameter_set, assay_key)):
-            break
+            continue
         analyte_key = f"analyte:{analyte_name or row_idx}"
         identity = (_identity_token(analyte_name or analyte_key), _identity_token(assay_key))
         if identity in seen_analytes:

@@ -52,7 +52,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
             display = _text(row[header_map["protocol_display_name"]].value) if "protocol_display_name" in header_map else ""
             xml_name = _text(row[header_map["xml_name"]].value) if "xml_name" in header_map else ""
             if not any((key, protocol, display, xml_name)):
-                break
+                continue
             if not key:
                 diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Assay key is required", sheet=sheet.title, row=row_idx, column="Assay Key"))
                 continue
@@ -60,6 +60,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                 protocol_type=protocol,
                 protocol_display_name=display,
                 xml_name=xml_name,
+                fallback_order={"xml_name": ("protocol_display_name", "protocol_type")},
             )
             assay_identity = (_identity_token(key), _identity_token(protocol_type))
             if assay_identity in seen_assays:

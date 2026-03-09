@@ -93,32 +93,99 @@ class ExcelImporter:
             return workbook_data["rows"]
         rows: list[dict[str, Any]] = []
         method = workbook_data["method"]
-        analytes_by_assay: dict[str, list[dict[str, Any]]] = {}
-        for analyte in workbook_data["analytes"]:
-            analytes_by_assay.setdefault(analyte["assay_key"], []).append(analyte)
-        units_by_analyte: dict[str, list[dict[str, Any]]] = {}
-        for unit in workbook_data["units"]:
-            units_by_analyte.setdefault(unit["analyte_key"], []).append(unit)
+        assays = workbook_data["assays"]
+        analytes = workbook_data["analytes"]
+        units = workbook_data["units"]
 
-        for assay in workbook_data["assays"]:
-            for analyte in analytes_by_assay.get(assay["assay_key"], []):
-                for unit in units_by_analyte.get(analyte["analyte_key"], [{}]):
-                    rows.append(
+        assays_by_key: dict[str, dict[str, Any]] = {
+            self._to_string(assay.get("assay_key")): assay
+            for assay in assays
+            if self._to_string(assay.get("assay_key"))
+        }
+        analytes_by_key: dict[str, dict[str, Any]] = {
+            self._to_string(analyte.get("analyte_key")): analyte
+            for analyte in analytes
+            if self._to_string(analyte.get("analyte_key"))
+        }
+
+        def _base_row() -> dict[str, Any]:
+            return {
+                "MethodId": method.get("method_id"),
+                "MethodVersion": method.get("method_version"),
+                "MethodDisplayName": method.get("method_display_name"),
+                "AssayKey": None,
+                "ProtocolType": None,
+                "AssayDisplayName": None,
+                "XmlAssayName": None,
+                "AnalyteKey": None,
+                "AnalyteName": None,
+                "AssayInformationType": None,
+                "UnitKey": None,
+                "UnitName": None,
+            }
+
+        for assay in assays:
+            row = _base_row()
+            row.update(
+                {
+                    "AssayKey": assay.get("assay_key"),
+                    "ProtocolType": assay.get("protocol_type"),
+                    "AssayDisplayName": assay.get("assay_display_name"),
+                    "XmlAssayName": assay.get("xml_assay_name"),
+                }
+            )
+            rows.append(row)
+
+        for analyte in analytes:
+            row = _base_row()
+            assay = assays_by_key.get(self._to_string(analyte.get("assay_key")))
+            if assay is not None:
+                row.update(
+                    {
+                        "AssayKey": assay.get("assay_key"),
+                        "ProtocolType": assay.get("protocol_type"),
+                        "AssayDisplayName": assay.get("assay_display_name"),
+                        "XmlAssayName": assay.get("xml_assay_name"),
+                    }
+                )
+            else:
+                row["AssayKey"] = analyte.get("assay_key")
+            row.update(
+                {
+                    "AnalyteKey": analyte.get("analyte_key"),
+                    "AnalyteName": analyte.get("analyte_name"),
+                    "AssayInformationType": analyte.get("assay_information_type"),
+                }
+            )
+            rows.append(row)
+
+        for unit in units:
+            row = _base_row()
+            analyte = analytes_by_key.get(self._to_string(unit.get("analyte_key")))
+            if analyte is not None:
+                row.update(
+                    {
+                        "AnalyteKey": analyte.get("analyte_key"),
+                        "AnalyteName": analyte.get("analyte_name"),
+                        "AssayInformationType": analyte.get("assay_information_type"),
+                    }
+                )
+                assay = assays_by_key.get(self._to_string(analyte.get("assay_key")))
+                if assay is not None:
+                    row.update(
                         {
-                            "MethodId": method.get("method_id"),
-                            "MethodVersion": method.get("method_version"),
-                            "MethodDisplayName": method.get("method_display_name"),
                             "AssayKey": assay.get("assay_key"),
                             "ProtocolType": assay.get("protocol_type"),
                             "AssayDisplayName": assay.get("assay_display_name"),
                             "XmlAssayName": assay.get("xml_assay_name"),
-                            "AnalyteKey": analyte.get("analyte_key"),
-                            "AnalyteName": analyte.get("analyte_name"),
-                            "AssayInformationType": analyte.get("assay_information_type"),
-                            "UnitKey": unit.get("unit_key"),
-                            "UnitName": unit.get("unit_name"),
                         }
                     )
+                else:
+                    row["AssayKey"] = analyte.get("assay_key")
+            else:
+                row["AnalyteKey"] = unit.get("analyte_key")
+            row.update({"UnitKey": unit.get("unit_key"), "UnitName": unit.get("unit_name")})
+            rows.append(row)
         return rows
 
     def normalize_workbook_rows(self, rows: list[dict[str, Any]]) -> dict[str, Any]:

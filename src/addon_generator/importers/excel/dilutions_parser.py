@@ -19,7 +19,7 @@ def parse_dilutions_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) ->
         name = _text(row[header_map["name"]].value)
         ratio = _text(row[header_map["ratio"]].value)
         if not name and not ratio:
-            break
+            continue
         if not name:
             diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Dilution scheme name is required", sheet=sheet.title, row=row_idx, column="Name"))
             continue
