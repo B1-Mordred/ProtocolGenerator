@@ -1,21 +1,26 @@
-"""Mapping configuration and link resolution helpers for addon projections."""
-
-from .config_loader import MappingConfigError, load_mapping_config, validate_mapping_config
+from .config_loader import MappingConfig, MappingConfigError, load_mapping_config, validate_mapping_config
+from .field_path import get_field_value, parse_field_path
 from .link_resolver import (
-    assign_ids,
-    resolve_analyte_projection,
-    resolve_assay_projection,
-    resolve_method_projection,
-    validate_cross_file_linkage,
+    LinkResolver,
+    ResolvedAnalyteProjection,
+    ResolvedAssayProjection,
+    ResolvedMethodProjection,
 )
+from .normalizers import case_fold, collapse_whitespace, normalize_for_matching, trim
 
 __all__ = [
+    "MappingConfig",
     "MappingConfigError",
-    "assign_ids",
+    "LinkResolver",
+    "ResolvedMethodProjection",
+    "ResolvedAssayProjection",
+    "ResolvedAnalyteProjection",
+    "get_field_value",
+    "parse_field_path",
     "load_mapping_config",
-    "resolve_method_projection",
-    "resolve_assay_projection",
-    "resolve_analyte_projection",
-    "validate_cross_file_linkage",
     "validate_mapping_config",
+    "case_fold",
+    "collapse_whitespace",
+    "normalize_for_matching",
+    "trim",
 ]
