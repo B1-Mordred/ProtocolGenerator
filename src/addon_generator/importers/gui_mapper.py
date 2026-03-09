@@ -2,90 +2,81 @@ from __future__ import annotations
 
 from typing import Any
 
-from addon_generator.domain.fragments import FragmentCollection, ProtocolFragment
 from addon_generator.domain.models import AddonModel, AnalyteModel, AnalyteUnitModel, AssayModel, MethodModel, ProtocolContextModel
 
-_FRAGMENT_SOURCE_KEYS: dict[str, tuple[str, ...]] = {
-    "loading": ("LoadingWorkflowSteps",),
-    "processing": ("ProcessingWorkflowSteps",),
-    "dilution": ("DilutionWorkflowSteps", "DilutionSettings", "Dilution"),
-    "reagent": ("ReagentWorkflowSteps", "ReagentSettings", "Reagent"),
-    "calibrator": ("CalibratorWorkflowSteps", "CalibratorSettings", "Calibrator"),
-    "control": ("ControlWorkflowSteps", "ControlSettings", "Control"),
-}
 
+def map_gui_payload_to_addon(payload: dict[str, Any]) -> AddonModel:
+    method_info = payload.get("MethodInformation", {}) if isinstance(payload.get("MethodInformation"), dict) else {}
+    method_id = str(payload.get("method_id") or method_info.get("Id") or "")
+    method_version = str(payload.get("method_version") or method_info.get("Version") or "")
+    method_key = str(payload.get("method_key") or f"method:{method_id or 'default'}")
+    method = MethodModel(
+        key=method_key,
+        method_id=method_id,
+        method_version=method_version,
+        display_name=method_info.get("DisplayName"),
+    )
 
-def _build_fragment_collection(key: str, value: Any, origin: str) -> FragmentCollection:
-    fragments = FragmentCollection()
-    fragments.add(ProtocolFragment(path=(key,), value=value, origin=origin))
-    return fragments
+    assay_rows = payload.get("assays") if isinstance(payload.get("assays"), list) else []
 
+    if not assay_rows and isinstance(payload.get("AssayInformation"), list):
+        for idx, assay in enumerate(payload.get("AssayInformation", [])):
+            if isinstance(assay, dict):
+                assay_rows.append({
+                    "key": assay.get("Type") or f"assay:{idx}",
+                    "protocol_type": assay.get("Type") or "",
+                    "protocol_display_name": assay.get("DisplayName"),
+                    "xml_name": assay.get("Type") or "",
+                })
 
-def extract_context_fragments(payload: dict[str, Any], origin: str = "gui") -> dict[str, FragmentCollection]:
-    """Extract optional protocol context fragments from payload sections."""
+    analyte_rows = payload.get("analytes") if isinstance(payload.get("analytes"), list) else []
+    unit_rows = payload.get("units") if isinstance(payload.get("units"), list) else []
 
-    context_fragments: dict[str, FragmentCollection] = {}
-    for fragment_name, aliases in _FRAGMENT_SOURCE_KEYS.items():
-        for alias in aliases:
-            if alias in payload:
-                context_fragments[fragment_name] = _build_fragment_collection(alias, payload[alias], origin)
-                break
-    return context_fragments
-
-
-def map_gui_payload_to_context(payload: dict[str, Any]) -> ProtocolContextModel:
-    """Map UI payload rows into the canonical addon domain model."""
-
-    rows = payload["rows"] if "rows" in payload else [payload]
-
-    methods: dict[str, MethodModel] = {}
-    assays: dict[str, AssayModel] = {}
-    analytes: dict[str, AnalyteModel] = {}
-    units: dict[str, AnalyteUnitModel] = {}
-
-    for row in rows:
-        method_info = row.get("MethodInformation", {}) if isinstance(row.get("MethodInformation"), dict) else {}
-        assay_info = row.get("AssayInformation", [])
-        first_assay = assay_info[0] if isinstance(assay_info, list) and assay_info else {}
-
-        method_name = str(row.get("MethodDisplayName") or method_info.get("DisplayName") or "Method").strip()
-        assay_name = str(row.get("AssayDisplayName") or first_assay.get("DisplayName") or "Assay").strip()
-        analyte_name = str(row.get("AnalyteName") or "Analyte").strip()
-        unit_name = str(row.get("UnitName") or "Unit").strip()
-
-        method_key = f"method:{method_name.casefold()}"
-        assay_key = f"assay:{assay_name.casefold()}"
-        analyte_key = f"analyte:{assay_key}:{analyte_name.casefold()}"
-        unit_key = f"unit:{analyte_key}:{unit_name.casefold()}"
-
-        methods.setdefault(method_key, MethodModel(key=method_key, method_id=len(methods) + 1, display_name=method_name))
-        assay_model = assays.setdefault(assay_key, AssayModel(key=assay_key, assay_id=len(assays) + 1, name=assay_name))
-        analyte_model = analytes.setdefault(
-            analyte_key,
-            AnalyteModel(key=analyte_key, analyte_id=len(analytes) + 1, name=analyte_name),
+    assays: list[AssayModel] = [
+        AssayModel(
+            key=str(row["key"]),
+            protocol_type=str(row.get("protocol_type") or ""),
+            protocol_display_name=row.get("protocol_display_name"),
+            xml_name=str(row.get("xml_name") or row.get("protocol_type") or ""),
         )
-        units.setdefault(unit_key, AnalyteUnitModel(key=unit_key, unit_id=len(units) + 1, name=unit_name, symbol=unit_name))
+        for row in assay_rows
+    ]
 
-        if analyte_model not in assay_model.analytes:
-            assay_model.analytes.append(analyte_model)
-        unit_model = units[unit_key]
-        if unit_model not in analyte_model.units:
-            analyte_model.units.append(unit_model)
+    analytes: list[AnalyteModel] = [
+        AnalyteModel(
+            key=str(row["key"]),
+            name=str(row.get("name") or ""),
+            assay_key=str(row.get("assay_key") or ""),
+            assay_information_type=row.get("assay_information_type"),
+        )
+        for row in analyte_rows
+    ]
 
-    method_information = payload.get("MethodInformation", {})
-    addon_name = str(method_information.get("DisplayName") or payload.get("addon_name") or "Generated Addon")
-    addon_id_raw = method_information.get("Id") or payload.get("addon_id") or 0
-    try:
-        addon_id = int(addon_id_raw)
-    except (TypeError, ValueError):
-        addon_id = 0
+    units: list[AnalyteUnitModel] = [
+        AnalyteUnitModel(
+            key=str(row["key"]),
+            name=str(row.get("name") or ""),
+            analyte_key=str(row.get("analyte_key") or ""),
+        )
+        for row in unit_rows
+    ]
 
-    addon = AddonModel(addon_id=addon_id, addon_name=addon_name, methods=list(methods.values()), assays=list(assays.values()))
-    return ProtocolContextModel(
-        addon=addon,
-        method_index=methods,
-        assay_index=assays,
-        analyte_index=analytes,
-        unit_index=units,
-        context_fragments=extract_context_fragments(payload),
+    method_overrides = dict(payload.get("method_information_overrides", {}))
+    if isinstance(method_info, dict):
+        method_overrides = {**method_info, **method_overrides}
+    protocol_context = ProtocolContextModel(
+        method_information_overrides=method_overrides,
+        assay_fragments=payload.get("AssayInformation", []),
+        loading_fragments=payload.get("LoadingWorkflowSteps", []),
+        processing_fragments=payload.get("ProcessingWorkflowSteps", []),
+    )
+
+    return AddonModel(
+        addon_id=0,
+        method=method,
+        assays=assays,
+        analytes=analytes,
+        units=units,
+        protocol_context=protocol_context,
+        source_metadata={"source": "gui"},
     )

@@ -67,3 +67,14 @@ pytest
 - `mapping/config_loader.py`: v1 mapping config loader + safety validation (unknown modes, invalid paths, ambiguous projections, alias contradictions).
 - `mapping/link_resolver.py`: projection APIs (`assign_ids`, `resolve_method_projection`, `resolve_assay_projection`, `resolve_analyte_projection`, `validate_cross_file_linkage`) supporting `exact`, `normalized`, `alias_map`, and `explicit_key` matching modes.
 - `config/mapping.v1.yaml`: baseline v1 defaults and ID strategy configuration.
+
+
+## AddOn generator backbone
+
+Core now includes a canonical `addon_generator` pipeline:
+
+- Protocol JSON generation now resolves schema-required `MethodInformation`, `AssayInformation`, and minimal valid Loading/Processing workflow defaults via mapping config fallback precedence.
+- Importers map GUI/Excel/XML payloads to `AddonModel`
+- `LinkResolver` assigns deterministic IDs from `config/mapping.v1.yaml`
+- Generators emit both `ProtocolFile.json` and `Analytes.xml`
+- Validation includes domain, XSD, protocol schema, and cross-file consistency checks
