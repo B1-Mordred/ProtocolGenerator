@@ -23,6 +23,8 @@ def parse_analytes_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostics:
     units: list[UnitInputDTO] = []
     known_units = {u.casefold(): u for u in vocab.get("Units", set())}
 
+    seen_analytes: set[tuple[str, str]] = set()
+
     for row_idx in range(header_row + 1, len(rows) + 1):
         row = rows[row_idx - 1]
         analyte_name = _text(row[headers["analyte"]].value)
@@ -32,6 +34,23 @@ def parse_analytes_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostics:
         if not any((analyte_name, unit_name, parameter_set, assay_key)):
             break
         analyte_key = f"analyte:{analyte_name or row_idx}"
+        identity = (_identity_token(analyte_name or analyte_key), _identity_token(assay_key))
+        if identity in seen_analytes:
+            diagnostics.append(
+                ImportDiagnostic(
+                    rule_id="duplicate-row",
+                    message="Duplicate analyte row",
+                    sheet=sheet.title,
+                    row=row_idx,
+                    value={
+                        "analyte": analyte_name,
+                        "assay_key": assay_key,
+                        "duplicate_key": f"{analyte_name or analyte_key}|{assay_key}",
+                    },
+                )
+            )
+            continue
+        seen_analytes.add(identity)
         analytes.append(
             AnalyteInputDTO(
                 key=analyte_key,
@@ -64,3 +83,8 @@ def _text(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+
+def _identity_token(value: str) -> str:
+    return value.strip().casefold()

@@ -117,3 +117,41 @@ def test_hidden_list_vocab_is_ingested_and_validation_errors_are_reported(tmp_pa
     diagnostics = {(d.rule_id, d.sheet, d.column) for d in exc.value.diagnostics}
     assert ("invalid-vocabulary", "Analytes", "Unit") in diagnostics
     assert ("invalid-vocabulary", "SamplePrep", "Action") in diagnostics
+
+
+def test_workbook_parser_reports_sheet_specific_duplicate_row_diagnostics(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = _build_template_workbook(openpyxl)
+
+    wb["Basics"].append(["assay:chem", "CHEM", "Chemistry", "Chemistry"])
+    wb["Analytes"].append(["GLU", "mg/dL", "CHEM", "assay:chem"])
+    wb["SamplePrep"].append(["1", "Mix"])
+    wb["Dilutions"].append(["Std1", "1:2"])
+
+    path = tmp_path / "duplicate-template.xlsx"
+    wb.save(path)
+
+    with pytest.raises(ExcelImportValidationError) as exc:
+        ExcelWorkbookParser().parse_path(path)
+
+    diagnostics = {(d.rule_id, d.sheet): d for d in exc.value.diagnostics if d.rule_id == "duplicate-row"}
+
+    assert diagnostics[("duplicate-row", "Basics")].value == {
+        "assay_key": "assay:chem",
+        "protocol_type": "CHEM",
+        "duplicate_key": "assay:chem|CHEM",
+    }
+    assert diagnostics[("duplicate-row", "Analytes")].value == {
+        "analyte": "GLU",
+        "assay_key": "assay:chem",
+        "duplicate_key": "GLU|assay:chem",
+    }
+    assert diagnostics[("duplicate-row", "SamplePrep")].value == {
+        "order": "1",
+        "action": "Mix",
+        "duplicate_key": "1|Mix",
+    }
+    assert diagnostics[("duplicate-row", "Dilutions")].value == {
+        "name": "Std1",
+        "duplicate_key": "Std1",
+    }

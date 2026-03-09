@@ -14,6 +14,7 @@ def parse_sampleprep_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostic
 
     steps: list[SamplePrepStepInputDTO] = []
     valid_actions = {v.casefold(): v for v in vocab.get("SamplePrepAction", set())}
+    seen_steps: set[tuple[str, str]] = set()
 
     for row_idx in range(header_row + 1, len(rows) + 1):
         row = rows[row_idx - 1]
@@ -28,6 +29,19 @@ def parse_sampleprep_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostic
                 diagnostics.append(ImportDiagnostic(rule_id="invalid-vocabulary", message="Unknown sample prep action", sheet=sheet.title, row=row_idx, column="Action", value=action))
             else:
                 normalized_action = canonical
+        identity = (_identity_token(order), _identity_token(normalized_action or action))
+        if identity in seen_steps:
+            diagnostics.append(
+                ImportDiagnostic(
+                    rule_id="duplicate-row",
+                    message="Duplicate sample prep step",
+                    sheet=sheet.title,
+                    row=row_idx,
+                    value={"order": order, "action": normalized_action or action, "duplicate_key": f"{order}|{normalized_action or action}"},
+                )
+            )
+            continue
+        seen_steps.add(identity)
         step_key = f"sampleprep:{order or row_idx}"
         steps.append(SamplePrepStepInputDTO(key=step_key, label=normalized_action or None, metadata={"order": order, "raw_action": action}))
     return steps
@@ -45,3 +59,8 @@ def _text(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+
+def _identity_token(value: str) -> str:
+    return value.strip().casefold()

@@ -44,6 +44,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
     if header_row_idx is None:
         diagnostics.append(ImportDiagnostic(rule_id="missing-component-table", message="Could not find component table headers", sheet=sheet.title))
     else:
+        seen_assays: set[tuple[str, str]] = set()
         for row_idx in range(header_row_idx + 1, len(rows) + 1):
             row = rows[row_idx - 1]
             key = _text(row[header_map["key"]].value)
@@ -60,6 +61,23 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                 protocol_display_name=display,
                 xml_name=xml_name,
             )
+            identity = (_identity_token(key), _identity_token(protocol_type))
+            if identity in seen_assays:
+                diagnostics.append(
+                    ImportDiagnostic(
+                        rule_id="duplicate-row",
+                        message="Duplicate assay row",
+                        sheet=sheet.title,
+                        row=row_idx,
+                        value={
+                            "assay_key": key,
+                            "protocol_type": protocol_type,
+                            "duplicate_key": f"{key}|{protocol_type}",
+                        },
+                    )
+                )
+                continue
+            seen_assays.add(identity)
             assays.append(AssayInputDTO(key=key, protocol_type=protocol_type, protocol_display_name=protocol_display_name, xml_name=xml_name))
 
     method = MethodInputDTO(key=f"method:{method_id or 'unknown'}", method_id=method_id, method_version=method_version, display_name=identity.get("display_name") or None)
@@ -79,3 +97,7 @@ def _text(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _identity_token(value: str) -> str:
+    return value.strip().casefold()
