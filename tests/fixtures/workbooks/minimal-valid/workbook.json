@@ -1,0 +1,21 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {
+      "columns": ["MethodId", "MethodVersion", "MethodDisplayName"],
+      "rows": [["FX-MIN", "1.0", "Fixture Minimal"]]
+    },
+    "Assays": {
+      "columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"],
+      "rows": [["assay:min", "CHEM", "Chem", "CHEM"]]
+    },
+    "Analytes": {
+      "columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"],
+      "rows": [["analyte:min", "GLU", "assay:min", "CHEM"]]
+    },
+    "Units": {
+      "columns": ["UnitKey", "UnitName", "AnalyteKey"],
+      "rows": [["unit:min", "mg/dL", "analyte:min"]]
+    }
+  }
+}

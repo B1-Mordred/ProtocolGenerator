@@ -138,10 +138,21 @@ class ProtocolJsonGenerator:
     def _resolve_context_fragments(self, section: str, raw_fragments: list[dict[str, Any]] | None, context: FragmentSelectionContext) -> Any:
         if not raw_fragments:
             return None
+        if self._is_direct_section_payload(raw_fragments):
+            return raw_fragments
+
         resolved = self.fragment_resolver.resolve(section=section, raw_fragments=raw_fragments, context=context)
         if section == "AssayInformation" and resolved is not None and not isinstance(resolved, list):
             return [resolved]
         return resolved
+
+    @staticmethod
+    def _is_direct_section_payload(raw_fragments: list[dict[str, Any]]) -> bool:
+        fragment_definition_keys = {"metadata", "selector", "payload", "value", "steps", "name", "assay_family", "reagent", "dilution", "instrument", "config"}
+        return all(
+            isinstance(item, dict) and not any(key in item for key in fragment_definition_keys)
+            for item in raw_fragments
+        )
 
     def _merge_method_information(
         self,

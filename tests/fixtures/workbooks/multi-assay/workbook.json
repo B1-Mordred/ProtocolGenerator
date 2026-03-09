@@ -1,0 +1,21 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-MA", "2.0", "Multi Assay"]]},
+    "Assays": {
+      "columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"],
+      "rows": [
+        ["assay:chem", "CHEM", "Chem", "CHEM"],
+        ["assay:imm", "IMM", "Immuno", "IMM"]
+      ]
+    },
+    "Analytes": {
+      "columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"],
+      "rows": [
+        ["analyte:glu", "GLU", "assay:chem", "CHEM"],
+        ["analyte:tsh", "TSH", "assay:imm", "IMM"]
+      ]
+    },
+    "Units": {"columns": ["UnitKey", "UnitName", "AnalyteKey"], "rows": [["unit:glu", "mg/dL", "analyte:glu"], ["unit:tsh", "uIU/mL", "analyte:tsh"]]}
+  }
+}

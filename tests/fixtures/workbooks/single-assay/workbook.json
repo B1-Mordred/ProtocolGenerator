@@ -1,0 +1,21 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-SA", "1.1", "Single Assay"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"], "rows": [["assay:chem", "CHEM", "Chemistry", "CHEM"]]},
+    "Analytes": {
+      "columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"],
+      "rows": [
+        ["analyte:glu", "GLU", "assay:chem", "CHEM"],
+        ["analyte:chol", "CHOL", "assay:chem", "CHEM"]
+      ]
+    },
+    "Units": {
+      "columns": ["UnitKey", "UnitName", "AnalyteKey"],
+      "rows": [
+        ["unit:glu", "mg/dL", "analyte:glu"],
+        ["unit:chol", "mg/dL", "analyte:chol"]
+      ]
+    }
+  }
+}
