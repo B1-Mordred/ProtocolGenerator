@@ -4,6 +4,40 @@ from dataclasses import dataclass, field
 from typing import Any
 
 
+def _clean_optional_text(value: str | None) -> str | None:
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def normalize_assay_identity_fields(
+    *,
+    protocol_type: str | None,
+    protocol_display_name: str | None,
+    xml_name: str | None,
+    fallback_order: dict[str, tuple[str, ...]] | None = None,
+) -> tuple[str | None, str | None, str | None]:
+    """Normalize assay identity fields with optional, explicit fallback rules."""
+
+    values: dict[str, str | None] = {
+        "protocol_type": _clean_optional_text(protocol_type),
+        "protocol_display_name": _clean_optional_text(protocol_display_name),
+        "xml_name": _clean_optional_text(xml_name),
+    }
+    if fallback_order:
+        for target, sources in fallback_order.items():
+            if values.get(target):
+                continue
+            for source in sources:
+                candidate = values.get(source)
+                if candidate:
+                    values[target] = candidate
+                    break
+
+    return values["protocol_type"], values["protocol_display_name"], values["xml_name"]
+
+
 @dataclass(slots=True)
 class MethodModel:
     key: str

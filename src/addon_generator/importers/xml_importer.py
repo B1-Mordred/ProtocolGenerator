@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from addon_generator.domain.models import AddonModel
+from addon_generator.domain.models import AddonModel, normalize_assay_identity_fields
 from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.input_models.provenance import FieldProvenance
@@ -31,7 +31,23 @@ class XmlImporter:
             assay_id = assay_el.findtext("Id") or ""
             assay_name = assay_el.findtext("Name") or ""
             assay_key = f"assay:{assay_id or assay_name}"
-            payload["assays"].append({"key": assay_key, "protocol_type": assay_name, "protocol_display_name": assay_name, "xml_name": assay_name})
+            protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
+                protocol_type=None,
+                protocol_display_name=None,
+                xml_name=assay_name,
+                fallback_order={
+                    "protocol_type": ("xml_name",),
+                    "protocol_display_name": ("xml_name",),
+                },
+            )
+            payload["assays"].append(
+                {
+                    "key": assay_key,
+                    "protocol_type": protocol_type,
+                    "protocol_display_name": protocol_display_name,
+                    "xml_name": xml_name,
+                }
+            )
             for analyte_el in assay_el.findall("./Analytes/Analyte"):
                 analyte_id = analyte_el.findtext("Id") or ""
                 analyte_name = analyte_el.findtext("Name") or ""

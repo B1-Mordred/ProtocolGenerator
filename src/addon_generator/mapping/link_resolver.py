@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from addon_generator.domain.ids import assign_deterministic_ids
 from addon_generator.domain.issues import IssueSeverity, IssueSource, ValidationIssue
-from addon_generator.domain.models import AddonModel, AnalyteModel, AssayModel
+from addon_generator.domain.models import AddonModel, AnalyteModel, AssayModel, normalize_assay_identity_fields
 from addon_generator.mapping.config_loader import MappingConfig
 from addon_generator.mapping.normalizers import normalize_for_matching
 
@@ -59,10 +59,17 @@ class LinkResolver:
         )
 
     def resolve_assay_projection(self, assay: AssayModel) -> ResolvedAssayProjection:
-        return ResolvedAssayProjection(
-            protocol_type=assay.protocol_type or "",
+        fallbacks = self.config.raw.get("assay_mapping", {}).get("projection_fallbacks", {})
+        protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
+            protocol_type=assay.protocol_type,
             protocol_display_name=assay.protocol_display_name,
-            xml_name=assay.xml_name or assay.protocol_type or "",
+            xml_name=assay.xml_name,
+            fallback_order=fallbacks if isinstance(fallbacks, dict) else None,
+        )
+        return ResolvedAssayProjection(
+            protocol_type=protocol_type or "",
+            protocol_display_name=protocol_display_name,
+            xml_name=xml_name or "",
             xml_id=assay.xml_id if assay.xml_id is not None else 0,
             addon_ref=assay.addon_ref if assay.addon_ref is not None else 0,
         )

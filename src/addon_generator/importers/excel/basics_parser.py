@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from addon_generator.domain.models import normalize_assay_identity_fields
 from addon_generator.importers.excel_importer import ImportDiagnostic
 from addon_generator.input_models.dtos import AssayInputDTO, MethodInputDTO
 
@@ -47,14 +48,19 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
             row = rows[row_idx - 1]
             key = _text(row[header_map["key"]].value)
             protocol = _text(row[header_map["protocol_type"]].value)
-            display = _text(row[header_map.get("protocol_display_name", header_map["protocol_type"])].value)
-            xml_name = _text(row[header_map.get("xml_name", header_map["protocol_type"])].value)
+            display = _text(row[header_map["protocol_display_name"]].value) if "protocol_display_name" in header_map else ""
+            xml_name = _text(row[header_map["xml_name"]].value) if "xml_name" in header_map else ""
             if not any((key, protocol, display, xml_name)):
                 break
             if not key:
                 diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Assay key is required", sheet=sheet.title, row=row_idx, column="Assay Key"))
                 continue
-            assays.append(AssayInputDTO(key=key, protocol_type=protocol, protocol_display_name=display or None, xml_name=xml_name or protocol))
+            protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
+                protocol_type=protocol,
+                protocol_display_name=display,
+                xml_name=xml_name,
+            )
+            assays.append(AssayInputDTO(key=key, protocol_type=protocol_type, protocol_display_name=protocol_display_name, xml_name=xml_name))
 
     method = MethodInputDTO(key=f"method:{method_id or 'unknown'}", method_id=method_id, method_version=method_version, display_name=identity.get("display_name") or None)
     return BasicsParseResult(method=method, assays=assays)

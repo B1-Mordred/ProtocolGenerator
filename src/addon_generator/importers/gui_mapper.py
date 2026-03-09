@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any
 
-from addon_generator.domain.models import AddonModel
+from addon_generator.domain.models import AddonModel, normalize_assay_identity_fields
 from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, InputDTOBundle, MethodInputDTO, UnitInputDTO
 from addon_generator.input_models.provenance import FieldProvenance
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
@@ -39,7 +39,21 @@ def map_gui_payload_to_bundle(payload: dict[str, Any]) -> InputDTOBundle:
     analyte_rows = payload.get("analytes") if isinstance(payload.get("analytes"), list) else []
     unit_rows = payload.get("units") if isinstance(payload.get("units"), list) else []
 
-    assays = [AssayInputDTO(key=str(row["key"]), protocol_type=str(row.get("protocol_type") or ""), protocol_display_name=row.get("protocol_display_name"), xml_name=str(row.get("xml_name") or row.get("protocol_type") or "")) for row in assay_rows]
+    assays: list[AssayInputDTO] = []
+    for row in assay_rows:
+        protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
+            protocol_type=row.get("protocol_type"),
+            protocol_display_name=row.get("protocol_display_name"),
+            xml_name=row.get("xml_name"),
+        )
+        assays.append(
+            AssayInputDTO(
+                key=str(row["key"]),
+                protocol_type=protocol_type,
+                protocol_display_name=protocol_display_name,
+                xml_name=xml_name,
+            )
+        )
     analytes = [AnalyteInputDTO(key=str(row["key"]), name=str(row.get("name") or ""), assay_key=str(row.get("assay_key") or ""), assay_information_type=row.get("assay_information_type")) for row in analyte_rows]
 
     normalized_unit_rows = list(unit_rows)

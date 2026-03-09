@@ -33,3 +33,36 @@ def test_canonical_builder_converts_bundle_to_domain_model() -> None:
     assert addon.method is not None and addon.method.method_id == "M-1"
     assert addon.analytes[0].unit_keys == ["unit:1"]
     assert addon.source_metadata["source"] == "gui"
+
+
+def test_assay_projection_fields_remain_independent_with_stable_linkage() -> None:
+    bundle = map_gui_payload_to_bundle(
+        {
+            "method_id": "M-1",
+            "method_version": "1.0",
+            "assays": [
+                {
+                    "key": "assay:1",
+                    "protocol_type": "PROTO-A",
+                    "protocol_display_name": "Display A",
+                    "xml_name": "XML-A",
+                }
+            ],
+            "analytes": [
+                {
+                    "key": "analyte:1",
+                    "name": "Analyte A",
+                    "assay_key": "assay:1",
+                    "assay_information_type": "PROTO-A",
+                }
+            ],
+            "units": [{"key": "unit:1", "name": "U", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    addon = CanonicalModelBuilder().build(bundle)
+
+    assert addon.assays[0].protocol_type == "PROTO-A"
+    assert addon.assays[0].protocol_display_name == "Display A"
+    assert addon.assays[0].xml_name == "XML-A"
+    assert addon.analytes[0].assay_key == addon.assays[0].key
