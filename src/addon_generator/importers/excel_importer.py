@@ -222,11 +222,12 @@ class ExcelImporter:
                             "xml_name": xml_name,
                         }
                     )
-            if analyte_key:
+            analyte_name = self._to_string(row.get("AnalyteName"))
+            if analyte_key and analyte_name:
                 payload["analytes"].append(
                     {
                         "key": analyte_key,
-                        "name": self._to_string(row.get("AnalyteName")),
+                        "name": analyte_name,
                         "assay_key": assay_key,
                         "assay_information_type": self._to_string(row.get("AssayInformationType")),
                     }

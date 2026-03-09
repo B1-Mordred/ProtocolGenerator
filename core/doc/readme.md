@@ -114,3 +114,4 @@ Core now includes a canonical `addon_generator` pipeline:
 - V2 row normalization now only materializes assay definitions when assay identity fields are present, so analyte-only dangling assay keys remain dangling and are surfaced by domain validators as linkage errors.
 - Domain validation now reports direct analyte linkage errors before downstream assay coverage fallout for stable, root-cause-first diagnostics in invalid workbook scenarios.
 - Generation issue sorting now keeps validation emission order inside each severity/phase class (instead of code alphabetization), preserving root-cause-first diagnostics in integration reports.
+- V2 workbook normalization no longer creates placeholder analytes from unit-only rows, preserving precise invalid-unit diagnostics (`unknown-analyte-key`) and avoiding secondary noise issues.

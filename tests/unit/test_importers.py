@@ -409,3 +409,32 @@ def test_normalize_workbook_rows_does_not_promote_analyte_only_assay_key_to_assa
 
     assert [assay["key"] for assay in payload["assays"]] == ["assay:real"]
     assert payload["analytes"][0]["assay_key"] == "assay:missing"
+
+
+def test_normalize_workbook_rows_does_not_create_analyte_from_unit_only_row() -> None:
+    importer = ExcelImporter()
+
+    payload = importer.normalize_workbook_rows(
+        [
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AssayKey": "assay:chem",
+                "ProtocolType": "CHEM",
+                "AssayDisplayName": "Chem",
+                "XmlAssayName": "Chem",
+                "AnalyteKey": "analyte:glu",
+                "AnalyteName": "GLU",
+            },
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "UnitKey": "unit:bad",
+                "UnitName": "mg/dL",
+                "AnalyteKey": "analyte:missing",
+            },
+        ]
+    )
+
+    assert [analyte["key"] for analyte in payload["analytes"]] == ["analyte:glu"]
+    assert [unit["analyte_key"] for unit in payload["units"]] == ["analyte:missing"]
