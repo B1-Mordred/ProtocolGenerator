@@ -130,3 +130,4 @@
 
 ### Fixed
 - Stopped emitting invalid `MethodInformation.SamplesLayoutType` (`SAMPLES_LAYOUT_SEPARATE`) during protocol generation; multi-assay output now uses schema-allowed values and mapping validation now rejects invalid `protocol_defaults.method_information.SamplesLayoutType`.
+- Hardened Excel workbook parsing entrypoints to convert workbook open failures into `ExcelImportValidationError` diagnostics with stable rule taxonomy (`invalid-workbook-format`/`workbook-open-failed`) and debug-safe error metadata (`path`, `error_type`, `error_message`).

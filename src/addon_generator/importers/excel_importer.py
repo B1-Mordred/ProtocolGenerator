@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from zipfile import BadZipFile
 
 from addon_generator.domain.models import AddonModel, normalize_assay_identity_fields
 from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
@@ -195,11 +196,30 @@ class ExcelImporter:
 
     def import_workbook_bundle(self, excel_path: str | Path) -> InputDTOBundle:
         from openpyxl import load_workbook  # type: ignore
+        from openpyxl.utils.exceptions import InvalidFileException  # type: ignore
 
         from addon_generator.importers.excel.workbook_parser import ExcelWorkbookParser
 
         workbook_path = Path(excel_path)
-        workbook = load_workbook(workbook_path, data_only=True)
+        try:
+            workbook = load_workbook(workbook_path, data_only=True)
+        except Exception as exc:
+            rule_id = "invalid-workbook-format" if isinstance(exc, (BadZipFile, InvalidFileException)) else "workbook-open-failed"
+            raise ExcelImportValidationError(
+                "Workbook could not be opened",
+                [
+                    ImportDiagnostic(
+                        rule_id=rule_id,
+                        message="Workbook payload is not a readable .xlsx archive",
+                        sheet="(workbook)",
+                        value={
+                            "path": str(workbook_path),
+                            "error_type": type(exc).__name__,
+                            "error_message": str(exc),
+                        },
+                    )
+                ],
+            ) from exc
         if ExcelWorkbookParser.supports_workbook_template(workbook.sheetnames):
             artifacts = ExcelWorkbookParser().parse_workbook(workbook, source_name=str(excel_path))
             if artifacts.diagnostics:
@@ -214,19 +234,25 @@ class ExcelImporter:
 
     def _parse_workbook_rows(self, excel_path: str | Path) -> dict[str, Any]:
         from openpyxl import load_workbook  # type: ignore
+        from openpyxl.utils.exceptions import InvalidFileException  # type: ignore
 
         workbook_path = Path(excel_path)
         try:
             wb = load_workbook(workbook_path, data_only=True)
         except Exception as exc:
+            rule_id = "invalid-workbook-format" if isinstance(exc, (BadZipFile, InvalidFileException)) else "workbook-open-failed"
             raise ExcelImportValidationError(
                 "Workbook could not be opened",
                 [
                     ImportDiagnostic(
-                        rule_id="invalid-workbook",
+                        rule_id=rule_id,
                         message="Workbook payload is not a readable .xlsx archive",
                         sheet="(workbook)",
-                        value={"path": str(workbook_path), "error_type": type(exc).__name__},
+                        value={
+                            "path": str(workbook_path),
+                            "error_type": type(exc).__name__,
+                            "error_message": str(exc),
+                        },
                     )
                 ],
             ) from exc

@@ -71,10 +71,10 @@
       "workbook": "tests/fixtures/workbooks/malformed-workbook/not-a-workbook.xlsx",
       "expected": {
         "import": "failure",
-        "error_type": "invalid-workbook",
+        "error_type": "invalid-workbook-format",
         "diagnostics": [
           {
-            "rule_id": "invalid-workbook",
+            "rule_id": "invalid-workbook-format",
             "sheet": "(workbook)"
           }
         ]
