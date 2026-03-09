@@ -1,3 +1,7 @@
+
+### Changed
+- Extended addon validation services to consume DTO/provenance context and emit entity-scoped errors with source-location hints; added checks for incompatible duplicate analyte scopes, unresolved `Parameter Set` assay links, hidden-vocab sample-prep actions, malformed/invalid dilution ratios, merged method identity requirements, and richer cross-file assay mismatch checks wired through `GenerationService.generate_all` before output writing.
+
 # Changelog
 
 ## Added

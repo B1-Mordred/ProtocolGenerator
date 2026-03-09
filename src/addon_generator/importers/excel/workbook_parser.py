@@ -58,6 +58,7 @@ class ExcelWorkbookParser:
             bundle.units = analytes.units
         bundle.sample_prep_steps = sample_prep
         bundle.dilution_schemes = dilutions
+        bundle.hidden_vocab = {key: sorted(values) for key, values in vocab.items()}
 
         return WorkbookParseArtifacts(bundle=bundle, diagnostics=diagnostics)
 

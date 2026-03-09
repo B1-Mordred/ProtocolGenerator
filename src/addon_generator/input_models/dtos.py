@@ -76,4 +76,5 @@ class InputDTOBundle:
     assay_fragments: list[dict[str, Any]] = field(default_factory=list)
     loading_fragments: list[dict[str, Any]] = field(default_factory=list)
     processing_fragments: list[dict[str, Any]] = field(default_factory=list)
+    hidden_vocab: dict[str, list[str]] = field(default_factory=dict)
     provenance: dict[str, list[FieldProvenance]] = field(default_factory=dict)

@@ -79,5 +79,8 @@ class CanonicalModelBuilder:
                 "source": bundle.source_type,
                 "source_name": bundle.source_name,
                 "provenance": {k: [asdict(item) for item in v] for k, v in bundle.provenance.items()},
+                "hidden_vocab": dict(bundle.hidden_vocab),
+                "sample_prep_steps": [asdict(step) for step in bundle.sample_prep_steps],
+                "dilution_schemes": [asdict(scheme) for scheme in bundle.dilution_schemes],
             },
         )
