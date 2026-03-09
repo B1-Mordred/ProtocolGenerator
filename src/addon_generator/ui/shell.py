@@ -77,7 +77,14 @@ class MainShell(QMainWindow):
         self.stack.addWidget(AnalytesView(self))
         self.stack.addWidget(SamplePrepView(self, app_state=self.app_state, merge_service=self.merge_service))
         self.stack.addWidget(DilutionsView(self, app_state=self.app_state, merge_service=self.merge_service))
-        self.stack.addWidget(ImportReviewView(self))
+        self.import_review_view = ImportReviewView(
+            self,
+            app_state=self.app_state,
+            merge_service=self.merge_service,
+            navigate_to_owner=self._navigate_to_owner,
+            on_state_changed=self._on_import_review_state_changed,
+        )
+        self.stack.addWidget(self.import_review_view)
         self.validation_view = ValidationView(self)
         self.stack.addWidget(self.validation_view)
         self.preview_view = PreviewView(self)
@@ -126,6 +133,7 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_excel(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self.import_review_view.refresh_table()
         self._refresh_status()
 
     def import_xml(self) -> None:
@@ -135,6 +143,7 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_xml(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self.import_review_view.refresh_table()
         self._refresh_status()
 
     def run_validation(self) -> None:
@@ -198,6 +207,16 @@ class MainShell(QMainWindow):
     def _switch_section(self, index: int) -> None:
         self.app_state.editor_state.selected_section_index = index
         self.stack.setCurrentIndex(index)
+
+    def _on_import_review_state_changed(self) -> None:
+        if self.app_state.import_state.bundles:
+            self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self._refresh_status()
+
+    def _navigate_to_owner(self, jump_target: dict[str, object]) -> None:
+        section_index = int(jump_target.get("section_index", 5))
+        self.app_state.editor_state.selected_entity = str(jump_target.get("entity", ""))
+        self.sidebar.setCurrentRow(section_index)
 
     def _refresh_status(self) -> None:
         self.sidebar.set_issue_count(5, len(self.app_state.import_state.issues))
