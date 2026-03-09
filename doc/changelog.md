@@ -41,6 +41,11 @@
 ## Unreleased
 
 ### Added
+
+- Added staged wizard workflow support for method setup, assay/analyte setup, import preview/conflicts, validation, and output preview/export, including required-conflict gating for progression/export.
+- Added wizard-state draft serialize/restore support with canonical DTO adapter helpers and persisted conflict metadata.
+- Added method validation (`Id`, `Version`, `DisplayName`) and assay/analyte relationship integrity warnings (orphan, duplicate, ambiguous mappings).
+- Added import/output preview models surfacing imported vs current values, provenance hints, unresolved field blockers, and export target readiness messages.
 - Added deterministic merge provenance output for protocol generation with required-field conflict/unresolved reporting and explicit precedence (`GUI > imported > config default > built-in default`).
 ### Changed
 
