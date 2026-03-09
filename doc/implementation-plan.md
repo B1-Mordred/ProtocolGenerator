@@ -147,20 +147,71 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 
 ## Phase 3 — P3 Safety net + maintainability (Regression + docs)
 
-### Task 3.1 — Fixture corpus and golden/regression suites (E7.1–E7.4)
+### Task 3.1 — Fixture corpus (E7.1)
 **Implementation steps**
-1. Expand fixture set in `tests/fixtures/` for real-world and invalid patterns.
-2. Add golden-output tests for exact XML/JSON outputs.
-3. Add workbook-variant import regression tests.
-4. Ensure coverage reports target `src/addon_generator` primarily.
+1. Add representative fixtures under `tests/fixtures/` and group them by scenario folders (minimal valid, single-assay, multi-assay, multi-analyte, alias-driven mapping, invalid cross-file mapping, invalid units, malformed workbook).
+2. Add or update fixture README/index notes so each scenario explains intent and expected pipeline behavior.
+3. Wire new fixtures into existing fixture-loading helpers so integration tests can consume them consistently.
+
+**Acceptance checks**
+- Fixture set covers real-world patterns, not just toy examples.
+- Fixtures are documented and organized by purpose.
 
 **Executable checks**
+- `pytest tests/integration/test_addon_generation_pipeline.py -q`
+
+---
+
+### Task 3.2 — Golden-output tests (E7.2)
+**Implementation steps**
+1. Add golden/snapshot fixtures for selected scenarios with canonical expected `Analytes.xml` and `ProtocolFile.json` outputs.
+2. Add exact-output assertions in generator integration tests (byte-for-byte or canonicalized snapshot compare) for both artifacts.
+3. Add explicit snapshot-update workflow notes in test docs to ensure intentional diffs stay reviewable.
+
+**Acceptance checks**
+- Intentional output changes are explicit and reviewable.
+- Stable inputs produce stable outputs.
+
+**Executable checks**
+- `pytest tests/integration/test_addon_generation_pipeline.py -k golden -q`
+
+---
+
+### Task 3.3 — Import regression tests (E7.3)
+**Implementation steps**
+1. Add workbook-variant fixtures that represent supported layout differences and historical import edge cases.
+2. Add malformed-workbook fixtures and assertions for deterministic, informative importer failures.
+3. Extend importer test matrices to cover both successful variant imports and failure-path diagnostics.
+
+**Acceptance checks**
+- Importer failures are reproducible and informative.
+- Workbook layout changes are caught by CI.
+
+**Executable checks**
+- `pytest tests/unit/test_importers.py -k "workbook or malformed or variant" -q`
+
+---
+
+### Task 3.4 — Coverage modernization (E7.4)
+**Implementation steps**
+1. Update coverage configuration to center source measurement and omission rules on `src/addon_generator`.
+2. Ensure coverage commands and CI configuration report addon-generator modules with term-missing visibility.
+3. Adjust coverage thresholds/gates so ongoing development is evaluated against the new pipeline focus.
+
+**Acceptance checks**
+- Coverage report reflects the new pipeline accurately.
+- Coverage gate is meaningful for ongoing development.
+
+**Executable checks**
+- `pytest --cov=src/addon_generator --cov-report=term-missing -q`
+
+**Umbrella regression checks**
 - `pytest -q`
 - `pytest --cov=src/addon_generator --cov-report=term-missing`
 
 ---
 
-### Task 3.2 — Mapping config reference (E8.1)
+### Task 3.5 — Mapping config reference (E8.1)
 **Implementation steps**
 1. Add/expand the mapping reference doc (for example, `doc/mapping-config-reference.md`) to cover every top-level mapping section currently consumed by loaders/validators.
 2. Enumerate valid field paths and supported value shapes, with examples aligned to real config usage.
@@ -181,7 +232,7 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 
 ---
 
-### Task 3.3 — Canonical model reference (E8.2)
+### Task 3.6 — Canonical model reference (E8.2)
 **Implementation steps**
 1. Add/expand canonical model reference documentation (for example, `doc/canonical-model-reference.md`) for all core entities.
 2. Document required vs optional fields per entity, including constraints and defaulting semantics where applicable.
@@ -202,7 +253,7 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 
 ---
 
-### Task 3.4 — Developer guide completion (E8.3)
+### Task 3.7 — Developer guide completion (E8.3)
 **Implementation steps**
 1. Expand `doc/developer-guide.md` with end-to-end import → canonical model → generation flow and extension boundaries.
 2. Add concrete sections for generator internals, validator architecture, and key extension points.
@@ -224,7 +275,7 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 
 ---
 
-### Task 3.5 — User guide completion (E8.4)
+### Task 3.8 — User guide completion (E8.4)
 **Implementation steps**
 1. Expand `doc/user-guide.md` to document the full user workflow: import data, edit addon inputs, validate, and export.
 2. Add concrete UI/task flow examples and troubleshooting notes for common validation/export blockers.
