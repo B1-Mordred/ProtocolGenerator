@@ -41,6 +41,7 @@
 ## Unreleased
 
 ### Added
+- Added regression coverage for deterministic linkage and generation pipeline edge cases in `tests/unit/test_addon_determinism_and_linkage.py` and `tests/integration/test_addon_generation_pipeline.py` (ambiguity failures, multi-assay processing behavior, and multi-unit normalization).
 - Added fragment-definition domain contracts (`FragmentMetadata`, selectors, loader/renderer protocols) and deterministic selection logic for assay/loading/processing protocol fragments based on assay family, reagent, dilution, instrument, and config metadata.
 
 - Added staged wizard workflow support for method setup, assay/analyte setup, import preview/conflicts, validation, and output preview/export, including required-conflict gating for progression/export.
@@ -49,6 +50,7 @@
 - Added import/output preview models surfacing imported vs current values, provenance hints, unresolved field blockers, and export target readiness messages.
 - Added deterministic merge provenance output for protocol generation with required-field conflict/unresolved reporting and explicit precedence (`GUI > imported > config default > built-in default`).
 ### Changed
+- Changed canonical import/validation/generation boundaries to enforce explicit assay↔analyte constraints, normalize/expand multi-unit inputs, and render conditional protocol behavior for multi-assay methods (`SamplesLayoutType` + per-assay processing groups).
 - Changed protocol JSON generation to resolve GUI workflow output via fragment definitions instead of direct placeholder lists, preserving deterministic precedence and schema-valid rendering.
 
 - Strengthened addon validation and mapping checks: cross-file validation now detects missing method identity and duplicate assay/analyte/unit XML IDs in addition to broken refs; domain validation now flags empty assay lists, unsupported analyte/assay type combinations, missing analyte units, ambiguous aliases, and non-numeric method-version formats; mapping config validation now enforces section shape/typing and mode-specific semantics earlier in config loading.

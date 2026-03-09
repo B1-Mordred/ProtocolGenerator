@@ -6,6 +6,7 @@ from typing import Any
 from addon_generator.domain.fragments import FragmentResolver, FragmentSelectionContext
 from addon_generator.domain.models import AddonModel
 from addon_generator.mapping.link_resolver import LinkResolver
+from addon_generator.mapping.normalizers import normalize_for_matching
 
 
 @dataclass(slots=True)
@@ -51,8 +52,8 @@ class ProtocolJsonGenerator:
 
         method, method_merge = self._merge_method_information(built_method, gui_method, imported_method, defaults.get("method_information", {}), builtin_method_defaults)
         assay_info, assay_merge = self._resolve_section("AssayInformation", gui_assay, imported_assay, built_assay, [{"Type": "A", "DisplayName": "Assay"}])
-        loading, loading_merge = self._resolve_section("LoadingWorkflowSteps", gui_loading, imported_loading, self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])), [])
-        processing, processing_merge = self._resolve_section("ProcessingWorkflowSteps", gui_processing, imported_processing, self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])), [])
+        loading, loading_merge = self._resolve_section("LoadingWorkflowSteps", gui_loading, imported_loading, self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])), [], allow_empty=False)
+        processing, processing_merge = self._resolve_section("ProcessingWorkflowSteps", gui_processing, imported_processing, self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])), [], allow_empty=False)
 
         payload = {
             "MethodInformation": method,
@@ -76,19 +77,27 @@ class ProtocolJsonGenerator:
             "MaximumNumberOfSamples": int(defaults.get("MaximumNumberOfSamples", 1)),
             "MaximumNumberOfProcessingCycles": int(defaults.get("MaximumNumberOfProcessingCycles", 1)),
             "MaximumNumberOfAssays": max(1, int(defaults.get("MaximumNumberOfAssays", len(addon.assays) if addon.assays else 1))),
-            "SamplesLayoutType": defaults.get("SamplesLayoutType", "SAMPLES_LAYOUT_COMBINED"),
+            "SamplesLayoutType": "SAMPLES_LAYOUT_SEPARATE" if len(addon.assays) > 1 else defaults.get("SamplesLayoutType", "SAMPLES_LAYOUT_COMBINED"),
             "MethodInformationType": defaults.get("MethodInformationType", "REGULAR"),
         }
 
     def _build_assay_information(self, addon: AddonModel, defaults: dict[str, Any]) -> list[dict[str, Any]]:
         assays: list[dict[str, Any]] = []
+        normalized_types: dict[str, str] = {}
         for assay in sorted(addon.assays, key=lambda a: a.key):
             projection = self.resolver.resolve_assay_projection(assay)
+            assay_type = projection.protocol_type or projection.xml_name
             assay_record = dict(defaults)
             assay_record.update({
-                "Type": projection.protocol_type or projection.xml_name,
+                "Type": assay_type,
                 "DisplayName": projection.protocol_display_name or projection.xml_name or defaults.get("DisplayName", "Assay"),
             })
+            canonical_type = normalize_for_matching(assay_type)
+            existing = normalized_types.get(canonical_type)
+            if canonical_type and existing and existing != assay.key:
+                raise ValueError(f"Ambiguous assay projection: '{assay.key}' and '{existing}' normalize to the same Type '{assay_type}'")
+            if canonical_type:
+                normalized_types[canonical_type] = assay.key
             assays.append(assay_record)
         if not assays:
             assay_record = dict(defaults)
@@ -97,10 +106,24 @@ class ProtocolJsonGenerator:
         return assays
 
     def _build_loading_workflow_steps(self, addon: AddonModel, defaults: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        return defaults if defaults else []
+        if not defaults:
+            return []
+        return [dict(step) for step in defaults]
 
     def _build_processing_workflow_steps(self, addon: AddonModel, defaults: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        return defaults if defaults else []
+        if not defaults:
+            return []
+        if len(addon.assays) <= 1:
+            return [dict(step) for step in defaults]
+        per_assay_steps: list[dict[str, Any]] = []
+        template = defaults[0]
+        for idx, assay in enumerate(sorted(addon.assays, key=lambda a: a.key)):
+            projection = self.resolver.resolve_assay_projection(assay)
+            assay_group = dict(template)
+            assay_group["GroupIndex"] = idx
+            assay_group["GroupDisplayName"] = projection.protocol_display_name or projection.protocol_type or assay.key
+            per_assay_steps.append(assay_group)
+        return per_assay_steps
 
     def _build_fragment_selection_context(self, addon: AddonModel) -> FragmentSelectionContext:
         metadata = addon.source_metadata if isinstance(addon.source_metadata, dict) else {}
@@ -159,7 +182,7 @@ class ProtocolJsonGenerator:
             })
         return merged, records
 
-    def _resolve_section(self, section: str, gui: Any, imported: Any, config_default: Any, built_in_default: Any) -> tuple[Any, dict[str, Any]]:
+    def _resolve_section(self, section: str, gui: Any, imported: Any, config_default: Any, built_in_default: Any, *, allow_empty: bool = True) -> tuple[Any, dict[str, Any]]:
         values = {
             "gui": gui,
             "imported": imported,
@@ -173,6 +196,9 @@ class ProtocolJsonGenerator:
                 selected_source = source
                 selected_value = values[source]
                 break
+        if not allow_empty and not self._has_value(selected_value):
+            selected_source = "built_in_default"
+            selected_value = []
         present = {source: value for source, value in values.items() if self._has_value(value)}
         conflict_sources = sorted([source for source, value in present.items() if value != selected_value])
         return selected_value, {

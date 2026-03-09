@@ -133,7 +133,9 @@ class ExcelImporter:
         for row in rows:
             assay_key = self._to_string(row.get("AssayKey")) or self._to_string(row.get("AssayDisplayName"))
             analyte_key = self._to_string(row.get("AnalyteKey")) or self._to_string(row.get("AnalyteName"))
-            unit_key = self._to_string(row.get("UnitKey")) or self._to_string(row.get("UnitName"))
+            unit_raw = self._to_string(row.get("UnitName"))
+            unit_names = self._split_multi_units(unit_raw)
+            unit_key = self._to_string(row.get("UnitKey")) or (unit_names[0] if unit_names else "")
             if assay_key:
                 payload["assays"].append(
                     {
@@ -152,11 +154,20 @@ class ExcelImporter:
                         "assay_information_type": self._to_string(row.get("AssayInformationType")),
                     }
                 )
-            if unit_key:
+            if unit_names:
+                for idx, unit_name in enumerate(unit_names):
+                    payload["units"].append(
+                        {
+                            "key": unit_key if idx == 0 else f"{unit_key}:{idx}",
+                            "name": self._normalize_unit_name(unit_name),
+                            "analyte_key": analyte_key,
+                        }
+                    )
+            elif unit_key:
                 payload["units"].append(
                     {
                         "key": unit_key,
-                        "name": self._to_string(row.get("UnitName")),
+                        "name": self._normalize_unit_name(self._to_string(row.get("UnitName"))),
                         "analyte_key": analyte_key,
                     }
                 )
@@ -292,6 +303,19 @@ class ExcelImporter:
             return [], {}
         headers = [self._to_string(c.value) for c in header_row]
         return headers, {name: idx for idx, name in enumerate(headers) if name}
+
+
+    def _normalize_unit_name(self, value: str) -> str:
+        text = self._to_string(value).replace(" ", "")
+        aliases = {"ug/ml": "µg/mL", "mg/ml": "mg/mL", "mg/dl": "mg/dL", "mmol/l": "mmol/L"}
+        return aliases.get(text.casefold(), text)
+
+    def _split_multi_units(self, value: str) -> list[str]:
+        text = self._to_string(value)
+        if not text:
+            return []
+        normalized = text.replace("|", ";").replace(",", ";")
+        return [part.strip() for part in normalized.split(";") if part.strip()]
 
     def _to_string(self, value: Any) -> str:
         if value is None:

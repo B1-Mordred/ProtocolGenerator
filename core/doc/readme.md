@@ -34,6 +34,9 @@ protocol-generator-gui
 - Addon protocol merge resolution now emits deterministic field-level provenance (`field_provenance`), required-field conflict/unresolved summaries, and enforces explicit precedence for overrides (`GUI > imported fragments > config defaults > built-in defaults`) for UI/validation consumption.
 - Addon fragment domain models now define metadata, loading, and rendering contracts and protocol generation deterministically selects workflow/assay fragments by assay family, reagent, dilution, instrument, and config context before merge resolution.
 - Addon importer package under `src/addon_generator/importers/` with `gui_mapper.py` (UI payload to canonical `AddonModel`/`ProtocolContextModel`), `excel_importer.py` (layout-aware worksheet parsing with deterministic column registries, type coercion, layout-version detection, and structured diagnostics for missing columns/duplicate rows), and `xml_importer.py` (AddOn XML import that validates against `AddOn.xsd` before mapping to the same canonical entities used by GUI/Excel paths) while keeping generation side effects outside the importer layer.
+- Canonical validation/generation boundaries now enforce explicit assay↔analyte constraints, including hard failures for assays without analytes and ambiguous analyte-to-assay linkage (normalized-name collisions across assay keys).
+- Canonical import processing now supports multi-unit expansion (e.g., `"mg/dL; mmol/L"`) and unit-name normalization for consistent downstream XML/domain handling.
+- Protocol generation now applies conditional multi-assay behavior by generating per-assay processing groups and switching `SamplesLayoutType` to `SAMPLES_LAYOUT_SEPARATE` when multiple assays are present.
 
 ## Build Windows executable
 

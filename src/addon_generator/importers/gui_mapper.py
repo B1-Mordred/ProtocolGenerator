@@ -5,6 +5,19 @@ from typing import Any
 from addon_generator.domain.models import AddonModel, AnalyteModel, AnalyteUnitModel, AssayModel, MethodModel, ProtocolContextModel
 
 
+def _split_multi_value(raw: Any) -> list[str]:
+    if raw is None:
+        return []
+    if isinstance(raw, (list, tuple, set)):
+        values = [str(v).strip() for v in raw if str(v).strip()]
+        return values
+    text = str(raw).strip()
+    if not text:
+        return []
+    normalized = text.replace("|", ";").replace(",", ";")
+    return [part.strip() for part in normalized.split(";") if part.strip()]
+
+
 def map_gui_payload_to_addon(payload: dict[str, Any]) -> AddonModel:
     method_info = payload.get("MethodInformation", {}) if isinstance(payload.get("MethodInformation"), dict) else {}
     method_id = str(payload.get("method_id") or method_info.get("Id") or "")
@@ -52,14 +65,33 @@ def map_gui_payload_to_addon(payload: dict[str, Any]) -> AddonModel:
         for row in analyte_rows
     ]
 
+    normalized_unit_rows = list(unit_rows)
+    for analyte_row in analyte_rows:
+        analyte_key = str(analyte_row.get("key") or "").strip()
+        unit_names = _split_multi_value(analyte_row.get("unit_names") or analyte_row.get("units"))
+        for idx, unit_name in enumerate(unit_names):
+            normalized_unit_rows.append(
+                {
+                    "key": f"{analyte_key}:unit:{idx}:{unit_name}",
+                    "name": unit_name,
+                    "analyte_key": analyte_key,
+                }
+            )
+
     units: list[AnalyteUnitModel] = [
         AnalyteUnitModel(
             key=str(row["key"]),
             name=str(row.get("name") or ""),
             analyte_key=str(row.get("analyte_key") or ""),
         )
-        for row in unit_rows
+        for row in normalized_unit_rows
     ]
+
+    units_by_analyte: dict[str, list[str]] = {}
+    for unit in units:
+        units_by_analyte.setdefault(unit.analyte_key, []).append(unit.key)
+    for analyte in analytes:
+        analyte.unit_keys = sorted(set(units_by_analyte.get(analyte.key, [])))
 
     method_overrides = dict(payload.get("method_information_overrides", {}))
     if isinstance(method_info, dict):
