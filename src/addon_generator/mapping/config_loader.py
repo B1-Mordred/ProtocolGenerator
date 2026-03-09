@@ -16,11 +16,29 @@ class MappingConfig:
     raw: dict[str, Any]
 
 
-def _validate_field_path(path: str) -> None:
+def _ensure_mapping(value: Any, *, path: str) -> dict[str, Any]:
+    if not isinstance(value, dict):
+        raise MappingConfigError(f"{path} must be an object")
+    return value
+
+
+def _ensure_list(value: Any, *, path: str) -> list[Any]:
+    if not isinstance(value, list):
+        raise MappingConfigError(f"{path} must be a list")
+    return value
+
+
+def _ensure_string(value: Any, *, path: str) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise MappingConfigError(f"{path} must be a non-empty string")
+    return value
+
+
+def _validate_field_path(path: str, *, source: str) -> None:
     try:
         parse_field_path(path)
     except ValueError as exc:
-        raise MappingConfigError(f"Invalid field path: {path}") from exc
+        raise MappingConfigError(f"Invalid field path for {source}: {path}") from exc
 
 
 def validate_mapping_config(raw: dict[str, Any]) -> MappingConfig:
@@ -31,23 +49,63 @@ def validate_mapping_config(raw: dict[str, Any]) -> MappingConfig:
         if key not in raw:
             raise MappingConfigError(f"Missing mandatory section: {key}")
 
-    mode = raw["assay_mapping"].get("cross_file_match", {}).get("mode", "exact")
+    ids = _ensure_mapping(raw["ids"], path="ids")
+    for key in ("assay", "analyte", "analyte_unit"):
+        section = _ensure_mapping(ids.get(key), path=f"ids.{key}")
+        if section.get("strategy") != "sequential":
+            raise MappingConfigError(f"ids.{key}.strategy must be 'sequential'")
+        start = section.get("start")
+        if not isinstance(start, int) or start < 0:
+            raise MappingConfigError(f"ids.{key}.start must be a non-negative integer")
+
+    assay_mapping_root = _ensure_mapping(raw["assay_mapping"], path="assay_mapping")
+    cross_file_match = _ensure_mapping(assay_mapping_root.get("cross_file_match", {}), path="assay_mapping.cross_file_match")
+    mode = cross_file_match.get("mode", "exact")
     if mode not in {"exact", "normalized", "alias_map", "explicit_key"}:
         raise MappingConfigError(f"Unknown match mode: {mode}")
 
-    method_mapping = raw["method_mapping"]
-    _validate_field_path(method_mapping["protocol"]["id"])
-    _validate_field_path(method_mapping["protocol"]["version"])
-    _validate_field_path(method_mapping["analytes_xml"]["method_id"])
-    _validate_field_path(method_mapping["analytes_xml"]["method_version"])
+    method_mapping = _ensure_mapping(raw["method_mapping"], path="method_mapping")
+    method_protocol = _ensure_mapping(method_mapping.get("protocol"), path="method_mapping.protocol")
+    method_xml = _ensure_mapping(method_mapping.get("analytes_xml"), path="method_mapping.analytes_xml")
+    _validate_field_path(_ensure_string(method_protocol.get("id"), path="method_mapping.protocol.id"), source="method_mapping.protocol.id")
+    _validate_field_path(_ensure_string(method_protocol.get("version"), path="method_mapping.protocol.version"), source="method_mapping.protocol.version")
+    _validate_field_path(_ensure_string(method_xml.get("method_id"), path="method_mapping.analytes_xml.method_id"), source="method_mapping.analytes_xml.method_id")
+    _validate_field_path(_ensure_string(method_xml.get("method_version"), path="method_mapping.analytes_xml.method_version"), source="method_mapping.analytes_xml.method_version")
 
-    assay_mapping = raw["assay_mapping"]
+    assay_mapping = assay_mapping_root
     protocol_defaults = raw.get("protocol_defaults", {})
     if protocol_defaults and not isinstance(protocol_defaults, dict):
         raise MappingConfigError("protocol_defaults must be an object")
-    _validate_field_path(assay_mapping["internal_identity"])
-    _validate_field_path(assay_mapping["protocol"]["type"])
-    _validate_field_path(assay_mapping["analytes_xml"]["name"])
+    _validate_field_path(_ensure_string(assay_mapping.get("internal_identity"), path="assay_mapping.internal_identity"), source="assay_mapping.internal_identity")
+    assay_protocol = _ensure_mapping(assay_mapping.get("protocol"), path="assay_mapping.protocol")
+    assay_xml = _ensure_mapping(assay_mapping.get("analytes_xml"), path="assay_mapping.analytes_xml")
+    _validate_field_path(_ensure_string(assay_protocol.get("type"), path="assay_mapping.protocol.type"), source="assay_mapping.protocol.type")
+    _validate_field_path(_ensure_string(assay_xml.get("name"), path="assay_mapping.analytes_xml.name"), source="assay_mapping.analytes_xml.name")
+
+    if mode == "alias_map":
+        alias_map = _ensure_mapping(cross_file_match.get("alias_map"), path="assay_mapping.cross_file_match.alias_map")
+        if not alias_map:
+            raise MappingConfigError("assay_mapping.cross_file_match.alias_map must not be empty")
+        for alias, target in alias_map.items():
+            _ensure_string(alias, path="assay_mapping.cross_file_match.alias_map key")
+            _ensure_string(target, path=f"assay_mapping.cross_file_match.alias_map.{alias}")
+    elif mode == "explicit_key":
+        _validate_field_path(_ensure_string(cross_file_match.get("protocol_field"), path="assay_mapping.cross_file_match.protocol_field"), source="assay_mapping.cross_file_match.protocol_field")
+        _validate_field_path(_ensure_string(cross_file_match.get("analytes_xml_field"), path="assay_mapping.cross_file_match.analytes_xml_field"), source="assay_mapping.cross_file_match.analytes_xml_field")
+
+    analyte_mapping = _ensure_mapping(raw["analyte_mapping"], path="analyte_mapping")
+    analyte_xml = _ensure_mapping(analyte_mapping.get("analytes_xml"), path="analyte_mapping.analytes_xml")
+    for field_name in ("id", "name", "assay_ref"):
+        _validate_field_path(_ensure_string(analyte_xml.get(field_name), path=f"analyte_mapping.analytes_xml.{field_name}"), source=f"analyte_mapping.analytes_xml.{field_name}")
+
+    unit_mapping = _ensure_mapping(raw["unit_mapping"], path="unit_mapping")
+    unit_xml = _ensure_mapping(unit_mapping.get("analytes_xml"), path="unit_mapping.analytes_xml")
+    for field_name in ("id", "name", "analyte_ref"):
+        _validate_field_path(_ensure_string(unit_xml.get(field_name), path=f"unit_mapping.analytes_xml.{field_name}"), source=f"unit_mapping.analytes_xml.{field_name}")
+
+    loading_steps = protocol_defaults.get("loading_workflow_steps")
+    if loading_steps is not None:
+        _ensure_list(loading_steps, path="protocol_defaults.loading_workflow_steps")
 
     return MappingConfig(raw=raw)
 

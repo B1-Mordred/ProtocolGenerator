@@ -20,6 +20,40 @@ def test_config_validation() -> None:
         validate_mapping_config(bad)
 
 
+def test_config_validation_rejects_invalid_semantics() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml").raw
+
+    bad_alias_mode = {
+        **cfg,
+        "assay_mapping": {
+            **cfg["assay_mapping"],
+            "cross_file_match": {"mode": "alias_map", "alias_map": {}},
+        },
+    }
+    with pytest.raises(MappingConfigError, match="alias_map must not be empty"):
+        validate_mapping_config(bad_alias_mode)
+
+    bad_ids = {
+        **cfg,
+        "ids": {
+            **cfg["ids"],
+            "assay": {"strategy": "random", "start": -1},
+        },
+    }
+    with pytest.raises(MappingConfigError, match="strategy"):
+        validate_mapping_config(bad_ids)
+
+
+def test_config_validation_requires_mapping_shapes() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml").raw
+    bad = {
+        **cfg,
+        "method_mapping": {"protocol": "method.method_id", "analytes_xml": cfg["method_mapping"]["analytes_xml"]},
+    }
+    with pytest.raises(MappingConfigError, match="method_mapping.protocol must be an object"):
+        validate_mapping_config(bad)
+
+
 def test_config_loader_parses_yaml_without_pyyaml(monkeypatch):
     real_import = __import__
 
