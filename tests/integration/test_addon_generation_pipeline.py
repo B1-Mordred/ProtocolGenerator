@@ -272,3 +272,36 @@ def test_excel_fixture_invalid_scenarios_surface_expected_errors(tmp_path) -> No
         expected = set(fixture_metadata(scenario)["expected"]["error_codes"])
         codes = {issue.code for issue in result.issues}
         assert expected.issubset(codes)
+
+
+def test_generation_pipeline_deterministic_fragment_registry_merge_ordering() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-FRAG",
+            "method_version": "1.0",
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+    addon.source_metadata = {"assay_family": "chem", "reagent": "r1", "dilution": "1:2"}
+    addon.protocol_context.reagent_fragments = [
+        {"selector": {"assay_family": "chem", "reagent": "r1"}, "payload": [{"StepName": "ZZZ"}]},
+    ]
+    addon.protocol_context.loading_fragments = [
+        {"selector": {"assay_family": "chem", "reagent": "r1"}, "payload": [{"StepName": "AAA"}]},
+    ]
+    addon.protocol_context.dilution_fragments = [
+        {"selector": {"assay_family": "chem", "dilution": "1:2"}, "payload": [{"GroupDisplayName": "B"}]},
+    ]
+    addon.protocol_context.processing_fragments = [
+        {"selector": {"assay_family": "chem", "reagent": "r1"}, "payload": [{"GroupDisplayName": "A"}]},
+    ]
+
+    result1 = service.generate_protocol_json(addon).payload
+    result2 = service.generate_protocol_json(addon).payload
+
+    assert result1 == result2
+    assert result1["LoadingWorkflowSteps"] == [{"StepName": "AAA"}, {"StepName": "ZZZ"}]
+    assert result1["ProcessingWorkflowSteps"] == [{"GroupDisplayName": "A"}, {"GroupDisplayName": "B"}]

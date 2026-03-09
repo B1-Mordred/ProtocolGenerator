@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import json
 from typing import Any
 
-from addon_generator.domain.fragments import FragmentResolver, FragmentSelectionContext
+from addon_generator.domain.fragments import FragmentSelectionContext
 from addon_generator.domain.models import AddonModel
+from addon_generator.fragments.registry import FragmentResolverRegistry
 from addon_generator.mapping.link_resolver import LinkResolver
 from addon_generator.mapping.normalizers import normalize_for_matching
 
@@ -20,7 +22,7 @@ class ProtocolJsonGenerator:
 
     def __init__(self, resolver: LinkResolver):
         self.resolver = resolver
-        self.fragment_resolver = FragmentResolver()
+        self.fragment_registry = FragmentResolverRegistry()
 
     def generate(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None) -> ProtocolJsonGenerationResult:
         defaults = self.resolver.config.raw.get("protocol_defaults", {})
@@ -41,9 +43,10 @@ class ProtocolJsonGenerator:
         context = addon.protocol_context
         gui_method = dict(context.method_information_overrides) if context else {}
         selection_context = self._build_fragment_selection_context(addon)
-        gui_assay = self._resolve_context_fragments("AssayInformation", list(context.assay_fragments) if context and context.assay_fragments else None, selection_context)
-        gui_loading = self._resolve_context_fragments("LoadingWorkflowSteps", list(context.loading_fragments) if context and context.loading_fragments else None, selection_context)
-        gui_processing = self._resolve_context_fragments("ProcessingWorkflowSteps", list(context.processing_fragments) if context and context.processing_fragments else None, selection_context)
+        registry_fragments = self.fragment_registry.collect(addon, selection_context)
+        gui_assay = registry_fragments.get("AssayInformation")
+        gui_loading = registry_fragments.get("LoadingWorkflowSteps")
+        gui_processing = registry_fragments.get("ProcessingWorkflowSteps")
 
         imported_method = dict(protocol_fragments.get("MethodInformation", {})) if protocol_fragments and isinstance(protocol_fragments.get("MethodInformation"), dict) else {}
         imported_assay = list(protocol_fragments.get("AssayInformation", [])) if protocol_fragments and isinstance(protocol_fragments.get("AssayInformation"), list) and protocol_fragments.get("AssayInformation") else None
@@ -135,25 +138,6 @@ class ProtocolJsonGenerator:
             config=metadata.get("config"),
         )
 
-    def _resolve_context_fragments(self, section: str, raw_fragments: list[dict[str, Any]] | None, context: FragmentSelectionContext) -> Any:
-        if not raw_fragments:
-            return None
-        if self._is_direct_section_payload(raw_fragments):
-            return raw_fragments
-
-        resolved = self.fragment_resolver.resolve(section=section, raw_fragments=raw_fragments, context=context)
-        if section == "AssayInformation" and resolved is not None and not isinstance(resolved, list):
-            return [resolved]
-        return resolved
-
-    @staticmethod
-    def _is_direct_section_payload(raw_fragments: list[dict[str, Any]]) -> bool:
-        fragment_definition_keys = {"metadata", "selector", "payload", "value", "steps", "name", "assay_family", "reagent", "dilution", "instrument", "config"}
-        return all(
-            isinstance(item, dict) and not any(key in item for key in fragment_definition_keys)
-            for item in raw_fragments
-        )
-
     def _merge_method_information(
         self,
         generated: dict[str, Any],
@@ -210,6 +194,10 @@ class ProtocolJsonGenerator:
         if not allow_empty and not self._has_value(selected_value):
             selected_source = "built_in_default"
             selected_value = []
+
+        if isinstance(selected_value, list):
+            selected_value = self._ordered_list(selected_value)
+
         present = {source: value for source, value in values.items() if self._has_value(value)}
         conflict_sources = sorted([source for source, value in present.items() if value != selected_value])
         return selected_value, {
@@ -219,6 +207,12 @@ class ProtocolJsonGenerator:
             "conflict": bool(conflict_sources),
             "conflict_sources": conflict_sources,
         }
+
+    @staticmethod
+    def _ordered_list(values: list[Any]) -> list[Any]:
+        indexed = list(enumerate(values))
+        indexed.sort(key=lambda item: (json.dumps(item[1], sort_keys=True, default=str), item[0]))
+        return [value for _, value in indexed]
 
     def _build_merge_report(self, method_information: dict[str, Any], records: list[dict[str, Any]]) -> dict[str, Any]:
         unresolved_required = sorted(

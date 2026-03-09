@@ -44,12 +44,14 @@
 ## Unreleased
 
 ### Added
+- Added fragment resolver plugin modules under `src/addon_generator/fragments/resolvers/` plus `src/addon_generator/fragments/registry.py` to collect concern-specific protocol section contributions and feed centralized deterministic ordering in protocol JSON generation.
 - Added typed mapping-schema models and a strict schema validation layer for addon mapping YAML (`src/addon_generator/config/models.py`, `src/addon_generator/config/schema_validator.py`), including actionable errors for unknown keys, invalid field paths, invalid enum/strategy modes, and missing mandatory sections.
 - Added DTO-first addon input model modules (`input_models/dtos.py`, `input_models/provenance.py`) and canonical conversion boundary (`services/canonical_model_builder.py`) to centralize DTO→domain transformation.
 - Added workbook-template Excel import parsing under `src/addon_generator/importers/excel/` with `workbook_parser.py` orchestration and dedicated basics/sample-prep/dilutions/analytes parsers using header-driven start detection, blank-row termination, `Hidden_Lists` vocabulary validation/normalization, and explicit ignore behavior for `AddOn CheckList`.
 - Added `services/input_merge_service.py` with deterministic precedence ordering and structured conflict capture across multi-source DTO bundles.
 
 ### Changed
+- Refactored `src/addon_generator/generators/protocol_json_generator.py` to consume registry-provided fragment contributions with centralized deterministic section merge/sort behavior while preserving legacy raw fragment definitions through the default resolver.
 - Refactored Excel/XML/GUI importers to emit DTO bundles with provenance while preserving domain import entry points via the canonical model builder.
 - Updated `GenerationService` import entry points to consume importer DTO bundles through the canonical builder/merge path.
 - Added unit coverage for merge precedence/conflict behavior and canonical DTO-to-domain conversion.
