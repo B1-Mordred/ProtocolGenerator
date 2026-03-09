@@ -11,6 +11,7 @@ from xml.etree import ElementTree as ET
 
 from addon_generator.domain.issues import ValidationIssue
 from addon_generator.domain.models import AddonModel
+from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.generators.analytes_xml_generator import generate_analytes_addon_xml
 from addon_generator.generators.protocol_json_generator import generate_protocol_json
 from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_bundle
@@ -20,6 +21,7 @@ from addon_generator.services.canonical_model_builder import CanonicalModelBuild
 from addon_generator.services.input_merge_service import InputMergeService
 from addon_generator.validation.cross_file_validator import validate_cross_file_consistency
 from addon_generator.validation.domain_validator import validate_domain
+from addon_generator.validation.dto_validator import validate_dto_bundle
 from addon_generator.validation.protocol_schema_validator import validate_protocol_schema
 
 
@@ -80,9 +82,10 @@ class GenerationService:
         self.resolver.assign_ids(addon)
         return generate_protocol_json(addon, self.resolver, protocol_fragments)
 
-    def generate_all(self, addon: AddonModel, *, xsd_path: str | Path = "AddOn.xsd", protocol_schema_path: str | Path = "protocol.schema.json") -> GenerationResult:
+    def generate_all(self, addon: AddonModel, *, dto_bundle: InputDTOBundle | None = None, xsd_path: str | Path = "AddOn.xsd", protocol_schema_path: str | Path = "protocol.schema.json") -> GenerationResult:
         self.resolver.assign_ids(addon)
         issues = list(validate_domain(addon).issues.issues)
+        issues.extend(validate_dto_bundle(dto_bundle or self._dto_bundle_from_addon(addon)).issues.issues)
         issues.extend(self.resolver.validate_cross_file_linkage(addon))
 
         xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
@@ -90,6 +93,17 @@ class GenerationService:
 
         protocol_result = self.generate_protocol_json(addon)
         protocol_json = protocol_result.payload
+        method_info = protocol_json.get("MethodInformation", {}) if isinstance(protocol_json.get("MethodInformation"), dict) else {}
+        if not str(method_info.get("Id") or "").strip() or not str(method_info.get("Version") or "").strip():
+            issues.append(
+                ValidationIssue(
+                    code="missing-required-method-identity-after-merge",
+                    message="MethodInformation.Id and MethodInformation.Version are required after merge resolution",
+                    path="MethodInformation",
+                    entity_keys=((addon.method.key,) if addon.method else ()),
+                    source_location="ProtocolFile.json/MethodInformation",
+                )
+            )
         protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
         issues.extend(protocol_schema_result.issues.issues)
 
@@ -108,6 +122,25 @@ class GenerationService:
             merge_report=protocol_result.merge_report,
             unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
             conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
+        )
+
+    def _dto_bundle_from_addon(self, addon: AddonModel) -> InputDTOBundle:
+        from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, DilutionSchemeInputDTO, SamplePrepStepInputDTO
+
+        source_metadata = addon.source_metadata if isinstance(addon.source_metadata, dict) else {}
+        sample_prep = [SamplePrepStepInputDTO(**item) for item in source_metadata.get("sample_prep_steps", []) if isinstance(item, dict)]
+        dilutions = [DilutionSchemeInputDTO(**item) for item in source_metadata.get("dilution_schemes", []) if isinstance(item, dict)]
+        assays = [AssayInputDTO(key=item.key, protocol_type=item.protocol_type, protocol_display_name=item.protocol_display_name, xml_name=item.xml_name, aliases=list(item.aliases), metadata=dict(item.metadata)) for item in addon.assays]
+        analytes = [AnalyteInputDTO(key=item.key, name=item.name, assay_key=item.assay_key, assay_information_type=item.assay_information_type, metadata=dict(item.metadata)) for item in addon.analytes]
+        return InputDTOBundle(
+            source_type="default",
+            source_name="addon",
+            assays=assays,
+            analytes=analytes,
+            sample_prep_steps=sample_prep,
+            dilution_schemes=dilutions,
+            hidden_vocab={k: list(v) for k, v in source_metadata.get("hidden_vocab", {}).items()} if isinstance(source_metadata.get("hidden_vocab", {}), dict) else {},
+            provenance=source_metadata.get("provenance", {}) if isinstance(source_metadata.get("provenance", {}), dict) else {},
         )
 
     def build_package(

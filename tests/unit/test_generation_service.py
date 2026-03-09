@@ -1,3 +1,4 @@
+from addon_generator.input_models.dtos import DilutionSchemeInputDTO, InputDTOBundle
 from addon_generator.services.generation_service import GenerationService
 
 
@@ -56,3 +57,13 @@ def test_generation_merge_report_is_deterministic_and_has_required_field_views()
     assert first == second
     assert first["field_provenance"] == sorted(first["field_provenance"], key=lambda item: item["path"])
     assert first["required_fields"] == {"unresolved": [], "conflicting": []}
+
+
+def test_generate_all_consumes_dto_context_for_validation() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload({"method_id": "M", "method_version": "1", "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}], "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}], "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}]})
+    dto_bundle = InputDTOBundle(source_type="excel", dilution_schemes=[DilutionSchemeInputDTO(key="d:1", metadata={"ratio": "bad"})])
+
+    result = service.generate_all(addon, dto_bundle=dto_bundle)
+
+    assert "malformed-dilution-scheme" in {issue.code for issue in result.issues}

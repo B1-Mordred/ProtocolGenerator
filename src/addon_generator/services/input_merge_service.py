@@ -56,6 +56,7 @@ class InputMergeService:
             assay_fragments=self._concat(by_priority, "assay_fragments"),
             loading_fragments=self._concat(by_priority, "loading_fragments"),
             processing_fragments=self._concat(by_priority, "processing_fragments"),
+            hidden_vocab=self._merge_hidden_vocab(by_priority),
             provenance=self._merge_provenance(by_priority),
         )
         return merged, {"precedence": self.precedence, "conflicts": sorted(conflicts, key=lambda i: i["path"]) }
@@ -88,6 +89,14 @@ class InputMergeService:
         for bundle in bundles:
             out.extend(getattr(bundle, attr))
         return out
+
+
+    def _merge_hidden_vocab(self, bundles: list[InputDTOBundle]) -> dict[str, list[str]]:
+        merged: dict[str, set[str]] = {}
+        for bundle in bundles:
+            for key, values in bundle.hidden_vocab.items():
+                merged.setdefault(key, set()).update(str(value) for value in values if str(value).strip())
+        return {key: sorted(values) for key, values in sorted(merged.items())}
 
     def _merge_provenance(self, bundles: list[InputDTOBundle]) -> dict[str, list[Any]]:
         merged: dict[str, list[Any]] = {}

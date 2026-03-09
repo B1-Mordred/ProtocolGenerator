@@ -13,6 +13,24 @@ class DomainValidationResult:
     issues: ValidationIssueCollection
 
 
+def _source_location_from_addon(addon: AddonModel, key: str) -> str | None:
+    provenance = addon.source_metadata.get("provenance", {}) if isinstance(addon.source_metadata, dict) else {}
+    records = provenance.get(key, []) if isinstance(provenance, dict) else []
+    if not records:
+        return None
+    first = records[0]
+    if not isinstance(first, dict):
+        return None
+    bits = [str(first.get("source_file") or first.get("source_type") or "source")]
+    if first.get("source_sheet"):
+        bits.append(str(first["source_sheet"]))
+    if first.get("row") is not None:
+        bits.append(f"row={first['row']}")
+    if first.get("column"):
+        bits.append(f"col={first['column']}")
+    return ":".join(bits)
+
+
 def validate_domain(addon: AddonModel) -> DomainValidationResult:
     issues = ValidationIssueCollection()
 
@@ -76,6 +94,19 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
                     path="analytes",
                     severity=IssueSeverity.ERROR,
                     source=IssueSource.DOMAIN,
+                    entity_keys=tuple(sorted(linked_assays)),
+                    source_location=_source_location_from_addon(addon, "analytes.name"),
+                )
+            )
+            issues.add(
+                ValidationIssue(
+                    code="duplicate-analyte-incompatible-scope",
+                    message=f"Analyte '{analyte_name}' appears in incompatible assay scopes: {sorted(linked_assays)}",
+                    path="analytes",
+                    severity=IssueSeverity.ERROR,
+                    source=IssueSource.DOMAIN,
+                    entity_keys=tuple(sorted(linked_assays)),
+                    source_location=_source_location_from_addon(addon, "analytes.name"),
                 )
             )
 

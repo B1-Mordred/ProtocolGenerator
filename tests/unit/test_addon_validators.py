@@ -97,3 +97,18 @@ def test_cross_file_validator_detects_duplicates_and_broken_refs() -> None:
     assert "duplicate-analyte-unit-id" in codes
     assert "broken-assay-ref" in codes
     assert "broken-analyte-ref" in codes
+
+
+def test_cross_file_validator_detects_assay_mismatch_and_merged_identity_gap() -> None:
+    protocol = {"MethodInformation": {"Id": "", "Version": ""}, "AssayInformation": [{"Type": "CHEM"}]}
+    root = ET.fromstring("""
+<AddOn>
+  <MethodId>MID</MethodId>
+  <MethodVersion>1</MethodVersion>
+  <Assays><Assay><Id>1</Id><Name>IA</Name><Analytes /></Assay></Assays>
+</AddOn>
+    """)
+    result = validate_cross_file_consistency(protocol, root)
+    codes = {i.code for i in result.issues.issues}
+    assert "cross-file-assay-mismatch" in codes
+    assert "missing-merged-method-identity" in codes
