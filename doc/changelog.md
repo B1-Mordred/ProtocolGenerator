@@ -52,6 +52,7 @@
 - Added import/output preview models surfacing imported vs current values, provenance hints, unresolved field blockers, and export target readiness messages.
 - Added deterministic merge provenance output for protocol generation with required-field conflict/unresolved reporting and explicit precedence (`GUI > imported > config default > built-in default`).
 ### Changed
+- Fixed protocol JSON assembly to preserve direct GUI workflow section payload arrays (`LoadingWorkflowSteps`, `ProcessingWorkflowSteps`) instead of treating each step as a fragment definition.
 - Changed fixture consumption to a shared loader helper (`tests/fixture_loader.py`) so unit/integration tests materialize workbook scenarios consistently, including malformed-workbook handling and expected domain-error assertions.
 - Changed canonical import/validation/generation boundaries to enforce explicit assay↔analyte constraints, normalize/expand multi-unit inputs, and render conditional protocol behavior for multi-assay methods (`SamplesLayoutType` + per-assay processing groups).
 - Changed protocol JSON generation to resolve GUI workflow output via fragment definitions instead of direct placeholder lists, preserving deterministic precedence and schema-valid rendering.
