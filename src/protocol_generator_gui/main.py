@@ -7,6 +7,7 @@ from pathlib import Path
 from tkinter import filedialog, messagebox, ttk
 from typing import Any, Callable, Dict
 
+from addon_generator.services.generation_service import GenerationService, fragments_from_protocol_payload
 from protocol_generator_gui.schema_utils import (
     assay_information_schema,
     loading_step_types,
@@ -335,6 +336,7 @@ class ProtocolWizardApp(tk.Tk):
         self.current_tab_index = 0
         self.autosave_delay_ms = 400
         self.persistence = DraftPersistence(Path.home() / ".protocol_generator_last_draft.json")
+        self.generation_service = GenerationService()
 
         self.status = tk.StringVar(value="Not validated")
         self.autosave_status = tk.StringVar(value="Autosave idle")
@@ -429,13 +431,19 @@ class ProtocolWizardApp(tk.Tk):
             self.autosave_job = None
             self.autosave_status.set("Autosave cancelled")
 
-    def protocol_data(self) -> Dict[str, Any]:
+    def collect_ui_payload(self) -> Dict[str, Any]:
         return {
             "MethodInformation": self.method_editor.data(),
             "AssayInformation": [self.assay_editor.data()],
             "LoadingWorkflowSteps": self.loading_editor.data(processing=False),
             "ProcessingWorkflowSteps": [{"GroupDisplayName": "Default Group", "GroupIndex": 0, "GroupSteps": self.processing_editor.data(processing=True)}],
         }
+
+    def protocol_data(self) -> Dict[str, Any]:
+        payload = self.collect_ui_payload()
+        context = self.generation_service.import_from_gui_payload(payload)
+        fragments = fragments_from_protocol_payload(payload)
+        return self.generation_service.generate_protocol_json(context, fragments).payload
 
     def _focus_first_invalid(self, errors: list[tuple[str, str]]) -> None:
         if not errors:

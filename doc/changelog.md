@@ -10,6 +10,7 @@
 - Added inline validation UX including per-step completion/error indicators, top-level progress summary, and first-invalid-field focus behavior.
 - Added contextual help UX with per-step Help panels plus schema/metadata-backed field tooltips.
 - Added packaging/build scaffolding (`pyproject.toml`, `build_windows_exe.ps1`) and CI-backed pytest coverage enforcement.
+- Added canonical protocol JSON generator and generation service APIs (`import_from_excel`, `import_from_gui_payload`, `validate_domain`, `generate_analytes_xml`, `generate_protocol_json`, `generate_all`) with UI integration so Tkinter no longer assembles final JSON directly.
 
 ## Changed
 
