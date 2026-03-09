@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 from enum import Enum
+from typing import Any
 
 
 class IssueSeverity(str, Enum):
@@ -23,6 +24,9 @@ class ValidationIssue:
     path: str
     severity: IssueSeverity = IssueSeverity.ERROR
     source: IssueSource = IssueSource.VALIDATION
+    entity_keys: tuple[str, ...] = ()
+    source_location: str | None = None
+    details: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(slots=True)
