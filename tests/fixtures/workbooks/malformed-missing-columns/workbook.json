@@ -1,0 +1,9 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodDisplayName"], "rows": [["FX-BAD-COL", "Bad Columns"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType"], "rows": [["assay:bad", "CHEM"]]},
+    "Analytes": {"columns": ["AnalyteKey", "AnalyteName", "AssayInformationType"], "rows": [["analyte:bad", "CRP", "CHEM"]]},
+    "Units": {"columns": ["UnitKey", "UnitName"], "rows": [["unit:bad", "mg/dL"]]}
+  }
+}

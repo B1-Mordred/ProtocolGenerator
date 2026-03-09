@@ -3,42 +3,161 @@
     "minimal-valid": {
       "intent": "Smallest sheeted workbook that passes full import+generation pipeline.",
       "workbook": "tests/fixtures/workbooks/minimal-valid/workbook.json",
-      "expected": {"import": "success", "error_codes": []}
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
     },
     "single-assay": {
       "intent": "One assay with multiple analytes and one unit per analyte.",
       "workbook": "tests/fixtures/workbooks/single-assay/workbook.json",
-      "expected": {"import": "success", "error_codes": []}
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
     },
     "multi-assay": {
       "intent": "Two assays to exercise per-assay processing grouping behavior.",
       "workbook": "tests/fixtures/workbooks/multi-assay/workbook.json",
-      "expected": {"import": "success", "error_codes": []}
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
     },
     "multi-analyte": {
       "intent": "Single assay with three analytes and heterogeneous units.",
       "workbook": "tests/fixtures/workbooks/multi-analyte/workbook.json",
-      "expected": {"import": "success", "error_codes": []}
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
     },
     "alias-driven-mapping": {
       "intent": "Alias-style unit tokens exercise importer normalization and multi-unit splitting.",
       "workbook": "tests/fixtures/workbooks/alias-driven-mapping/workbook.json",
-      "expected": {"import": "success", "error_codes": [], "normalized_units": ["mg/dL", "µg/mL"]}
+      "expected": {
+        "import": "success",
+        "error_codes": [],
+        "normalized_units": [
+          "mg/dL",
+          "\u00b5g/mL"
+        ]
+      }
     },
     "invalid-cross-file-mapping": {
       "intent": "Analyte references a missing assay key and should fail domain linkage checks.",
       "workbook": "tests/fixtures/workbooks/invalid-cross-file-mapping/workbook.json",
-      "expected": {"import": "success", "error_codes": ["unknown-assay-key", "assay-missing-analytes"]}
+      "expected": {
+        "import": "success",
+        "error_codes": [
+          "unknown-assay-key",
+          "assay-missing-analytes"
+        ]
+      }
     },
     "invalid-units": {
       "intent": "Unit references a missing analyte key and should fail domain unit linkage checks.",
       "workbook": "tests/fixtures/workbooks/invalid-units/workbook.json",
-      "expected": {"import": "success", "error_codes": ["unknown-analyte-key", "missing-analyte-units"]}
+      "expected": {
+        "import": "success",
+        "error_codes": [
+          "unknown-analyte-key",
+          "missing-analyte-units"
+        ]
+      }
     },
     "malformed-workbook": {
       "intent": "Non-zip payload with .xlsx extension should fail workbook loading.",
       "workbook": "tests/fixtures/workbooks/malformed-workbook/not-a-workbook.xlsx",
-      "expected": {"import": "failure", "error_type": "invalid-workbook"}
+      "expected": {
+        "import": "failure",
+        "error_type": "invalid-workbook",
+        "diagnostics": [
+          {
+            "rule_id": "invalid-workbook",
+            "sheet": "(workbook)"
+          }
+        ]
+      }
+    },
+    "variant-v1-flat": {
+      "intent": "Legacy single-sheet layout should import successfully.",
+      "workbook": "tests/fixtures/workbooks/variant-v1-flat/workbook.json",
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
+    },
+    "variant-v2-extra-columns": {
+      "intent": "Sheeted layout with additive columns/blank rows should still import canonically.",
+      "workbook": "tests/fixtures/workbooks/variant-v2-extra-columns/workbook.json",
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
+    },
+    "historical-unit-pipe-delimiter": {
+      "intent": "Historical unit delimiter variants (| and commas) should split/normalize deterministically.",
+      "workbook": "tests/fixtures/workbooks/historical-unit-pipe-delimiter/workbook.json",
+      "expected": {
+        "import": "success",
+        "error_codes": [],
+        "normalized_units": [
+          "mg/dL",
+          "mmol/L",
+          "\u00b5g/mL"
+        ]
+      }
+    },
+    "malformed-missing-columns": {
+      "intent": "Missing required columns should fail with deterministic validation diagnostics.",
+      "workbook": "tests/fixtures/workbooks/malformed-missing-columns/workbook.json",
+      "expected": {
+        "import": "failure",
+        "error_type": "validation",
+        "diagnostics": [
+          {
+            "rule_id": "missing-required-column",
+            "sheet": "Method",
+            "column": "MethodVersion"
+          },
+          {
+            "rule_id": "missing-required-column",
+            "sheet": "Analytes",
+            "column": "AssayKey"
+          },
+          {
+            "rule_id": "missing-required-column",
+            "sheet": "Units",
+            "column": "AnalyteKey"
+          }
+        ]
+      }
+    },
+    "malformed-duplicate-rows": {
+      "intent": "Duplicate records in v2 sheets should fail with deterministic row metadata.",
+      "workbook": "tests/fixtures/workbooks/malformed-duplicate-rows/workbook.json",
+      "expected": {
+        "import": "failure",
+        "error_type": "validation",
+        "diagnostics": [
+          {
+            "rule_id": "duplicate-row",
+            "sheet": "Assays",
+            "row": 3
+          },
+          {
+            "rule_id": "duplicate-row",
+            "sheet": "Analytes",
+            "row": 3
+          },
+          {
+            "rule_id": "duplicate-row",
+            "sheet": "Units",
+            "row": 3
+          }
+        ]
+      }
     }
   }
 }

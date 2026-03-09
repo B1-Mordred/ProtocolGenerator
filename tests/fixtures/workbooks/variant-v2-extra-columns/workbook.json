@@ -1,0 +1,21 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {
+      "columns": ["MethodId", "MethodVersion", "MethodDisplayName", "LegacyNotes"],
+      "rows": [["FX-V2-EXTRA", "2.1", "Extra Columns", "ignored"]]
+    },
+    "Assays": {
+      "columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName", "RetiredField"],
+      "rows": [["assay:extra", "CHEM", "Chem", "CHEM", "unused"]]
+    },
+    "Analytes": {
+      "columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType", "LegacyIndex"],
+      "rows": [["analyte:extra", "ALT", "assay:extra", "CHEM", 7], ["", "", "", "", ""]]
+    },
+    "Units": {
+      "columns": ["UnitKey", "UnitName", "AnalyteKey", "PrecisionHint"],
+      "rows": [["unit:extra", "U/L", "analyte:extra", "2dp"], [null, null, null, null]]
+    }
+  }
+}

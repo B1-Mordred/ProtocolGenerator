@@ -15,8 +15,13 @@ This directory groups workbook fixture sets used by importer/generation integrat
 - `multi-assay`: two assays for multi-group processing behavior.
 - `multi-analyte`: one assay with many analytes.
 - `alias-driven-mapping`: unit alias normalization and split coverage (`mg/dl; ug/ml`).
+- `variant-v1-flat`: legacy single-sheet layout variant (`v1-flat`).
+- `variant-v2-extra-columns`: sheeted layout variant with additive historical columns and blank rows.
+- `historical-unit-pipe-delimiter`: legacy mixed unit delimiters (`|`, `,`, `;`) normalized at import.
 - `invalid-cross-file-mapping`: analyte references unknown assay key.
 - `invalid-units`: unit references unknown analyte key.
+- `malformed-missing-columns`: deterministic required-column validation diagnostics.
+- `malformed-duplicate-rows`: deterministic duplicate-row diagnostics with row metadata.
 - `malformed-workbook`: unreadable `.xlsx` binary.
 
 Expected outcomes are encoded in `index.json` and consumed by `tests/fixture_loader.py`.

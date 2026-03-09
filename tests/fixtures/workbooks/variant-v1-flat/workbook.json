@@ -1,0 +1,11 @@
+{
+  "layout": "v1-flat",
+  "sheets": {
+    "Legacy": {
+      "columns": ["MethodId", "MethodVersion", "AssayKey", "ProtocolType", "AnalyteKey", "AnalyteName", "UnitKey", "UnitName"],
+      "rows": [
+        ["FX-V1", "1.0", "assay:legacy", "CHEM", "analyte:legacy", "GLU", "unit:legacy", "mg/dL"]
+      ]
+    }
+  }
+}

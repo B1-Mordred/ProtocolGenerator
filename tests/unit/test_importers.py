@@ -154,6 +154,30 @@ def test_fixture_alias_mapping_normalizes_and_splits_units(tmp_path) -> None:
     assert units == ["mg/dL", "µg/mL"]
 
 
+@pytest.mark.parametrize(
+    "scenario",
+    ["minimal-valid", "single-assay", "multi-assay", "multi-analyte", "variant-v1-flat", "variant-v2-extra-columns"],
+)
+def test_fixture_variant_success_matrix_imports(scenario: str, tmp_path) -> None:
+    workbook_path = materialize_workbook_fixture(scenario, tmp_path)
+
+    addon = ExcelImporter().import_workbook(workbook_path)
+
+    assert addon.method is not None
+    assert addon.assays
+    assert addon.analytes
+
+
+@pytest.mark.parametrize("scenario", ["alias-driven-mapping", "historical-unit-pipe-delimiter"])
+def test_fixture_variant_unit_normalization_matrix(scenario: str, tmp_path) -> None:
+    workbook_path = materialize_workbook_fixture(scenario, tmp_path)
+    addon = ExcelImporter().import_workbook(workbook_path)
+
+    units = sorted(unit.name for unit in addon.units)
+    expected_units = sorted(fixture_metadata(scenario)["expected"]["normalized_units"])
+    assert units == expected_units
+
+
 def test_fixture_invalid_cross_file_mapping_surfaces_domain_issues(tmp_path) -> None:
     from addon_generator.validation.domain_validator import validate_domain
 
@@ -188,12 +212,27 @@ def test_fixture_index_contains_expected_scenarios() -> None:
         "alias-driven-mapping",
         "invalid-cross-file-mapping",
         "invalid-units",
+        "variant-v1-flat",
+        "variant-v2-extra-columns",
+        "historical-unit-pipe-delimiter",
+        "malformed-missing-columns",
+        "malformed-duplicate-rows",
         "malformed-workbook",
     }.issubset(set(data))
 
 
-def test_fixture_malformed_workbook_fails_import(tmp_path) -> None:
-    workbook_path = materialize_workbook_fixture("malformed-workbook", tmp_path)
+@pytest.mark.parametrize("scenario", ["malformed-missing-columns", "malformed-duplicate-rows", "malformed-workbook"])
+def test_fixture_malformed_workbook_failure_diagnostics_matrix(scenario: str, tmp_path) -> None:
+    pytest.importorskip("openpyxl")
+    workbook_path = materialize_workbook_fixture(scenario, tmp_path)
+    expected_diagnostics = fixture_metadata(scenario)["expected"].get("diagnostics", [])
 
-    with pytest.raises(Exception):
+    with pytest.raises(ExcelImportValidationError) as exc_info:
         ExcelImporter().import_workbook(workbook_path)
+
+    diagnostics = exc_info.value.to_dict()["diagnostics"]
+    for expected in expected_diagnostics:
+        assert any(
+            all(actual.get(key) == value for key, value in expected.items())
+            for actual in diagnostics
+        ), f"Missing expected diagnostic for {scenario}: {expected}"

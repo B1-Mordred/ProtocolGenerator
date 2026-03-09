@@ -183,7 +183,21 @@ class ExcelImporter:
     def _parse_workbook_rows(self, excel_path: str | Path) -> dict[str, Any]:
         from openpyxl import load_workbook  # type: ignore
 
-        wb = load_workbook(Path(excel_path), data_only=True)
+        workbook_path = Path(excel_path)
+        try:
+            wb = load_workbook(workbook_path, data_only=True)
+        except Exception as exc:
+            raise ExcelImportValidationError(
+                "Workbook could not be opened",
+                [
+                    ImportDiagnostic(
+                        rule_id="invalid-workbook",
+                        message="Workbook payload is not a readable .xlsx archive",
+                        sheet="(workbook)",
+                        value={"path": str(workbook_path), "error_type": type(exc).__name__},
+                    )
+                ],
+            ) from exc
         layout_version = self._detect_layout_version(wb.sheetnames)
         if layout_version == "v2-sheeted":
             return self._parse_v2_workbook(wb)
