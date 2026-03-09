@@ -1,58 +1,266 @@
 <?xml version="1.0" encoding="utf-8"?>
-<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
-  <xs:element name="AddOn">
-    <xs:complexType>
-      <xs:sequence>
-        <xs:element name="Id" type="xs:int"/>
-        <xs:element name="MethodId" type="xs:string" minOccurs="0"/>
-        <xs:element name="MethodVersion" type="xs:string" minOccurs="0"/>
-        <xs:element name="Assays" minOccurs="0">
-          <xs:complexType>
-            <xs:sequence>
-              <xs:element name="Assay" minOccurs="0" maxOccurs="unbounded">
-                <xs:complexType>
-                  <xs:sequence>
-                    <xs:element name="Id" type="xs:int"/>
-                    <xs:element name="Name" type="xs:string" minOccurs="0"/>
-                    <xs:element name="AddOnRef" type="xs:int"/>
-                    <xs:element name="Analytes" minOccurs="0">
-                      <xs:complexType>
-                        <xs:sequence>
-                          <xs:element name="Analyte" minOccurs="0" maxOccurs="unbounded">
-                            <xs:complexType>
-                              <xs:sequence>
-                                <xs:element name="Id" type="xs:int"/>
-                                <xs:element name="Name" type="xs:string" minOccurs="0"/>
-                                <xs:element name="AssayRef" type="xs:int"/>
-                                <xs:element name="AnalyteUnits" minOccurs="0">
-                                  <xs:complexType>
-                                    <xs:sequence>
-                                      <xs:element name="AnalyteUnit" minOccurs="0" maxOccurs="unbounded">
-                                        <xs:complexType>
-                                          <xs:sequence>
-                                            <xs:element name="Id" type="xs:int"/>
-                                            <xs:element name="Name" type="xs:string" minOccurs="0"/>
-                                            <xs:element name="AnalyteRef" type="xs:int"/>
-                                          </xs:sequence>
-                                        </xs:complexType>
-                                      </xs:element>
-                                    </xs:sequence>
-                                  </xs:complexType>
-                                </xs:element>
-                                <xs:element name="AssayInformationType" type="xs:string" minOccurs="0"/>
-                              </xs:sequence>
-                            </xs:complexType>
-                          </xs:element>
-                        </xs:sequence>
-                      </xs:complexType>
-                    </xs:element>
-                  </xs:sequence>
-                </xs:complexType>
-              </xs:element>
-            </xs:sequence>
-          </xs:complexType>
-        </xs:element>
-      </xs:sequence>
-    </xs:complexType>
-  </xs:element>
+<xs:schema elementFormDefault="qualified" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<xs:element name="AddOn" nillable="true" type="AddOn" />
+	<xs:complexType name="AddOn">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="Id" type="xs:int" />
+			<xs:element minOccurs="0" maxOccurs="1" name="MethodId" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="MethodVersion" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="SampleTubeTypes" type="ArrayOfSampleTubeType" />
+			<xs:element minOccurs="0" maxOccurs="1" name="MeasurementSampleLists" type="ArrayOfMeasurementSampleList" />
+			<xs:element minOccurs="0" maxOccurs="1" name="RunResultsExportPath" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="Assays" type="ArrayOfAssay" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfSampleTubeType">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="SampleTubeType" nillable="true" type="SampleTubeType" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="SampleTubeType">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="Id" type="xs:int" />
+			<xs:element minOccurs="0" maxOccurs="1" name="DisplayName" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="BarcodeMask" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="FullFilename" type="xs:string" />
+			<xs:element minOccurs="1" maxOccurs="1" name="SampleCarrierType" type="SampleCarrierType" />
+			<xs:element minOccurs="0" maxOccurs="1" name="BarcodeRegex" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="GeneralConfigs" type="ArrayOfGeneralConfiguration" />
+			<xs:element minOccurs="0" maxOccurs="1" name="AddOns" type="ArrayOfAddOn" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="SampleCarrierType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Undefined" />
+			<xs:enumeration value="Positions24" />
+			<xs:enumeration value="Positions32" />
+			<xs:enumeration value="ErrorCarrierPositions24" />
+			<xs:enumeration value="ErrorCarrierPositions32" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="ArrayOfGeneralConfiguration">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="GeneralConfiguration" nillable="true" type="GeneralConfiguration" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="GeneralConfiguration">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="Id" type="xs:int" />
+			<xs:element minOccurs="0" maxOccurs="1" name="Version" type="xs:string" />
+			<xs:element minOccurs="0" maxOccurs="1" name="SampleTubeTypes" type="ArrayOfSampleTubeType" />
+			<xs:element minOccurs="1" maxOccurs="1" name="IsRequestListUsed" type="xs:boolean" />
+			<xs:element minOccurs="0" maxOccurs="1" name="RequestListFilePath" type="xs:string" />
+			<xs:element minOccurs="1" maxOccurs="1" name="IsLimsFileUsed" type="xs:boolean" />
+			<xs:element minOccurs="0" maxOccurs="1" name="LimsFilePath" type="xs:string" />
+			<xs:element minOccurs="1" maxOccurs="1" name="ValidateRequestList" type="xs:boolean" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfAddOn">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="AddOn" nillable="true" type="AddOn" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<!-- New: ArrayOfAssay / Assay -->
+	<xs:complexType name="ArrayOfAssay">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="Assay" nillable="true" type="Assay" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="Assay">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="AddOnRef" type="xs:int" />
+					<xs:element minOccurs="0" maxOccurs="1" name="Analytes" type="ArrayOfAnalyte" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="ArrayOfMeasurementSampleList">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="MeasurementSampleList" nillable="true" type="MeasurementSampleList" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="MeasurementSampleList">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="AddOnRef" type="xs:int" />
+					<xs:element minOccurs="0" maxOccurs="1" name="ExportPath" type="xs:string" />
+					<xs:element minOccurs="0" maxOccurs="1" name="Header" type="xs:string" />
+					<xs:element minOccurs="0" maxOccurs="1" name="Footer" type="xs:string" />
+					<xs:element minOccurs="0" maxOccurs="1" name="AdditionalInjections" type="ArrayOfAdditionalInjection" />
+					<xs:element minOccurs="0" maxOccurs="1" name="WarmUps" type="ArrayOfWarmUp" />
+					<xs:element minOccurs="0" maxOccurs="1" name="ParameterMappings" type="ArrayOfMeasurementSampleListItem" />
+					<xs:element minOccurs="1" maxOccurs="1" name="DelimiterType" type="DelimiterType" />
+					<xs:element minOccurs="1" maxOccurs="1" name="FileType" type="FileType" />
+					<xs:element minOccurs="1" maxOccurs="1" name="IsSelected" type="xs:boolean" />
+					<xs:element minOccurs="0" maxOccurs="1" name="Assay" type="xs:string" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="NamedItemOfInt32">
+		<xs:sequence>
+			<xs:element minOccurs="1" maxOccurs="1" name="Id" type="xs:int" />
+			<xs:element minOccurs="0" maxOccurs="1" name="Name" type="xs:string" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="AnalyteUnit">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="AnalyteRef" type="xs:int" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<!-- Modified Analyte: now references AssayRef and may include AssayInformationType -->
+	<xs:complexType name="Analyte">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="AssayRef" type="xs:int" />
+					<xs:element minOccurs="0" maxOccurs="1" name="AnalyteUnits" type="ArrayOfAnalyteUnit" />
+					<xs:element minOccurs="0" maxOccurs="1" name="AssayInformationType" type="xs:string" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:complexType name="ArrayOfAnalyteUnit">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="AnalyteUnit" nillable="true" type="AnalyteUnit" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfAnalyte">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="Analyte" nillable="true" type="Analyte" />
+		</xs:sequence>
+	</xs:complexType>
+
+	<xs:complexType name="MeasurementSampleListItemComponent">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="MeasurementSampleListItemRef" type="xs:int" />
+					<xs:element minOccurs="1" maxOccurs="1" name="MeasurementSampleListComponentType" type="MeasurementSampleListComponentType" />
+					<xs:element minOccurs="0" maxOccurs="1" name="Value" type="xs:string" />
+					<xs:element minOccurs="0" maxOccurs="1" name="Parameter" type="xs:string" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+
+	<xs:simpleType name="MeasurementSampleListComponentType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Undefined" />
+			<xs:enumeration value="StaticText" />
+			<xs:enumeration value="SampleId" />
+			<xs:enumeration value="SampleType" />
+			<xs:enumeration value="FinalPlateBarcode" />
+			<xs:enumeration value="RunTimeStamp" />
+			<xs:enumeration value="UserName" />
+			<xs:enumeration value="AnalyteConcentration" />
+			<xs:enumeration value="SamplePosition" />
+			<xs:enumeration value="Level" />
+			<xs:enumeration value="State" />
+			<!-- Added entries to match C# enum -->
+			<xs:enumeration value="SourcePosition" />
+			<xs:enumeration value="DilutionFactor" />
+		</xs:restriction>
+	</xs:simpleType>
+
+	<xs:complexType name="MeasurementSampleListItem">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="0" maxOccurs="1" name="Components" type="ArrayOfMeasurementSampleListItemComponent" />
+					<xs:element minOccurs="1" maxOccurs="1" name="MeasurementSampleListRef" type="xs:int" />
+					<xs:element minOccurs="1" maxOccurs="1" name="Position" type="xs:int" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfMeasurementSampleListItemComponent">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="MeasurementSampleListItemComponent" nillable="true" type="MeasurementSampleListItemComponent" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="WarmUp">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="RequiredItemType" type="REQUIRED_ITEM_TYPE" />
+					<xs:element minOccurs="1" maxOccurs="1" name="Level" type="xs:int" />
+					<xs:element minOccurs="1" maxOccurs="1" name="MeasurementSampleListRef" type="xs:int" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:simpleType name="REQUIRED_ITEM_TYPE">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Undefined" />
+			<xs:enumeration value="Calibrator" />
+			<xs:enumeration value="Control" />
+			<xs:enumeration value="Reagent" />
+			<xs:enumeration value="Plate" />
+			<xs:enumeration value="TipRack" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:complexType name="AdditionalInjection">
+		<xs:complexContent mixed="false">
+			<xs:extension base="NamedItemOfInt32">
+				<xs:sequence>
+					<xs:element minOccurs="1" maxOccurs="1" name="Frequency" type="xs:int" />
+					<xs:element minOccurs="1" maxOccurs="1" name="Offset" type="xs:int" />
+					<xs:element minOccurs="1" maxOccurs="1" name="Prepend" type="xs:boolean" />
+					<xs:element minOccurs="1" maxOccurs="1" name="Append" type="xs:boolean" />
+					<xs:element minOccurs="0" maxOccurs="1" name="DisplayName" type="xs:string" />
+					<xs:element minOccurs="1" maxOccurs="1" name="RequiredItemType" type="REQUIRED_ITEM_TYPE" />
+					<xs:element minOccurs="1" maxOccurs="1" name="Level" type="xs:int" />
+					<xs:element minOccurs="1" maxOccurs="1" name="MeasurementSampleListRef" type="xs:int" />
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfAdditionalInjection">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="AdditionalInjection" nillable="true" type="AdditionalInjection" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfWarmUp">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="WarmUp" nillable="true" type="WarmUp" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="ArrayOfMeasurementSampleListItem">
+		<xs:sequence>
+			<xs:element minOccurs="0" maxOccurs="unbounded" name="MeasurementSampleListItem" nillable="true" type="MeasurementSampleListItem" />
+		</xs:sequence>
+	</xs:complexType>
+	<xs:simpleType name="DelimiterType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Undefined" />
+			<xs:enumeration value="Semicolon" />
+			<xs:enumeration value="Comma" />
+			<xs:enumeration value="Blank" />
+			<xs:enumeration value="Tab" />
+		</xs:restriction>
+	</xs:simpleType>
+	<xs:simpleType name="FileType">
+		<xs:restriction base="xs:string">
+			<xs:enumeration value="Undefined" />
+			<xs:enumeration value="Csv" />
+			<xs:enumeration value="Txt" />
+			<xs:enumeration value="Xlsx" />
+			<xs:enumeration value="Json" />
+			<xs:enumeration value="Xml" />
+		</xs:restriction>
+	</xs:simpleType>
+	
 </xs:schema>
