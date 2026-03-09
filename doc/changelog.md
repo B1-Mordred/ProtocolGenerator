@@ -48,6 +48,7 @@
 
 - Changed addon generation architecture to canonical `AddonModel` + mapping resolver; generation now produces XSD-shaped `Analytes.xml` and method-linked `ProtocolFile.json` with deterministic IDs.
 - Changed test fixtures to enforce deterministic ordering and stable output diffs for addon XML/JSON generation.
+- Changed `doc/implementation-plan.md` Task 1.4 to split E2.1–E2.5 execution details, add explicit E2.4 UI display areas, align acceptance criteria wording to backlog requirements, and enumerate E2.4 assertions in wizard/validation test plans.
 ### Added
 - Added addon validation modules (`domain_validator`, `protocol_schema_validator`, `xsd_validator`, `cross_file_validator`) with hard-failure checks (linkage/ref/duplicate/uniqueness/schema/XSD) and warning-level quality checks, all returning structured issue metadata.
 - Introduced `src/addon_generator/importers/` with Excel, GUI, and XML importers that normalize inputs into `AddonModel`/`ProtocolContextModel` and optionally attach loading/processing/dilution/reagent/calibrator/control context fragments for downstream generation (PR pending).

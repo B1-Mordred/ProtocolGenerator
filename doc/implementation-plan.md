@@ -68,6 +68,8 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 
 ### Task 1.4 — New GUI shell + editors + preview/export (E2.1–E2.5)
 **Implementation steps**
+
+**E2.1 — Build new GUI shell**
 1. Refactor `src/protocol_generator_gui/main.py` into task-oriented flow:
    - method setup,
    - assay/analyte setup,
@@ -75,17 +77,59 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
    - validation,
    - output preview/export.
 2. Bind GUI state to canonical DTO/model adapters; add serialize/restore draft support.
-3. Add method editor fields + validation hooks.
-4. Add assay/analyte editor with relationship integrity checks.
-5. Add output preview panels for `Analytes.xml` and `ProtocolFile.json`.
+
+**E2.2 — Add method editor**
+3. Add method editor fields + validation hooks for method id, version, and display name.
+4. Ensure method identity changes are reflected in preview surfaces before export.
+
+**E2.3 — Add assay/analyte editor**
+5. Add assay/analyte editor with relationship integrity checks (orphan prevention, duplicate/ambiguous mapping warnings).
+6. Keep unit assignment and alias-editing paths in canonical-state sync for downstream generation.
+
+**E2.4 — Add import preview and conflict resolution UI**
+7. Add a dedicated import preview/conflict panel that explicitly presents:
+   - imported values,
+   - overridden values,
+   - unresolved fields,
+   - validation errors/warnings,
+   - provenance visibility where practical.
+8. Add interaction affordances so users can resolve import conflicts before generation and clear unresolved required-field blockers.
+9. Ensure conflict and provenance state is deterministic and preserved across navigation/draft restore.
+
+**E2.5 — Add output preview/export UI**
+10. Add output preview panels for `Analytes.xml` and `ProtocolFile.json` plus validation status and export target selection.
+11. Block export while unresolved required fields/conflicts remain, with actionable messages linked back to editor/import screens.
+
+**Acceptance criteria**
+- user can create an addon without touching protocol-schema fields directly
+- GUI state can be serialized/restored for draft workflows
+- navigation supports validation-aware progression
+- user can inspect and resolve import conflicts before generation
+- unresolved required fields are clearly highlighted
+- field provenance is visible where practical
+- validation failures block export with actionable messages
+- previews reflect the latest merged canonical model state
 
 **Tests**
-- Extend `tests/test_wizard_logic.py`, `tests/integration/test_wizard_flow.py`, and `tests/test_validation.py` for navigation gating, required fields, conflict visibility, and export blocking.
+- Extend `tests/test_wizard_logic.py` with assertions for E2.4 behavior:
+  - imported values are shown in the import preview state,
+  - overridden values are flagged as overrides,
+  - unresolved fields are listed and required unresolved fields gate generation,
+  - validation errors/warnings are surfaced in the wizard state,
+  - provenance metadata is attached where practical.
+- Extend `tests/integration/test_wizard_flow.py` with assertions for E2.4 behavior:
+  - user can inspect and resolve import conflicts before generation,
+  - unresolved required fields are clearly highlighted during flow progression,
+  - generation/export remains blocked until conflicts/unresolved required fields are resolved,
+  - resolved flow reaches successful preview/export.
+- Extend `tests/test_validation.py` with assertions for E2.4 behavior:
+  - unresolved required fields produce explicit validation findings,
+  - import conflict states emit actionable validation errors/warnings,
+  - provenance-linked findings retain field identifiers needed by the UI.
 
 **Executable checks**
 - `pytest tests/test_wizard_logic.py tests/integration/test_wizard_flow.py tests/test_validation.py -q`
 
----
 
 ### Task 1.5 — Semantic validation layer completion (E5.1–E5.3)
 **Implementation steps**
