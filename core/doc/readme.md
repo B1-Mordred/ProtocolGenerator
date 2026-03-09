@@ -78,6 +78,7 @@ pytest --cov=addon_generator --cov-report=term-missing --cov-fail-under=70
 - `mapping/field_path.py`: safe dotted/bracket path parser and accessor (`a.b[0].c`).
 - `mapping/normalizers.py`: match normalizers (trim, whitespace collapse, case-fold) and combined normalized token generation.
 - `mapping/config_loader.py`: v1 mapping config loader + safety validation (unknown modes, invalid paths, ambiguous projections, alias contradictions).
+- `config/models.py` + `config/schema_validator.py`: typed mapping-schema models and strict YAML parsing/validation with actionable errors for unknown keys, invalid field-path syntax, unsupported modes/strategies, and missing required sections.
 - `mapping/link_resolver.py`: projection APIs (`assign_ids`, `resolve_method_projection`, `resolve_assay_projection`, `resolve_analyte_projection`, `validate_cross_file_linkage`) supporting `exact`, `normalized`, `alias_map`, and `explicit_key` matching modes.
 - `config/mapping.v1.yaml`: baseline v1 defaults and ID strategy configuration.
 
