@@ -12,6 +12,7 @@ The app is a Tkinter desktop wizard with a schema-driven form engine.
 - **Validation engine:** `src/protocol_generator_gui/validation.py`
 - **Wizard UX logic helpers:** `src/protocol_generator_gui/wizard_logic.py`
 - Mapping config contract reference for addon generation: `doc/mapping-config-reference.md`
+- Canonical addon entity/reference contract: `doc/canonical-model-reference.md`
 - **Persistence/autosave:** `src/protocol_generator_gui/persistence.py`
 
 Runtime flow:
@@ -136,3 +137,5 @@ pytest
 ## 8) Addon mapping config reference
 
 For mapping-loader/validator-consumed config sections, field-path rules, matching modes, fallback behavior, and ID assignment semantics, see `doc/mapping-config-reference.md`.
+
+For canonical addon entities, required vs optional fields, identity/defaulting semantics, and projection-to-output rules, see `doc/canonical-model-reference.md`.
