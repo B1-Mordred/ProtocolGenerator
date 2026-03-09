@@ -139,6 +139,7 @@
 
 ### Changed
 - Refactored the Dilutions UI into a split table/detail workflow backed by a screen-level view model with dilution CRUD/duplicate/reset operations, provenance/effective metadata, reference-used indicators, and incomplete/invalid-ratio validation states that flow through merge recomputation and stale preview/validation flags.
+- Implemented an Import Review split layout with dedicated review-row modeling, filterable review states (All/Conflicts/Overrides/Missing Required/Imported Only), resolution actions, and owner-navigation callbacks that route through merge recomputation and stale validation/preview invalidation.
 
 ### Fixed
 - Hardened `GenerationService._dto_bundle_from_addon()` to treat nullable source metadata collections (`sample_prep_steps`, `dilution_schemes`, `hidden_vocab`, `provenance`) as empty structures, preventing `NoneType` iteration crashes in generation flows.
