@@ -112,3 +112,4 @@ Core now includes a canonical `addon_generator` pipeline:
 - Workbook-template Basics parsing now preserves method identity metadata while computing duplicate assay keys, preventing tuple-vs-mapping crashes during template import flows.
 - Workbook-template import now tolerates sparse blank rows in component sheets, falls back `Xml Assay Name` from `Protocol Display Name` when absent, and retains unlinked v2 records so domain linkage validators report precise cross-file diagnostics instead of collapsing into missing-method fallout.
 - V2 row normalization now only materializes assay definitions when assay identity fields are present, so analyte-only dangling assay keys remain dangling and are surfaced by domain validators as linkage errors.
+- Domain validation now reports direct analyte linkage errors before downstream assay coverage fallout for stable, root-cause-first diagnostics in invalid workbook scenarios.
