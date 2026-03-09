@@ -212,6 +212,7 @@ class ExcelImporter:
                     protocol_type=self._to_string(row.get("ProtocolType")),
                     protocol_display_name=self._to_string(row.get("AssayDisplayName")),
                     xml_name=self._to_string(row.get("XmlAssayName")),
+                    fallback_order={"xml_name": ("protocol_display_name", "protocol_type")},
                 )
                 if any((protocol_type, protocol_display_name, xml_name)):
                     payload["assays"].append(
@@ -395,8 +396,9 @@ class ExcelImporter:
 
     def _parse_sheet_rows(self, sheet: Any, layout_version: str, diagnostics: list[ImportDiagnostic]) -> list[dict[str, Any]]:
         headers, header_map = self._sheet_headers(sheet)
+        before_count = len(diagnostics)
         self._validate_required_columns(layout_version, sheet.title, headers, diagnostics)
-        if diagnostics:
+        if len(diagnostics) > before_count:
             return []
         mapping = self.COLUMN_MAPPINGS[layout_version][sheet.title]
         records: list[dict[str, Any]] = []

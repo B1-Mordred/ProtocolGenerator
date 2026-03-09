@@ -131,6 +131,7 @@
 - Adjusted domain-validation issue ordering so analyte linkage failures (`unknown-assay-key`) are emitted before derived assay coverage fallout (`assay-missing-analytes`), restoring deterministic fixture error-order expectations.
 - Updated `GenerationService` issue sorting to preserve insertion order within each severity/phase bucket, preventing alphabetical reordering from masking root-cause diagnostics (e.g., `unknown-assay-key` before `assay-missing-analytes`).
 - Fixed v2 workbook normalization to avoid synthesizing analyte records from unit-only rows; dangling unit references now correctly surface `unknown-analyte-key` without introducing spurious `empty-analyte-name`/`unknown-assay-key` noise.
+- Fixed Excel importer normalization and v2 sheet parsing regressions by restoring assay `xml_name` fallback from `ProtocolType` when `XmlAssayName` is absent and by continuing duplicate-row detection per sheet even after prior diagnostics are recorded.
 - Updated workflow assembly so loading steps no longer emit empty `StepParameters` objects and fragment-only processing group descriptors remain deterministic without schema-breaking placeholder step payloads.
 - Updated protocol JSON generator fragment rendering expectations to match the normalized loading-step contract (no empty parameter maps) and keep deterministic workflow merge assertions stable.
 
