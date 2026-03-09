@@ -19,6 +19,7 @@ class ProtocolJsonGenerationResult:
 
 class ProtocolJsonGenerator:
     REQUIRED_METHOD_FIELDS = ("Id", "DisplayName", "Version", "MainTitle", "SubTitle", "OrderNumber")
+    VALID_SAMPLES_LAYOUT_TYPES = {"SAMPLES_LAYOUT_COMBINED", "SAMPLES_LAYOUT_SPLIT"}
 
     def __init__(self, resolver: LinkResolver):
         self.resolver = resolver
@@ -70,6 +71,13 @@ class ProtocolJsonGenerator:
     def _build_method_information(self, addon: AddonModel, defaults: dict[str, Any]) -> dict[str, Any]:
         projection = self.resolver.resolve_method_projection(addon)
         method = addon.method
+        configured_samples_layout = defaults.get("SamplesLayoutType")
+        if len(addon.assays) > 1:
+            samples_layout_type = configured_samples_layout or "SAMPLES_LAYOUT_SPLIT"
+        else:
+            samples_layout_type = "SAMPLES_LAYOUT_COMBINED"
+        if samples_layout_type not in self.VALID_SAMPLES_LAYOUT_TYPES:
+            samples_layout_type = "SAMPLES_LAYOUT_COMBINED"
         return {
             "Id": projection.protocol_id,
             "DisplayName": self._resolve_required_default(method.display_name if method else None, defaults.get("DisplayName"), "Method"),
@@ -80,7 +88,7 @@ class ProtocolJsonGenerator:
             "MaximumNumberOfSamples": int(defaults.get("MaximumNumberOfSamples", 1)),
             "MaximumNumberOfProcessingCycles": int(defaults.get("MaximumNumberOfProcessingCycles", 1)),
             "MaximumNumberOfAssays": max(1, int(defaults.get("MaximumNumberOfAssays", len(addon.assays) if addon.assays else 1))),
-            "SamplesLayoutType": "SAMPLES_LAYOUT_SEPARATE" if len(addon.assays) > 1 else defaults.get("SamplesLayoutType", "SAMPLES_LAYOUT_COMBINED"),
+            "SamplesLayoutType": samples_layout_type,
             "MethodInformationType": defaults.get("MethodInformationType", "REGULAR"),
         }
 

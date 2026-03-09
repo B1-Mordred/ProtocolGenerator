@@ -62,3 +62,9 @@ def test_config_loader_parses_yaml_without_pyyaml(monkeypatch):
     cfg = load_mapping_config("config/mapping.v1.yaml")
     assert cfg.raw["version"] == 1
     assert cfg.raw["protocol_defaults"]["method_information"]["DisplayName"] == "Method"
+
+def test_config_validation_rejects_invalid_samples_layout_type() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml").raw
+    cfg["protocol_defaults"]["method_information"]["SamplesLayoutType"] = "SAMPLES_LAYOUT_SEPARATE"
+    with pytest.raises(MappingConfigError, match="protocol_defaults.method_information.SamplesLayoutType"):
+        validate_mapping_config(cfg)

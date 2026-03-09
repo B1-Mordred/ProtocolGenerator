@@ -131,7 +131,7 @@ def test_generation_pipeline_multi_assay_processing_groups() -> None:
 
     result = service.generate_all(addon)
 
-    assert result.protocol_json["MethodInformation"]["SamplesLayoutType"] == "SAMPLES_LAYOUT_SEPARATE"
+    assert result.protocol_json["MethodInformation"]["SamplesLayoutType"] == "SAMPLES_LAYOUT_SPLIT"
     assert len(result.protocol_json["ProcessingWorkflowSteps"]) == 2
     assert {step["GroupDisplayName"] for step in result.protocol_json["ProcessingWorkflowSteps"]} == {"Chem", "Immuno"}
 

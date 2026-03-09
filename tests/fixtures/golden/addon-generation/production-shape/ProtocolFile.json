@@ -117,7 +117,7 @@
     "MaximumNumberOfSamples": 1,
     "MethodInformationType": "REGULAR",
     "OrderNumber": "O-1",
-    "SamplesLayoutType": "SAMPLES_LAYOUT_SEPARATE",
+    "SamplesLayoutType": "SAMPLES_LAYOUT_SPLIT",
     "SubTitle": "Sub",
     "Version": "5.4"
   },

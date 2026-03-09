@@ -119,3 +119,8 @@
 
 - Changed addon generation architecture to canonical `AddonModel` + mapping resolver; generation now produces XSD-shaped `Analytes.xml` and method-linked `ProtocolFile.json` with deterministic IDs.
 - Refactored `GenerationService` import entrypoints to delegate domain mapping to the new importer layer (PR pending).
+
+## Unreleased
+
+### Fixed
+- Stopped emitting invalid `MethodInformation.SamplesLayoutType` (`SAMPLES_LAYOUT_SEPARATE`) during protocol generation; multi-assay output now uses schema-allowed values and mapping validation now rejects invalid `protocol_defaults.method_information.SamplesLayoutType`.
