@@ -129,6 +129,7 @@
 - Restored workbook-template parser parity by allowing sparse/blank interstitial rows (without terminating parsing), adding assay XML-name fallback (`Protocol Display Name` when `Xml Assay Name` is absent), and preserving unlinked v2 sheet records so expected domain linkage errors (`unknown-assay-key`, `assay-missing-analytes`, `unknown-analyte-key`) surface correctly.
 - Fixed v2 workbook normalization to avoid auto-promoting analyte-only `AssayKey` values into assay definitions when assay identity fields are missing, restoring expected `unknown-assay-key` diagnostics for invalid linkage fixtures.
 - Adjusted domain-validation issue ordering so analyte linkage failures (`unknown-assay-key`) are emitted before derived assay coverage fallout (`assay-missing-analytes`), restoring deterministic fixture error-order expectations.
+- Updated `GenerationService` issue sorting to preserve insertion order within each severity/phase bucket, preventing alphabetical reordering from masking root-cause diagnostics (e.g., `unknown-assay-key` before `assay-missing-analytes`).
 - Updated workflow assembly so loading steps no longer emit empty `StepParameters` objects and fragment-only processing group descriptors remain deterministic without schema-breaking placeholder step payloads.
 - Updated protocol JSON generator fragment rendering expectations to match the normalized loading-step contract (no empty parameter maps) and keep deterministic workflow merge assertions stable.
 

@@ -1,3 +1,4 @@
+from addon_generator.domain.issues import IssueSeverity, IssueSource, ValidationIssue
 from addon_generator.input_models.dtos import DilutionSchemeInputDTO, InputDTOBundle
 from addon_generator.services.generation_service import GenerationService
 
@@ -93,3 +94,16 @@ def test_dto_bundle_builder_ignores_non_mapping_source_metadata_values() -> None
     assert bundle.dilution_schemes == []
     assert bundle.hidden_vocab == {}
     assert bundle.provenance == {}
+
+
+def test_sort_issues_preserves_insertion_order_within_phase_and_severity() -> None:
+    service = GenerationService()
+    staged = [
+        ("domain", ValidationIssue(code="b", message="", path="x", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN)),
+        ("domain", ValidationIssue(code="a", message="", path="x", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN)),
+        ("projection", ValidationIssue(code="z", message="", path="x", severity=IssueSeverity.ERROR, source=IssueSource.VALIDATION)),
+    ]
+
+    sorted_issues = service._sort_issues(staged)
+
+    assert [issue.code for issue in sorted_issues] == ["b", "a", "z"]

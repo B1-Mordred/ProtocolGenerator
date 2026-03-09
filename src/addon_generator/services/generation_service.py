@@ -139,18 +139,16 @@ class GenerationService:
         severity_priority = {"error": 0, "warning": 1, "info": 2}
         phase_priority = {"domain": 0, "linkage": 1, "projection": 2}
 
-        def _issue_key(item: tuple[str, ValidationIssue]) -> tuple[Any, ...]:
-            phase, issue = item
+        def _issue_key(item: tuple[int, tuple[str, ValidationIssue]]) -> tuple[Any, ...]:
+            index, (phase, issue) = item
             return (
                 severity_priority.get(issue.severity.value, 99),
                 phase_priority.get(phase, 99),
-                issue.code,
-                issue.path,
-                issue.source_location or "",
-                issue.entity_keys,
+                index,
             )
 
-        return [issue for _, issue in sorted(staged_issues, key=_issue_key)]
+        ordered = sorted(enumerate(staged_issues), key=_issue_key)
+        return [issue for _, (_, issue) in ordered]
 
     def _dto_bundle_from_addon(self, addon: AddonModel) -> InputDTOBundle:
         from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, DilutionSchemeInputDTO, SamplePrepStepInputDTO
