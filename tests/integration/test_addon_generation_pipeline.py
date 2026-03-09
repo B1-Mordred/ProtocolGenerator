@@ -1,7 +1,23 @@
+import json
+from pathlib import Path
+from xml.etree import ElementTree as ET
+
 import pytest
 
 from addon_generator.services.generation_service import GenerationService
 from fixture_loader import fixture_metadata, materialize_workbook_fixture
+
+
+GOLDEN_ROOT = Path(__file__).resolve().parent.parent / "fixtures" / "golden" / "addon-generation"
+
+
+def _canonical_json_string(payload: dict) -> str:
+    return json.dumps(payload, sort_keys=True, indent=2) + "\n"
+
+
+def _canonical_xml_string(xml_text: str) -> str:
+    root = ET.fromstring(xml_text)
+    return ET.tostring(root, encoding="unicode")
 
 
 def test_generation_pipeline_produces_linked_outputs() -> None:
@@ -176,6 +192,63 @@ def test_package_builder_rejects_unknown_collision_policy(tmp_path) -> None:
 
     with pytest.raises(ValueError):
         service.build_package(addon, tmp_path, collision_policy="rename")
+
+
+@pytest.mark.parametrize(
+    ("scenario", "payload"),
+    [
+        (
+            "basic-gui",
+            {
+                "method_id": "M-1",
+                "method_version": "1.0",
+                "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+                "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+                "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+            },
+        ),
+        (
+            "multi-assay-groups",
+            {
+                "method_id": "M-2A",
+                "method_version": "2.0",
+                "assays": [
+                    {"key": "assay:chem", "protocol_type": "CHEM", "xml_name": "CHEM", "protocol_display_name": "Chem"},
+                    {"key": "assay:immuno", "protocol_type": "IMM", "xml_name": "IMM", "protocol_display_name": "Immuno"},
+                ],
+                "analytes": [
+                    {"key": "a1", "name": "GLU", "assay_key": "assay:chem"},
+                    {"key": "a2", "name": "TSH", "assay_key": "assay:immuno"},
+                ],
+                "units": [
+                    {"key": "u1", "name": "mg/dL", "analyte_key": "a1"},
+                    {"key": "u2", "name": "uIU/mL", "analyte_key": "a2"},
+                ],
+            },
+        ),
+        (
+            "gui-fragments-deterministic",
+            {
+                "method_id": "M-R",
+                "method_version": "3.0",
+                "MethodInformation": {"DisplayName": "GUI Preferred"},
+                "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+                "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+                "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+            },
+        ),
+    ],
+)
+def test_generation_pipeline_matches_golden_artifacts(scenario: str, payload: dict) -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(payload)
+    result = service.generate_all(addon)
+
+    expected_json = (GOLDEN_ROOT / scenario / "ProtocolFile.json").read_text(encoding="utf-8")
+    expected_xml = (GOLDEN_ROOT / scenario / "Analytes.xml").read_text(encoding="utf-8")
+
+    assert _canonical_json_string(result.protocol_json) == expected_json
+    assert _canonical_xml_string(result.analytes_xml_string) == _canonical_xml_string(expected_xml)
 
 
 @pytest.mark.parametrize("scenario", ["single-assay", "multi-assay", "multi-analyte"])

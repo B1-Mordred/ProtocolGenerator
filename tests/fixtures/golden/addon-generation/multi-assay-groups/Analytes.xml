@@ -1,0 +1,46 @@
+<?xml version='1.0' encoding='utf-8'?>
+<AddOn>
+  <Id>0</Id>
+  <MethodId>M-2A</MethodId>
+  <MethodVersion>2.0</MethodVersion>
+  <Assays>
+    <Assay>
+      <Id>0</Id>
+      <Name>CHEM</Name>
+      <AddOnRef>0</AddOnRef>
+      <Analytes>
+        <Analyte>
+          <Id>0</Id>
+          <Name>GLU</Name>
+          <AssayRef>0</AssayRef>
+          <AnalyteUnits>
+            <AnalyteUnit>
+              <Id>0</Id>
+              <Name>mg/dL</Name>
+              <AnalyteRef>0</AnalyteRef>
+            </AnalyteUnit>
+          </AnalyteUnits>
+        </Analyte>
+      </Analytes>
+    </Assay>
+    <Assay>
+      <Id>1</Id>
+      <Name>IMM</Name>
+      <AddOnRef>0</AddOnRef>
+      <Analytes>
+        <Analyte>
+          <Id>1</Id>
+          <Name>TSH</Name>
+          <AssayRef>1</AssayRef>
+          <AnalyteUnits>
+            <AnalyteUnit>
+              <Id>1</Id>
+              <Name>uIU/mL</Name>
+              <AnalyteRef>1</AnalyteRef>
+            </AnalyteUnit>
+          </AnalyteUnits>
+        </Analyte>
+      </Analytes>
+    </Assay>
+  </Assays>
+</AddOn>
