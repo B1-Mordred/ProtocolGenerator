@@ -1,4 +1,4 @@
-from addon_generator.domain.models import AddonModel, AssayModel, MethodModel
+from addon_generator.domain.models import AddonModel, AssayModel, MethodModel, ProtocolContextModel
 from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.link_resolver import LinkResolver
 from addon_generator.generators.protocol_json_generator import generate_protocol_json
@@ -39,5 +39,70 @@ def test_generated_protocol_validates_against_schema() -> None:
     resolver = LinkResolver(load_mapping_config("config/mapping.v1.yaml"))
     resolver.assign_ids(addon)
     payload = generate_protocol_json(addon, resolver).payload
+    validation = validate_protocol_schema(payload, schema_path="protocol.schema.json")
+    assert validation.is_valid is True
+
+
+def test_protocol_generator_uses_fragment_definitions_for_deterministic_workflow_rendering() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="m", method_id="MID", method_version="1"),
+        assays=[AssayModel(key="a1", protocol_type="A", xml_name="A")],
+        source_metadata={
+            "assay_family": "chemistry",
+            "reagent": "rg-1",
+            "dilution": "1:20",
+            "instrument": "inst-9",
+            "config": "cfg-z",
+        },
+        protocol_context=ProtocolContextModel(
+            assay_fragments=[
+                {
+                    "name": "chemistry-rg1",
+                    "selector": {"assay_family": "chemistry", "reagent": "rg-1"},
+                    "payload": {"Type": "CHEM", "DisplayName": "Chemistry RG1"},
+                }
+            ],
+            loading_fragments=[
+                {
+                    "name": "generic-loading",
+                    "selector": {"assay_family": "chemistry"},
+                    "payload": [{"StepName": "GENERIC"}],
+                },
+                {
+                    "name": "specific-loading",
+                    "selector": {
+                        "assay_family": "chemistry",
+                        "reagent": "rg-1",
+                        "dilution": "1:20",
+                        "instrument": "inst-9",
+                        "config": "cfg-z",
+                    },
+                    "payload": [{"StepName": "SPECIFIC"}],
+                },
+            ],
+            processing_fragments=[
+                {
+                    "name": "specific-processing",
+                    "selector": {
+                        "assay_family": "chemistry",
+                        "reagent": "rg-1",
+                        "dilution": "1:20",
+                        "instrument": "inst-9",
+                        "config": "cfg-z",
+                    },
+                    "payload": [{"StepName": "PROC-SPECIFIC"}],
+                }
+            ],
+        ),
+    )
+
+    resolver = LinkResolver(load_mapping_config("config/mapping.v1.yaml"))
+    resolver.assign_ids(addon)
+    payload = generate_protocol_json(addon, resolver).payload
+
+    assert payload["AssayInformation"] == [{"Type": "CHEM", "DisplayName": "Chemistry RG1"}]
+    assert payload["LoadingWorkflowSteps"] == [{"StepName": "SPECIFIC"}]
+    assert payload["ProcessingWorkflowSteps"] == [{"StepName": "PROC-SPECIFIC"}]
+
     validation = validate_protocol_schema(payload, schema_path="protocol.schema.json")
     assert validation.is_valid is True
