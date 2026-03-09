@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+from addon_generator.domain.fragments import FragmentResolver, FragmentSelectionContext
 from addon_generator.domain.models import AddonModel
 from addon_generator.mapping.link_resolver import LinkResolver
 
@@ -18,6 +19,7 @@ class ProtocolJsonGenerator:
 
     def __init__(self, resolver: LinkResolver):
         self.resolver = resolver
+        self.fragment_resolver = FragmentResolver()
 
     def generate(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None) -> ProtocolJsonGenerationResult:
         defaults = self.resolver.config.raw.get("protocol_defaults", {})
@@ -37,9 +39,10 @@ class ProtocolJsonGenerator:
 
         context = addon.protocol_context
         gui_method = dict(context.method_information_overrides) if context else {}
-        gui_assay = list(context.assay_fragments) if context and context.assay_fragments else None
-        gui_loading = list(context.loading_fragments) if context and context.loading_fragments else None
-        gui_processing = list(context.processing_fragments) if context and context.processing_fragments else None
+        selection_context = self._build_fragment_selection_context(addon)
+        gui_assay = self._resolve_context_fragments("AssayInformation", list(context.assay_fragments) if context and context.assay_fragments else None, selection_context)
+        gui_loading = self._resolve_context_fragments("LoadingWorkflowSteps", list(context.loading_fragments) if context and context.loading_fragments else None, selection_context)
+        gui_processing = self._resolve_context_fragments("ProcessingWorkflowSteps", list(context.processing_fragments) if context and context.processing_fragments else None, selection_context)
 
         imported_method = dict(protocol_fragments.get("MethodInformation", {})) if protocol_fragments and isinstance(protocol_fragments.get("MethodInformation"), dict) else {}
         imported_assay = list(protocol_fragments.get("AssayInformation", [])) if protocol_fragments and isinstance(protocol_fragments.get("AssayInformation"), list) and protocol_fragments.get("AssayInformation") else None
@@ -98,6 +101,24 @@ class ProtocolJsonGenerator:
 
     def _build_processing_workflow_steps(self, addon: AddonModel, defaults: list[dict[str, Any]]) -> list[dict[str, Any]]:
         return defaults if defaults else []
+
+    def _build_fragment_selection_context(self, addon: AddonModel) -> FragmentSelectionContext:
+        metadata = addon.source_metadata if isinstance(addon.source_metadata, dict) else {}
+        return FragmentSelectionContext(
+            assay_family=metadata.get("assay_family"),
+            reagent=metadata.get("reagent"),
+            dilution=metadata.get("dilution"),
+            instrument=metadata.get("instrument"),
+            config=metadata.get("config"),
+        )
+
+    def _resolve_context_fragments(self, section: str, raw_fragments: list[dict[str, Any]] | None, context: FragmentSelectionContext) -> Any:
+        if not raw_fragments:
+            return None
+        resolved = self.fragment_resolver.resolve(section=section, raw_fragments=raw_fragments, context=context)
+        if section == "AssayInformation" and resolved is not None and not isinstance(resolved, list):
+            return [resolved]
+        return resolved
 
     def _merge_method_information(
         self,
