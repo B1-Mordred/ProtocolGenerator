@@ -15,6 +15,7 @@ dependencies = [
 dev = [
   "pytest>=8.0",
   "pytest-cov>=5.0",
+  "openpyxl>=3.1",
 ]
 
 [project.scripts]
@@ -29,7 +30,7 @@ where = ["src"]
 [tool.pytest.ini_options]
 pythonpath = ["src"]
 testpaths = ["tests"]
-addopts = "--cov=addon_generator --cov-report=term-missing --cov-fail-under=70"
+addopts = "--cov=addon_generator --cov-report=term-missing --cov-fail-under=75"
 
 
 [tool.coverage.run]

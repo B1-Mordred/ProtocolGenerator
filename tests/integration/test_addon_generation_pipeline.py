@@ -274,6 +274,21 @@ def test_excel_fixture_invalid_scenarios_surface_expected_errors(tmp_path) -> No
         assert expected.issubset(codes)
 
 
+
+@pytest.mark.parametrize("scenario", ["production-shape", "header-offset-and-checklist"])
+def test_workbook_template_scenarios_match_golden_outputs(tmp_path, scenario: str) -> None:
+    service = GenerationService()
+    workbook_path = materialize_workbook_fixture(scenario, tmp_path)
+
+    addon = service.import_from_excel(str(workbook_path))
+    result = service.generate_all(addon)
+
+    expected_json = (GOLDEN_ROOT / scenario / "ProtocolFile.json").read_text(encoding="utf-8")
+    expected_xml = (GOLDEN_ROOT / scenario / "Analytes.xml").read_text(encoding="utf-8")
+
+    assert _canonical_json_string(result.protocol_json) == expected_json
+    assert _canonical_xml_string(result.analytes_xml_string) == _canonical_xml_string(expected_xml)
+
 def test_generation_pipeline_deterministic_fragment_registry_merge_ordering() -> None:
     service = GenerationService()
     addon = service.import_from_gui_payload(

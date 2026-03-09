@@ -158,6 +158,42 @@
           }
         ]
       }
+    },
+    "production-shape": {
+      "intent": "Production workbook-style template with Basics/Analytes/SamplePrep/Dilutions/Hidden_Lists sheets.",
+      "workbook": "tests/fixtures/workbooks/production-shape/workbook.json",
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
+    },
+    "header-offset-and-checklist": {
+      "intent": "Workbook with leading note rows before headers and noisy AddOn CheckList content.",
+      "workbook": "tests/fixtures/workbooks/header-offset-and-checklist/workbook.json",
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
+    },
+    "invalid-hidden-vocab": {
+      "intent": "Workbook where analyte units and sample prep actions are outside Hidden_Lists vocabulary.",
+      "workbook": "tests/fixtures/workbooks/invalid-hidden-vocab/workbook.json",
+      "expected": {
+        "import": "failure",
+        "error_type": "validation",
+        "diagnostics": [
+          {
+            "rule_id": "invalid-vocabulary",
+            "sheet": "Analytes",
+            "column": "Unit"
+          },
+          {
+            "rule_id": "invalid-vocabulary",
+            "sheet": "SamplePrep",
+            "column": "Action"
+          }
+        ]
+      }
     }
   }
 }

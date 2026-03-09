@@ -1,0 +1,53 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Basics": {
+      "columns": ["Key", "Value", "Unused"],
+      "rows": [
+        ["Method Id", "PRD-001", ""],
+        ["Method Version", "5.4", ""],
+        ["Method Display Name", "Production Panel", ""],
+        ["", "", ""],
+        ["Assay Key", "Protocol Type", "Protocol Display Name"],
+        ["assay:chem", "CHEM", "Chemistry"],
+        ["assay:imm", "IMM", "Immuno"]
+      ]
+    },
+    "Analytes": {
+      "columns": ["Ignore"],
+      "rows": [
+        ["Production analyte mapping"],
+        ["Analyte", "Unit", "Parameter Set", "Assay Key"],
+        ["GLU", "mg/dL", "CHEM", "assay:chem"],
+        ["TSH", "uIU/mL", "IMM", "assay:imm"]
+      ]
+    },
+    "SamplePrep": {
+      "columns": ["Comment"],
+      "rows": [
+        ["Ordered execution"],
+        ["Order", "Action"],
+        ["1", "Mix"],
+        ["2", "Incubate"]
+      ]
+    },
+    "Dilutions": {
+      "columns": ["Name", "Ratio"],
+      "rows": [
+        ["Std1", "1:2"],
+        ["Std2", "1:4"]
+      ]
+    },
+    "AddOn CheckList": {
+      "columns": ["Section", "Complete"],
+      "rows": [["Review", "Yes"]]
+    },
+    "Hidden_Lists": {
+      "columns": ["Units", "SamplePrepAction"],
+      "rows": [
+        ["mg/dL", "Mix"],
+        ["uIU/mL", "Incubate"]
+      ]
+    }
+  }
+}
