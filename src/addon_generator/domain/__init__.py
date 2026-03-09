@@ -1,23 +1,16 @@
 """Domain models and helpers for addon protocol generation."""
 
 from .fragments import FragmentCollection, ProtocolFragment
-from .ids import DeterministicIdAssigner, make_stable_key
+from .ids import assign_deterministic_ids
 from .issues import IssueSeverity, IssueSource, ValidationIssue, ValidationIssueCollection
-from .models import (
-    AddonModel,
-    AnalyteModel,
-    AnalyteUnitModel,
-    AssayModel,
-    MethodModel,
-    ProtocolContextModel,
-)
+from .models import AddonModel, AnalyteModel, AnalyteUnitModel, AssayModel, MethodModel, ProtocolContextModel
 
 __all__ = [
     "AddonModel",
     "AnalyteModel",
     "AnalyteUnitModel",
     "AssayModel",
-    "DeterministicIdAssigner",
+    "assign_deterministic_ids",
     "FragmentCollection",
     "IssueSeverity",
     "IssueSource",
@@ -26,5 +19,4 @@ __all__ = [
     "ProtocolFragment",
     "ValidationIssue",
     "ValidationIssueCollection",
-    "make_stable_key",
 ]

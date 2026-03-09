@@ -1,40 +1,31 @@
 from __future__ import annotations
 
-import re
-from collections import defaultdict
+from addon_generator.domain.models import AddonModel
 
 
-_SLUG_RE = re.compile(r"[^a-z0-9]+")
+def assign_deterministic_ids(addon: AddonModel, *, assay_start: int = 0, analyte_start: int = 0, unit_start: int = 0) -> AddonModel:
+    addon.addon_id = 0
 
+    assay_id = assay_start
+    for assay in sorted(addon.assays, key=lambda a: a.key):
+        assay.xml_id = assay_id
+        assay.addon_ref = addon.addon_id
+        assay_id += 1
 
-def _slugify(value: str) -> str:
-    normalized = _SLUG_RE.sub("-", value.strip().lower()).strip("-")
-    return normalized or "item"
+    assay_id_by_key = {assay.key: assay.xml_id for assay in addon.assays}
 
+    analyte_id = analyte_start
+    for analyte in sorted(addon.analytes, key=lambda a: (a.assay_key, a.name, a.key)):
+        analyte.xml_id = analyte_id
+        analyte.assay_ref = assay_id_by_key.get(analyte.assay_key)
+        analyte_id += 1
 
-def make_stable_key(kind: str, label: str, index: int) -> str:
-    """Create stable keys from deterministic inputs."""
+    analyte_id_by_key = {analyte.key: analyte.xml_id for analyte in addon.analytes}
 
-    return f"{kind}:{_slugify(label)}:{index}"
+    unit_id = unit_start
+    for unit in sorted(addon.units, key=lambda u: (u.analyte_key, u.name, u.key)):
+        unit.xml_id = unit_id
+        unit.analyte_ref = analyte_id_by_key.get(unit.analyte_key)
+        unit_id += 1
 
-
-class DeterministicIdAssigner:
-    """Assign deterministic integer IDs and internal keys per object kind."""
-
-    def __init__(self) -> None:
-        self._counters: dict[str, int] = defaultdict(int)
-        self._seen: dict[tuple[str, str], tuple[str, int]] = {}
-
-    def assign(self, kind: str, label: str) -> tuple[str, int]:
-        """Return the same key/id for repeated (kind, label) assignments."""
-
-        cache_key = (kind, label)
-        if cache_key in self._seen:
-            return self._seen[cache_key]
-
-        self._counters[kind] += 1
-        next_id = self._counters[kind]
-        key = make_stable_key(kind=kind, label=label, index=next_id)
-        result = (key, next_id)
-        self._seen[cache_key] = result
-        return result
+    return addon

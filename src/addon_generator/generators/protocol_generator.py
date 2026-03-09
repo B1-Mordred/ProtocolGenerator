@@ -3,43 +3,42 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
-from addon_generator.domain.fragments import FragmentCollection, ProtocolFragment
-from addon_generator.domain.models import ProtocolContextModel
+from addon_generator.domain.models import AddonModel
+from addon_generator.mapping.link_resolver import LinkResolver
 
 
 @dataclass(slots=True)
 class ProtocolJsonGenerationResult:
     payload: dict[str, Any]
-    fragments: FragmentCollection
 
 
-def build_canonical_protocol_fragments(context: ProtocolContextModel) -> FragmentCollection:
-    """Build protocol fragments from the canonical domain model only."""
+def generate_protocol_json(addon: AddonModel, resolver: LinkResolver) -> ProtocolJsonGenerationResult:
+    method_projection = resolver.resolve_method_projection(addon)
+    assay_info: list[dict[str, Any]] = []
+    for assay in sorted(addon.assays, key=lambda a: a.key):
+        projection = resolver.resolve_assay_projection(assay)
+        record: dict[str, Any] = {"Type": projection.protocol_type}
+        if projection.protocol_display_name:
+            record["DisplayName"] = projection.protocol_display_name
+        assay_info.append(record)
 
-    addon = context.addon
-    fragments = FragmentCollection(
-        [
-            ProtocolFragment(path=("MethodInformation", "Id"), value=str(addon.addon_id), origin="canonical-model"),
-            ProtocolFragment(
-                path=("MethodInformation", "DisplayName"), value=addon.addon_name, origin="canonical-model"
-            ),
-            ProtocolFragment(path=("AssayInformation",), value=[{"Type": assay.name} for assay in addon.assays], origin="canonical-model"),
-        ]
-    )
-    return fragments
+    payload: dict[str, Any] = {
+        "MethodInformation": {
+            "Id": method_projection.protocol_id,
+            "Version": method_projection.protocol_version,
+        },
+        "AssayInformation": assay_info,
+        "LoadingWorkflowSteps": [],
+        "ProcessingWorkflowSteps": [],
+    }
 
+    if addon.protocol_context:
+        payload["MethodInformation"].update(addon.protocol_context.method_information_overrides)
+        if addon.protocol_context.assay_fragments:
+            payload["AssayInformation"] = addon.protocol_context.assay_fragments
+        if addon.protocol_context.loading_fragments:
+            payload["LoadingWorkflowSteps"] = addon.protocol_context.loading_fragments
+        if addon.protocol_context.processing_fragments:
+            payload["ProcessingWorkflowSteps"] = addon.protocol_context.processing_fragments
 
-def generate_protocol_json(
-    context: ProtocolContextModel,
-    protocol_fragments: FragmentCollection | None = None,
-) -> ProtocolJsonGenerationResult:
-    """Materialize protocol json from canonical model + optional protocol fragments."""
-
-    merged = FragmentCollection()
-    for fragment in build_canonical_protocol_fragments(context).fragments:
-        merged.add(fragment)
-    if protocol_fragments is not None:
-        for fragment in protocol_fragments.fragments:
-            merged.add(fragment)
-
-    return ProtocolJsonGenerationResult(payload=merged.materialize(), fragments=merged)
+    return ProtocolJsonGenerationResult(payload=payload)
