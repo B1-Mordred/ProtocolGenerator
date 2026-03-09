@@ -11,10 +11,12 @@ protocol-generator-gui
 
 ## Features
 
-- 3-step wizard UI:
-  - General information (`MethodInformation`, `AssayInformation`)
-  - Loading workflow steps (`LoadingWorkflowSteps`)
-  - Processing workflow steps (`ProcessingWorkflowSteps`)
+- 5-stage wizard UI:
+  - Method setup
+  - Assay/analyte setup
+  - Import preview/conflicts
+  - Validation
+  - Output preview/export
 - Schema-driven rendering for required flags, primitive input types, minimum-constrained numeric fields, and `StepType` conditional parameter forms with required-first progressive disclosure for advanced options.
 - Inline schema validation with completion/error counters, top-level progress indicator, and automatic focus on the first invalid field.
 - Lifecycle-based saving with in-memory drafts before first file selection, temporary crash-recovery draft persistence, and debounced autosave-on-change (400ms).
@@ -80,3 +82,8 @@ Core now includes a canonical `addon_generator` pipeline:
 - `LinkResolver` assigns deterministic IDs from `config/mapping.v1.yaml`
 - Generators emit both `ProtocolFile.json` and `Analytes.xml`
 - Validation includes domain, XSD, protocol schema, and cross-file consistency checks
+
+- Wizard state now tracks canonical DTO adapters and supports draft serialize/restore including import-conflict resolution context.
+- Method editor now enforces `Id` / `Version` / `DisplayName` rules with live propagation into validation and preview stages.
+- Import preview now shows imported/current values, unresolved required conflicts, provenance hints, and progression gating until required conflicts are resolved.
+- Output stage previews `ProtocolFile.json` and `Analytes.xml` export readiness with blocker-aware messaging and target-selection requirements.

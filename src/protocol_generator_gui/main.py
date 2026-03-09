@@ -18,10 +18,16 @@ from protocol_generator_gui.schema_utils import (
 from protocol_generator_gui.persistence import DraftPersistence
 from protocol_generator_gui.validation import validate_protocol
 from protocol_generator_gui.wizard_logic import (
+    WizardState,
+    assay_analyte_integrity_warnings,
     build_field_tooltip,
+    build_import_conflicts,
+    build_output_preview,
+    can_progress,
     categorize_schema_fields,
     make_step_help,
     summarize_progress,
+    validate_method_editor,
 )
 
 logger = logging.getLogger(__name__)
@@ -340,7 +346,7 @@ class ProtocolWizardApp(tk.Tk):
 
         self.status = tk.StringVar(value="Not validated")
         self.autosave_status = tk.StringVar(value="Autosave idle")
-        self.progress_text = tk.StringVar(value="Step 1/3 | Completed: 0/3 | Unresolved errors: 0")
+        self.progress_text = tk.StringVar(value="Stage 1/5 | Completed: 0/5 | Unresolved errors: 0")
         self.step_state = {
             "general": tk.StringVar(value="✗"),
             "loading": tk.StringVar(value="✗"),
@@ -367,9 +373,14 @@ class ProtocolWizardApp(tk.Tk):
         general = ttk.Frame(notebook)
         loading = ttk.Frame(notebook)
         processing = ttk.Frame(notebook)
-        notebook.add(general, text="Step 1 General")
-        notebook.add(loading, text="Step 2 Loading")
-        notebook.add(processing, text="Step 3 Processing")
+        import_preview = ttk.Frame(notebook)
+        validation = ttk.Frame(notebook)
+        output = ttk.Frame(notebook)
+        notebook.add(general, text="1. Method setup")
+        notebook.add(loading, text="2. Assay/analyte setup")
+        notebook.add(import_preview, text="3. Import preview/conflicts")
+        notebook.add(validation, text="4. Validation")
+        notebook.add(output, text="5. Output preview/export")
         self.notebook = notebook
 
         self.general_help = self._build_step_panel(general, "general")
@@ -386,6 +397,16 @@ class ProtocolWizardApp(tk.Tk):
         self.processing_help = self._build_step_panel(processing, "processing")
         self.processing_editor = StepEditor(self.processing_help["editor_area"], "ProcessingWorkflowSteps", processing_step_types(self.schema), self.on_change)
         self.processing_editor.pack(fill="both", expand=True)
+
+        self.wizard_state = WizardState()
+        self.import_conflict_text = tk.Text(import_preview, height=20)
+        self.import_conflict_text.pack(fill="both", expand=True, padx=8, pady=8)
+
+        self.validation_text = tk.Text(validation, height=20)
+        self.validation_text.pack(fill="both", expand=True, padx=8, pady=8)
+
+        self.output_text = tk.Text(output, height=20)
+        self.output_text.pack(fill="both", expand=True, padx=8, pady=8)
 
         self.bind_all("<Return>", self.on_enter_next)
         self.bind_all("<Escape>", self.on_escape_cancel)
@@ -422,7 +443,7 @@ class ProtocolWizardApp(tk.Tk):
     def on_enter_next(self, event: tk.Event[tk.Widget]) -> None:
         if isinstance(event.widget, ttk.Entry):
             idx = self.notebook.index(self.notebook.select())
-            if idx < 2:
+            if idx < 4:
                 self.notebook.select(idx + 1)
 
     def on_escape_cancel(self, *_: Any) -> None:
@@ -432,11 +453,13 @@ class ProtocolWizardApp(tk.Tk):
             self.autosave_status.set("Autosave cancelled")
 
     def collect_ui_payload(self) -> Dict[str, Any]:
+        assay = self.assay_editor.data()
         return {
             "MethodInformation": self.method_editor.data(),
-            "AssayInformation": [self.assay_editor.data()],
+            "AssayInformation": [assay],
             "LoadingWorkflowSteps": self.loading_editor.data(processing=False),
             "ProcessingWorkflowSteps": [{"GroupDisplayName": "Default Group", "GroupIndex": 0, "GroupSteps": self.processing_editor.data(processing=True)}],
+            "analytes": self.wizard_state.analytes,
         }
 
     def protocol_data(self) -> Dict[str, Any]:
@@ -469,10 +492,43 @@ class ProtocolWizardApp(tk.Tk):
         self.step_state["processing"].set("✓" if not processing_err else f"✗ ({len(processing_err)})")
         self.status.set("Valid" if not errors else f"Errors: {len(errors)} ({errors[0][0]}: {errors[0][1]})")
         tab_index = self.notebook.index(self.notebook.select()) + 1
-        self.progress_text.set(summarize_progress(tab_index, self.step_state, self.status.get()))
+        self.progress_text.set(summarize_progress(min(tab_index,3), self.step_state, self.status.get()))
         if errors:
             logger.warning("validation_errors", extra={"event": "validation_errors", "error_count": len(errors), "errors": errors[:8]})
             self._focus_first_invalid(errors)
+
+        payload = self.collect_ui_payload()
+        self.wizard_state.method_information = payload.get("MethodInformation", {})
+        self.wizard_state.assays = payload.get("AssayInformation", [])
+        self.wizard_state.loading_steps = payload.get("LoadingWorkflowSteps", [])
+        self.wizard_state.processing_steps = payload.get("ProcessingWorkflowSteps", [])
+
+        method_issues = validate_method_editor(self.wizard_state.method_information)
+        analyte_warnings = assay_analyte_integrity_warnings(self.wizard_state.assays, self.wizard_state.analytes)
+        self.wizard_state.conflicts = build_import_conflicts(payload, self.wizard_state.imported_payload, {"MethodInformation", "AssayInformation"})
+        allowed, reason = can_progress("output_preview_export", self.wizard_state.conflicts)
+
+        self.import_conflict_text.delete("1.0", tk.END)
+        self.import_conflict_text.insert(tk.END, f"Conflicts: {len(self.wizard_state.conflicts)}\n")
+        for conflict in self.wizard_state.conflicts:
+            self.import_conflict_text.insert(tk.END, f"- {conflict.field}: imported={conflict.imported_value!r} current={conflict.current_value!r} resolution={conflict.resolution}\n")
+
+        self.validation_text.delete("1.0", tk.END)
+        self.validation_text.insert(tk.END, "Method validation\n")
+        for issue in method_issues:
+            self.validation_text.insert(tk.END, f"- {issue}\n")
+        self.validation_text.insert(tk.END, "Analyte relationship checks\n")
+        for warning in analyte_warnings:
+            self.validation_text.insert(tk.END, f"- {warning}\n")
+
+        output_preview = build_output_preview(data, "<preview unavailable>", self.wizard_state.export_target, [] if allowed else [reason])
+        self.output_text.delete("1.0", tk.END)
+        self.output_text.insert(tk.END, "ProtocolFile.json preview\n")
+        self.output_text.insert(tk.END, output_preview["ProtocolFile.json"][:1000] + "\n")
+        self.output_text.insert(tk.END, "Messages\n")
+        for msg in output_preview["messages"]:
+            self.output_text.insert(tk.END, f"- {msg}\n")
+
         self.schedule_autosave()
 
     def save_as(self) -> None:

@@ -3,6 +3,7 @@ from __future__ import annotations
 from copy import deepcopy
 
 from protocol_generator_gui.validation import validate_protocol
+from protocol_generator_gui.wizard_logic import build_import_conflicts, can_progress, resolve_conflict
 
 
 def test_validation_reports_missing_required_sections(schema: dict):
@@ -40,3 +41,13 @@ def test_validation_rejects_unknown_loading_step_type(schema: dict, minimal_prot
     errors = validate_protocol(schema, payload)
 
     assert any(path.endswith("LoadingWorkflowSteps/0/StepType") and "must be one of" in msg for path, msg in errors)
+
+
+def test_required_conflict_gating_for_export_stage():
+    conflicts = build_import_conflicts({"AssayInformation": []}, {"AssayInformation": [{"Type": "A"}]}, {"AssayInformation"})
+    allowed, _ = can_progress("output_preview_export", conflicts)
+    assert allowed is False
+
+    resolve_conflict(conflicts, "AssayInformation", "keep_current")
+    allowed_after, _ = can_progress("output_preview_export", conflicts)
+    assert allowed_after is True

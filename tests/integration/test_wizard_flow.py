@@ -5,6 +5,7 @@ from pathlib import Path
 
 from protocol_generator_gui.persistence import DraftPersistence
 from protocol_generator_gui.validation import validate_protocol
+from protocol_generator_gui.wizard_logic import build_import_conflicts, can_progress, resolve_conflict
 
 
 class WizardFlowHarness:
@@ -14,14 +15,21 @@ class WizardFlowHarness:
         self.current_step = 0
         self.save_path: Path | None = None
         self.payload: dict = {}
+        self.conflicts = []
 
     def set_payload(self, payload: dict) -> None:
         self.payload = payload
+
+    def set_conflicts(self, conflicts: list) -> None:
+        self.conflicts = conflicts
 
     def attempt_transition(self, next_step: int) -> bool:
         if next_step > 0 and self.save_path is None:
             return False
         if validate_protocol(self.schema, self.payload):
+            return False
+        allowed, _ = can_progress("validation", self.conflicts)
+        if not allowed:
             return False
         self.current_step = next_step
         return True
@@ -95,3 +103,16 @@ def test_autosave_runs_only_after_save_path_selected(schema: dict, minimal_proto
 
     assert output_path == tmp_path / "protocol.json"
     assert output_path.exists()
+
+
+def test_required_conflicts_block_progress_until_resolved(schema: dict, minimal_protocol: dict, tmp_path: Path):
+    harness = WizardFlowHarness(schema, DraftPersistence(tmp_path / "draft.json"))
+    harness.save_path = tmp_path / "protocol.json"
+    harness.set_payload(deepcopy(minimal_protocol))
+    conflicts = build_import_conflicts({"MethodInformation": {"Id": "m1"}}, {"MethodInformation": {"Id": "m2"}}, {"MethodInformation"})
+    harness.set_conflicts(conflicts)
+
+    assert harness.attempt_transition(1) is False
+
+    resolve_conflict(conflicts, "MethodInformation", "use_imported")
+    assert harness.attempt_transition(1) is True
