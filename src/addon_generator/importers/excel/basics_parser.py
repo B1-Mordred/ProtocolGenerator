@@ -61,8 +61,8 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                 protocol_display_name=display,
                 xml_name=xml_name,
             )
-            identity = (_identity_token(key), _identity_token(protocol_type))
-            if identity in seen_assays:
+            assay_identity = (_identity_token(key), _identity_token(protocol_type))
+            if assay_identity in seen_assays:
                 diagnostics.append(
                     ImportDiagnostic(
                         rule_id="duplicate-row",
@@ -77,7 +77,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                     )
                 )
                 continue
-            seen_assays.add(identity)
+            seen_assays.add(assay_identity)
             assays.append(AssayInputDTO(key=key, protocol_type=protocol_type, protocol_display_name=protocol_display_name, xml_name=xml_name))
 
     method = MethodInputDTO(key=f"method:{method_id or 'unknown'}", method_id=method_id, method_version=method_version, display_name=identity.get("display_name") or None)
