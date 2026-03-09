@@ -160,12 +160,84 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 
 ---
 
-### Task 3.2 — Documentation completion (E8.1–E8.4)
+### Task 3.2 — Mapping config reference (E8.1)
 **Implementation steps**
-1. Update `doc/developer-guide.md` with import→model→generation architecture and extension guides.
-2. Update `doc/user-guide.md` for import, edit, validate, export flows.
-3. Add mapping config and canonical model references.
-4. Keep `doc/changelog.md` updated per completed increments.
+1. Add/expand the mapping reference doc (for example, `doc/mapping-config-reference.md`) to cover every top-level mapping section currently consumed by loaders/validators.
+2. Enumerate valid field paths and supported value shapes, with examples aligned to real config usage.
+3. Document fallback behavior, alias rules, and ID generation rules exactly as implemented in mapping resolution code.
+4. Link the mapping reference from `doc/developer-guide.md` and record the update in `doc/changelog.md`.
+
+**Acceptance checks**
+- Documentation covers top-level sections, valid field paths, fallback behavior, alias rules, and ID generation rules.
+- Maintainers can modify mapping config safely using documentation alone.
+
+**Concrete file touchpoints**
+- `doc/mapping-config-reference.md` (new or expanded)
+- `doc/developer-guide.md`
+- `doc/changelog.md`
+
+**Executable checks**
+- `pytest -q` (documentation-only change; full suite remains the regression guard for documented behavior)
+
+---
+
+### Task 3.3 — Canonical model reference (E8.2)
+**Implementation steps**
+1. Add/expand canonical model reference documentation (for example, `doc/canonical-model-reference.md`) for all core entities.
+2. Document required vs optional fields per entity, including constraints and defaulting semantics where applicable.
+3. Capture identity semantics and projection rules from canonical entities into generated outputs.
+4. Cross-link canonical reference from `doc/developer-guide.md` and track completion in `doc/changelog.md`.
+
+**Acceptance checks**
+- Documentation covers entity definitions, required vs optional fields, identity semantics, and projection rules.
+- Developers can extend the canonical model without guessing intended semantics.
+
+**Concrete file touchpoints**
+- `doc/canonical-model-reference.md` (new or expanded)
+- `doc/developer-guide.md`
+- `doc/changelog.md`
+
+**Executable checks**
+- `pytest -q` (documentation-only change; full suite remains the regression guard for documented behavior)
+
+---
+
+### Task 3.4 — Developer guide completion (E8.3)
+**Implementation steps**
+1. Expand `doc/developer-guide.md` with end-to-end import → canonical model → generation flow and extension boundaries.
+2. Add concrete sections for generator internals, validator architecture, and key extension points.
+3. Document the step-by-step process to add a new assay family and add a new fragment template.
+4. Link to mapping and canonical reference docs and note the guide update in `doc/changelog.md`.
+
+**Acceptance checks**
+- Developer guide documents import flow, generator behavior, validator behavior, and extension workflows for assay families and fragment templates.
+- A new developer can add a supported assay family without reverse-engineering the codebase.
+
+**Concrete file touchpoints**
+- `doc/developer-guide.md`
+- `doc/mapping-config-reference.md`
+- `doc/canonical-model-reference.md`
+- `doc/changelog.md`
+
+**Executable checks**
+- `pytest -q` (doc-linked workflows remain validated by test suite)
+
+---
+
+### Task 3.5 — User guide completion (E8.4)
+**Implementation steps**
+1. Expand `doc/user-guide.md` to document the full user workflow: import data, edit addon inputs, validate, and export.
+2. Add concrete UI/task flow examples and troubleshooting notes for common validation/export blockers.
+3. Ensure user-facing terms align with current GUI/workflow labels and output artifacts.
+4. Capture the user-guide completion in `doc/changelog.md`.
+
+**Acceptance checks**
+- User guide documents how to import data, edit addon inputs, validate, and export.
+- A domain user can operate the system using the guide alone.
+
+**Concrete file touchpoints**
+- `doc/user-guide.md`
+- `doc/changelog.md`
 
 **Executable checks**
 - `pytest -q` (doc-linked workflows remain validated by test suite)
@@ -193,4 +265,8 @@ This plan translates `doc/backlog.md` into execution-ready tasks with concrete d
 2. **E2.1–E2.5** (usable workflow UI)
 3. **E5.1–E5.3** (semantic safety gates)
 4. **E3 + E4 + E6** (domain completeness and packaging)
-5. **E7 + E8** (regression armor and maintainability)
+5. **E7.1–E7.4** (regression armor)
+6. **E8.1** (mapping config reference)
+7. **E8.2** (canonical model reference)
+8. **E8.3** (developer guide completion)
+9. **E8.4** (user guide completion)
