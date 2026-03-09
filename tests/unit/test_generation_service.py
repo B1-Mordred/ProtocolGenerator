@@ -67,3 +67,29 @@ def test_generate_all_consumes_dto_context_for_validation() -> None:
     result = service.generate_all(addon, dto_bundle=dto_bundle)
 
     assert "malformed-dilution-scheme" in {issue.code for issue in result.issues}
+
+
+def test_dto_bundle_builder_ignores_non_mapping_source_metadata_values() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M-3",
+            "method_version": "1.0",
+            "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+    addon.source_metadata = {
+        "sample_prep_steps": None,
+        "dilution_schemes": None,
+        "hidden_vocab": ["not", "a", "mapping"],
+        "provenance": "excel.xlsx",
+    }
+
+    bundle = service._dto_bundle_from_addon(addon)
+
+    assert bundle.sample_prep_steps == []
+    assert bundle.dilution_schemes == []
+    assert bundle.hidden_vocab == {}
+    assert bundle.provenance == {}
