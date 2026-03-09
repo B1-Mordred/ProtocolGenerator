@@ -213,14 +213,15 @@ class ExcelImporter:
                     protocol_display_name=self._to_string(row.get("AssayDisplayName")),
                     xml_name=self._to_string(row.get("XmlAssayName")),
                 )
-                payload["assays"].append(
-                    {
-                        "key": assay_key,
-                        "protocol_type": protocol_type,
-                        "protocol_display_name": protocol_display_name,
-                        "xml_name": xml_name,
-                    }
-                )
+                if any((protocol_type, protocol_display_name, xml_name)):
+                    payload["assays"].append(
+                        {
+                            "key": assay_key,
+                            "protocol_type": protocol_type,
+                            "protocol_display_name": protocol_display_name,
+                            "xml_name": xml_name,
+                        }
+                    )
             if analyte_key:
                 payload["analytes"].append(
                     {

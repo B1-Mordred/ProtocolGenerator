@@ -381,3 +381,31 @@ def test_read_workbook_rows_v2_preserves_unlinked_records() -> None:
     assert any(row.get("AssayKey") == "assay:real" and not row.get("AnalyteKey") for row in rows)
     assert any(row.get("AnalyteKey") == "analyte:oops" and row.get("AssayKey") == "assay:missing" for row in rows)
     assert any(row.get("UnitKey") == "unit:oops" and row.get("AnalyteKey") == "analyte:missing" for row in rows)
+
+
+def test_normalize_workbook_rows_does_not_promote_analyte_only_assay_key_to_assay_definition() -> None:
+    importer = ExcelImporter()
+
+    payload = importer.normalize_workbook_rows(
+        [
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AssayKey": "assay:real",
+                "ProtocolType": "CHEM",
+                "AssayDisplayName": "Chem",
+                "XmlAssayName": "Chem",
+            },
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AnalyteKey": "analyte:oops",
+                "AnalyteName": "GLU",
+                "AssayKey": "assay:missing",
+                "AssayInformationType": "CHEM",
+            },
+        ]
+    )
+
+    assert [assay["key"] for assay in payload["assays"]] == ["assay:real"]
+    assert payload["analytes"][0]["assay_key"] == "assay:missing"

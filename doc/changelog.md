@@ -127,6 +127,7 @@
 - Corrected DTO bundle metadata type-guards so non-mapping `provenance`/`hidden_vocab` values are safely discarded instead of leaking invalid payload types into downstream validation.
 - Fixed workbook-template Basics parsing identity tracking bug where assay duplicate detection overwrote method identity state, causing `AttributeError: 'tuple' object has no attribute 'get'` during import.
 - Restored workbook-template parser parity by allowing sparse/blank interstitial rows (without terminating parsing), adding assay XML-name fallback (`Protocol Display Name` when `Xml Assay Name` is absent), and preserving unlinked v2 sheet records so expected domain linkage errors (`unknown-assay-key`, `assay-missing-analytes`, `unknown-analyte-key`) surface correctly.
+- Fixed v2 workbook normalization to avoid auto-promoting analyte-only `AssayKey` values into assay definitions when assay identity fields are missing, restoring expected `unknown-assay-key` diagnostics for invalid linkage fixtures.
 - Updated workflow assembly so loading steps no longer emit empty `StepParameters` objects and fragment-only processing group descriptors remain deterministic without schema-breaking placeholder step payloads.
 - Updated protocol JSON generator fragment rendering expectations to match the normalized loading-step contract (no empty parameter maps) and keep deterministic workflow merge assertions stable.
 
