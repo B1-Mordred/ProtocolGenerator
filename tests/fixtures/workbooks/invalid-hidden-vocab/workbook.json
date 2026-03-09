@@ -1,0 +1,27 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Basics": {
+      "columns": ["Label", "Value"],
+      "rows": [
+        ["Method Id", "PRD-003"],
+        ["Method Version", "1.0"],
+        ["", ""],
+        ["Assay Key", "Protocol Type", "Protocol Display Name"],
+        ["assay:chem", "CHEM", "Chemistry"]
+      ]
+    },
+    "Analytes": {
+      "columns": ["Analyte", "Unit", "Parameter Set", "Assay Key"],
+      "rows": [["K", "mg/dL", "CHEM", "assay:chem"]]
+    },
+    "SamplePrep": {
+      "columns": ["Order", "Action"],
+      "rows": [["1", "Shake"]]
+    },
+    "Hidden_Lists": {
+      "columns": ["Units", "SamplePrepAction"],
+      "rows": [["mmol/L", "Mix"]]
+    }
+  }
+}

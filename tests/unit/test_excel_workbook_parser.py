@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from addon_generator.importers import ExcelImportValidationError, ExcelImporter
 from addon_generator.importers.excel.workbook_parser import ExcelWorkbookParser
+from fixture_loader import materialize_workbook_fixture
 
 
 def _build_template_workbook(openpyxl):
@@ -72,3 +75,45 @@ def test_workbook_parser_reports_invalid_vocab_from_hidden_lists(tmp_path) -> No
         ExcelWorkbookParser().parse_path(path)
 
     assert "validation errors" in str(exc.value).lower()
+
+
+def test_production_fixture_successfully_imports_and_links_entities(tmp_path: Path) -> None:
+    workbook_path = materialize_workbook_fixture("production-shape", tmp_path)
+
+    bundle = ExcelImporter().import_workbook_bundle(workbook_path)
+
+    assert bundle.method is not None and bundle.method.method_id == "PRD-001"
+    assert [assay.key for assay in bundle.assays] == ["assay:chem", "assay:imm"]
+    assert [(a.name, a.assay_key) for a in bundle.analytes] == [("GLU", "assay:chem"), ("TSH", "assay:imm")]
+    assert [unit.analyte_key for unit in bundle.units] == ["analyte:GLU", "analyte:TSH"]
+
+
+def test_header_detection_and_checklist_exclusion_are_robust(tmp_path: Path) -> None:
+    workbook_path = materialize_workbook_fixture("header-offset-and-checklist", tmp_path)
+
+    bundle = ExcelImporter().import_workbook_bundle(workbook_path)
+
+    assert [a.name for a in bundle.analytes] == ["Na"]
+    assert bundle.analytes[0].assay_key == "assay:chem"
+    assert all(a.name != "SHOULD_NOT_PARSE" for a in bundle.analytes)
+
+
+def test_sampleprep_order_and_dilution_ratio_are_parsed_in_sheet_order(tmp_path: Path) -> None:
+    workbook_path = materialize_workbook_fixture("production-shape", tmp_path)
+
+    bundle = ExcelImporter().import_workbook_bundle(workbook_path)
+
+    assert [step.metadata["order"] for step in bundle.sample_prep_steps] == ["1", "2"]
+    assert [step.label for step in bundle.sample_prep_steps] == ["Mix", "Incubate"]
+    assert [scheme.metadata["ratio"] for scheme in bundle.dilution_schemes] == ["1:2", "1:4"]
+
+
+def test_hidden_list_vocab_is_ingested_and_validation_errors_are_reported(tmp_path: Path) -> None:
+    workbook_path = materialize_workbook_fixture("invalid-hidden-vocab", tmp_path)
+
+    with pytest.raises(ExcelImportValidationError) as exc:
+        ExcelImporter().import_workbook_bundle(workbook_path)
+
+    diagnostics = {(d.rule_id, d.sheet, d.column) for d in exc.value.diagnostics}
+    assert ("invalid-vocabulary", "Analytes", "Unit") in diagnostics
+    assert ("invalid-vocabulary", "SamplePrep", "Action") in diagnostics

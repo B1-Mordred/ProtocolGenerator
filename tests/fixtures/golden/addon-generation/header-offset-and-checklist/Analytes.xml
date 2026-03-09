@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<AddOn>
+  <Id>0</Id>
+  <MethodId>PRD-002</MethodId>
+  <MethodVersion>1.1</MethodVersion>
+  <Assays>
+    <Assay>
+      <Id>0</Id>
+      <Name>Chemistry</Name>
+      <AddOnRef>0</AddOnRef>
+      <Analytes>
+        <Analyte>
+          <Id>0</Id>
+          <Name>Na</Name>
+          <AssayRef>0</AssayRef>
+          <AnalyteUnits>
+            <AnalyteUnit>
+              <Id>0</Id>
+              <Name>mmol/L</Name>
+              <AnalyteRef>0</AnalyteRef>
+            </AnalyteUnit>
+          </AnalyteUnits>
+          <AssayInformationType>CHEM</AssayInformationType>
+        </Analyte>
+      </Analytes>
+    </Assay>
+  </Assays>
+</AddOn>

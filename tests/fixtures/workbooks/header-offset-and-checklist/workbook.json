@@ -1,0 +1,44 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Basics": {
+      "columns": ["Label", "Value"],
+      "rows": [
+        ["Method Id", "PRD-002"],
+        ["Method Version", "1.1"],
+        ["", ""],
+        ["Assay Key", "Protocol Type", "Protocol Display Name"],
+        ["assay:chem", "CHEM", "Chemistry"]
+      ]
+    },
+    "Analytes": {
+      "columns": ["Notes"],
+      "rows": [
+        ["notes line one"],
+        ["notes line two"],
+        ["Analyte", "Unit", "Parameter Set", "Assay Key"],
+        ["Na", "mmol/L", "CHEM", "assay:chem"]
+      ]
+    },
+    "SamplePrep": {
+      "columns": ["Text"],
+      "rows": [
+        ["intro"],
+        ["Order", "Action"],
+        ["10", "Mix"]
+      ]
+    },
+    "Dilutions": {
+      "columns": ["Name", "Ratio"],
+      "rows": [["Cal", "1:10"]]
+    },
+    "AddOn CheckList": {
+      "columns": ["Analyte", "Unit", "Parameter Set", "Assay Key"],
+      "rows": [["SHOULD_NOT_PARSE", "bad", "bad", "assay:chem"]]
+    },
+    "Hidden_Lists": {
+      "columns": ["Units", "SamplePrepAction"],
+      "rows": [["mmol/L", "Mix"]]
+    }
+  }
+}

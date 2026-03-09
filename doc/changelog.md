@@ -4,6 +4,17 @@
 
 # Changelog
 
+## 2026-03-09
+
+### Added
+- Added workbook-template fixture scenarios for production workbook shape and edge cases (`production-shape`, `header-offset-and-checklist`, `invalid-hidden-vocab`) under `tests/fixtures/workbooks/`, plus index metadata for deterministic materialization and expectation tracking.
+- Added workbook-template focused parser tests for successful import, header row detection, analyte/assay linkage, sample prep ordering, dilution parsing, checklist exclusion, and hidden-list vocabulary validation in `tests/unit/test_excel_workbook_parser.py`.
+- Added workbook-template golden-output integration assertions for selected scenarios to verify stable `Analytes.xml` and `ProtocolFile.json` output under `tests/integration/test_addon_generation_pipeline.py`.
+
+### Changed
+- Changed CI and coverage gates to make `src/addon_generator` workbook/import-generation paths the primary quality gate by adding a dedicated pipeline test step and raising addon coverage threshold from 70 to 75.
+- Changed developer test dependencies to include `openpyxl` so workbook fixture materialization and parser-path tests run in CI.
+
 ## Added
 
 - Added `doc/canonical-model-reference.md` documenting core canonical addon entities (method/assay/analyte/unit/context/root), required-vs-optional fields, domain constraints, deterministic identity/defaulting semantics, and canonical-to-output projection rules; linked it from `doc/developer-guide.md`.
