@@ -126,6 +126,7 @@
 ## Unreleased
 
 ### Changed
+- Excel workbook-template sheet parsers now enforce deterministic duplicate detection per sheet with stable `duplicate-row` diagnostics and duplicate-key metadata: assay identity (`Basics`), analyte identity per assay (`Analytes`), dilution scheme name uniqueness (`Dilutions`), and sample-prep order/action uniqueness (`SamplePrep`); tests were expanded for workbook-template duplicate diagnostics.
 - Refactored assay projection/import normalization so `protocol_type`, `protocol_display_name`, and `xml_name` remain independent by default, with explicit opt-in fallback behavior via a shared normalizer used by import/projection paths.
 
 ### Fixed
