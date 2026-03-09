@@ -37,6 +37,7 @@ protocol-generator-gui
 - Canonical validation/generation boundaries now enforce explicit assay↔analyte constraints, including hard failures for assays without analytes and ambiguous analyte-to-assay linkage (normalized-name collisions across assay keys).
 - Canonical import processing now supports multi-unit expansion (e.g., `"mg/dL; mmol/L"`) and unit-name normalization for consistent downstream XML/domain handling.
 - Protocol generation now applies conditional multi-assay behavior by generating per-assay processing groups and switching `SamplesLayoutType` to `SAMPLES_LAYOUT_SEPARATE` when multiple assays are present.
+- Generation service package builder now exports deterministic addon bundles under `<method-id>-<method-version>/` containing `ProtocolFile.json`, `Analytes.xml`, and `package-metadata.json`, with configurable collision policies (`error`/`increment`), overwrite enforcement, and temp-write then atomic-move semantics for robust destination handling.
 
 ## Build Windows executable
 
