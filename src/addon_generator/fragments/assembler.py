@@ -51,17 +51,16 @@ class WorkflowAssembler:
                 continue
 
             normalized_steps: list[dict[str, Any]] = []
-            for step_index, step in enumerate(self._ordered(group_steps)):
+            for step_index, step in enumerate(self._ordered_steps(group_steps)):
                 step.setdefault("StepType", step.get("StepName", "UnknownStep"))
                 step["StepIndex"] = step_index
                 step["StaticDurationInSeconds"] = int(step.get("StaticDurationInSeconds", 0) or 0)
                 step["DynamicDurationInSeconds"] = int(step.get("DynamicDurationInSeconds", 0) or 0)
                 params = step.get("StepParameters")
-                if not isinstance(params, dict):
-                    params = {}
-                params.setdefault("StaticDurationInSeconds", step["StaticDurationInSeconds"])
-                params.setdefault("DynamicDurationInSeconds", step["DynamicDurationInSeconds"])
-                step["StepParameters"] = params
+                if isinstance(params, dict) and params:
+                    step["StepParameters"] = params
+                else:
+                    step.pop("StepParameters", None)
                 normalized_steps.append(step)
 
             group_display_name = group.get("GroupDisplayName")
@@ -94,4 +93,19 @@ class WorkflowAssembler:
     def _ordered(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
         indexed = list(enumerate(values))
         indexed.sort(key=lambda item: (json.dumps(item[1], sort_keys=True, default=str), item[0]))
+        return [value for _, value in indexed]
+
+    @staticmethod
+    def _ordered_steps(values: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        indexed = list(enumerate(values))
+
+        def _step_index_key(item: tuple[int, dict[str, Any]]) -> tuple[int, str, str, int]:
+            index, step = item
+            raw_step_index = step.get("StepIndex")
+            step_name = str(step.get("StepName") or step.get("StepType") or "").strip().casefold()
+            if isinstance(raw_step_index, int):
+                return (raw_step_index, step_name, json.dumps(step, sort_keys=True, default=str), index)
+            return (10**9, step_name, json.dumps(step, sort_keys=True, default=str), index)
+
+        indexed.sort(key=_step_index_key)
         return [value for _, value in indexed]

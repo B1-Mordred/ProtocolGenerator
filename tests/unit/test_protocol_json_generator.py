@@ -113,7 +113,6 @@ def test_protocol_generator_uses_fragment_definitions_for_deterministic_workflow
                     "StepIndex": 0,
                     "StaticDurationInSeconds": 0,
                     "DynamicDurationInSeconds": 0,
-                    "StepParameters": {"StaticDurationInSeconds": 0, "DynamicDurationInSeconds": 0},
                 }
             ],
         }

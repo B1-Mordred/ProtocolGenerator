@@ -114,4 +114,4 @@ def test_workflow_assembly_normalizes_fragment_only_processing_steps_to_schema_g
     assert group["GroupIndex"] == 0
     assert [step["StepType"] for step in group["GroupSteps"]] == ["PROC-A", "PROC-B"]
     assert [step["StepIndex"] for step in group["GroupSteps"]] == [0, 1]
-    assert all(isinstance(step["StepParameters"], dict) for step in group["GroupSteps"])
+    assert all("StepParameters" not in step for step in group["GroupSteps"])

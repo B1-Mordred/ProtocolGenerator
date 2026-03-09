@@ -5,7 +5,7 @@ from typing import Any
 
 from addon_generator.domain.models import AddonModel
 
-_SOURCE_ONLY_METADATA_FIELDS = frozenset({"provenance", "source", "source_name"})
+_ASSAY_LABEL_FIELDS = frozenset({"protocol_type", "protocol_display_name", "xml_name", "assay_information_type", "label"})
 
 
 _OPTIONAL_TEXT_FIELDS = {
@@ -44,6 +44,9 @@ def normalize_empty_container(value: Any) -> Any:
 
 def normalize_value(value: Any, *, field_name: str | None = None) -> Any:
     if isinstance(value, str):
+        if field_name in _ASSAY_LABEL_FIELDS:
+            normalized = normalize_text(value)
+            return normalized.casefold() or None
         if field_name in _OPTIONAL_TEXT_FIELDS:
             return normalize_optional_text(value)
         normalized = normalize_text(value)
@@ -59,11 +62,13 @@ def normalize_value(value: Any, *, field_name: str | None = None) -> Any:
         normalized = sorted(normalize_value(item) for item in value)
         return normalize_empty_container(normalized)
     if isinstance(value, dict):
-        normalized = {
-            str(key).strip(): normalize_value(item, field_name=str(key).strip())
-            for key, item in value.items()
-            if normalize_value(item, field_name=str(key).strip()) is not None
-        }
+        normalized_items: dict[str, Any] = {}
+        for raw_key, raw_item in value.items():
+            key = str(raw_key).strip()
+            normalized_item = normalize_value(raw_item, field_name=key)
+            if normalized_item is not None:
+                normalized_items[key] = normalized_item
+        normalized = normalized_items
         return normalize_empty_container(normalized)
     if is_dataclass(value):
         return normalize_value(asdict(value))
@@ -75,13 +80,7 @@ def normalize_addon_for_comparison(addon: AddonModel) -> dict[str, Any]:
     if not isinstance(canonical, dict):
         return {}
 
-    source_metadata = canonical.get("source_metadata")
-    if isinstance(source_metadata, dict):
-        canonical["source_metadata"] = {
-            key: value for key, value in source_metadata.items() if key not in _SOURCE_ONLY_METADATA_FIELDS
-        }
-        if not canonical["source_metadata"]:
-            canonical["source_metadata"] = None
+    canonical.pop("source_metadata", None)
     return canonical
 
 
