@@ -32,7 +32,7 @@ def materialize_workbook_fixture(name: str, tmp_path: Path) -> Path:
         return destination
 
     spec = json.loads(source_path.read_text(encoding="utf-8"))
-    if spec.get("layout") != "v2-sheeted":
+    if spec.get("layout") not in {"v1-flat", "v2-sheeted"}:
         raise ValueError(f"Unsupported fixture layout for scenario '{name}'")
 
     openpyxl = pytest.importorskip("openpyxl")

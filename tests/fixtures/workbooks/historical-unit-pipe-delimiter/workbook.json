@@ -1,0 +1,9 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-HIST", "1.2", "Historical Units"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"], "rows": [["assay:hist", "CHEM", "Chem", "CHEM"]]},
+    "Analytes": {"columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"], "rows": [["analyte:hist", "CRP", "assay:hist", "CHEM"]]},
+    "Units": {"columns": ["UnitKey", "UnitName", "AnalyteKey"], "rows": [["unit:hist", "mg/dl| mmol/l, ug/ml", "analyte:hist"]]}
+  }
+}

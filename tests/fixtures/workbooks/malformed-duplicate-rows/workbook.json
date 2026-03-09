@@ -1,0 +1,9 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Method": {"columns": ["MethodId", "MethodVersion", "MethodDisplayName"], "rows": [["FX-BAD-DUPE", "1.0", "Dupes"]]},
+    "Assays": {"columns": ["AssayKey", "ProtocolType", "AssayDisplayName", "XmlAssayName"], "rows": [["assay:dup", "CHEM", "Chem", "CHEM"], ["assay:dup", "CHEM", "Chem", "CHEM"]]},
+    "Analytes": {"columns": ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"], "rows": [["analyte:dup", "CRP", "assay:dup", "CHEM"], ["analyte:dup", "CRP", "assay:dup", "CHEM"]]},
+    "Units": {"columns": ["UnitKey", "UnitName", "AnalyteKey"], "rows": [["unit:dup", "mg/dL", "analyte:dup"], ["unit:dup", "mg/dL", "analyte:dup"]]}
+  }
+}
