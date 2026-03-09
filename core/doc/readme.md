@@ -51,6 +51,7 @@ pytest
 - Test framework: `pytest` with `pytest-cov` coverage enforcement (`--cov-fail-under=85`). Coverage metrics omit `src/protocol_generator_gui/main.py` (Tkinter UI shell) to keep the gate focused on testable core logic modules.
 - Unit tests cover schema parsing, dynamic field grouping, conditional `StepType` required-field behavior, and validation edge cases.
 - Integration tests use a headless wizard-flow harness to verify transition guards, processing-step reorder/edit behavior, and autosave behavior after save-path selection (no Qt helpers are required because the app is Tkinter-based).
+- Addon-generation tests now include deterministic field-path/linkage behavior, matching-mode/alias-map coverage, deterministic ID assignment checks, domain and cross-file validator checks, import-to-canonical integration scenarios, and golden fixture assertions for stable `Analytes.xml` and `ProtocolFile.json` outputs.
 - CI runs the same test command on push and pull requests via GitHub Actions.
 
 ## Addon domain package

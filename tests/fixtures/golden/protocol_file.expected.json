@@ -1,0 +1,15 @@
+{
+  "AssayInformation": [
+    {
+      "Type": "Panel B"
+    },
+    {
+      "Type": "Panel A"
+    }
+  ],
+  "MethodInformation": {
+    "DisplayName": "Chemistry Method",
+    "Id": 1,
+    "Version": "1.0"
+  }
+}
