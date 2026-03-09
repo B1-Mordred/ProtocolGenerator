@@ -49,6 +49,7 @@
 - Added deterministic merge provenance output for protocol generation with required-field conflict/unresolved reporting and explicit precedence (`GUI > imported > config default > built-in default`).
 ### Changed
 
+- Strengthened addon validation and mapping checks: cross-file validation now detects missing method identity and duplicate assay/analyte/unit XML IDs in addition to broken refs; domain validation now flags empty assay lists, unsupported analyte/assay type combinations, missing analyte units, ambiguous aliases, and non-numeric method-version formats; mapping config validation now enforces section shape/typing and mode-specific semantics earlier in config loading.
 - Improved `src/addon_generator/importers/excel_importer.py` with worksheet-specific parsing paths, deterministic layout/version column registries, canonical value coercion, and structured diagnostics (`rule_id`, `sheet`, `row`, `column`, `value`) for missing required columns and duplicate rows.
 - Extended importer tests for valid workbook parsing, required-column validation, duplicate detection metadata, coercion edge cases, and importer-to-canonical integration flow through `GenerationService.import_from_excel`.
 - Changed `src/addon_generator/importers/xml_importer.py` to enforce `AddOn.xsd` validation before conversion and to raise `XmlImportValidationError` on schema-invalid payloads, while preserving importer-only canonical mapping responsibilities.
