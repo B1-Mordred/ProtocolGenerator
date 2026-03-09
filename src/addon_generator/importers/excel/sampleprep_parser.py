@@ -21,7 +21,7 @@ def parse_sampleprep_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostic
         order = _text(row[header_map["order"]].value)
         action = _text(row[header_map["action"]].value)
         if not order and not action:
-            break
+            continue
         normalized_action = action
         if action and valid_actions:
             canonical = valid_actions.get(action.casefold())

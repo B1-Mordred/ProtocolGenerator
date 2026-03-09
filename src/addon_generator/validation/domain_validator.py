@@ -56,12 +56,6 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
         issues.add(ValidationIssue(code="duplicate-assay-xml-ids", message="Assay xml_id values must be unique", path="assays", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
 
     analyte_counts_by_assay: dict[str, int] = {assay.key: 0 for assay in addon.assays}
-    for analyte in addon.analytes:
-        if analyte.assay_key in analyte_counts_by_assay:
-            analyte_counts_by_assay[analyte.assay_key] += 1
-    for assay_key, analyte_count in analyte_counts_by_assay.items():
-        if analyte_count == 0:
-            issues.add(ValidationIssue(code="assay-missing-analytes", message=f"Assay '{assay_key}' must include at least one analyte", path=f"assays[{assay_key}]", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
 
     analyte_keys = {a.key for a in addon.analytes}
     if len(analyte_keys) != len(addon.analytes):
@@ -75,6 +69,8 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
         if linked_assay is None:
             issues.add(ValidationIssue(code="unknown-assay-key", message=f"Analyte references missing assay key '{analyte.assay_key}'", path=f"analytes[{analyte.key}].assay_key", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
             continue
+
+        analyte_counts_by_assay[analyte.assay_key] += 1
 
         canonical_name = normalize_for_matching(analyte.name)
         if canonical_name:
@@ -109,6 +105,10 @@ def validate_domain(addon: AddonModel) -> DomainValidationResult:
                     source_location=_source_location_from_addon(addon, "analytes.name"),
                 )
             )
+
+    for assay_key, analyte_count in analyte_counts_by_assay.items():
+        if analyte_count == 0:
+            issues.add(ValidationIssue(code="assay-missing-analytes", message=f"Assay '{assay_key}' must include at least one analyte", path=f"assays[{assay_key}]", severity=IssueSeverity.ERROR, source=IssueSource.DOMAIN))
 
     unit_keys = {u.key for u in addon.units}
     if len(unit_keys) != len(addon.units):

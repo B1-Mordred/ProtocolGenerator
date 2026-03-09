@@ -139,25 +139,31 @@ class GenerationService:
         severity_priority = {"error": 0, "warning": 1, "info": 2}
         phase_priority = {"domain": 0, "linkage": 1, "projection": 2}
 
-        def _issue_key(item: tuple[str, ValidationIssue]) -> tuple[Any, ...]:
-            phase, issue = item
+        def _issue_key(item: tuple[int, tuple[str, ValidationIssue]]) -> tuple[Any, ...]:
+            index, (phase, issue) = item
             return (
                 severity_priority.get(issue.severity.value, 99),
                 phase_priority.get(phase, 99),
-                issue.code,
-                issue.path,
-                issue.source_location or "",
-                issue.entity_keys,
+                index,
             )
 
-        return [issue for _, issue in sorted(staged_issues, key=_issue_key)]
+        ordered = sorted(enumerate(staged_issues), key=_issue_key)
+        return [issue for _, (_, issue) in ordered]
 
     def _dto_bundle_from_addon(self, addon: AddonModel) -> InputDTOBundle:
         from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, DilutionSchemeInputDTO, SamplePrepStepInputDTO
 
         source_metadata = addon.source_metadata if isinstance(addon.source_metadata, dict) else {}
-        sample_prep = [SamplePrepStepInputDTO(**item) for item in source_metadata.get("sample_prep_steps", []) if isinstance(item, dict)]
-        dilutions = [DilutionSchemeInputDTO(**item) for item in source_metadata.get("dilution_schemes", []) if isinstance(item, dict)]
+        sample_prep_payload = source_metadata.get("sample_prep_steps")
+        dilution_payload = source_metadata.get("dilution_schemes")
+        hidden_vocab_payload = source_metadata.get("hidden_vocab")
+        provenance_payload = source_metadata.get("provenance")
+
+        sample_prep = [SamplePrepStepInputDTO(**item) for item in (sample_prep_payload or []) if isinstance(item, dict)]
+        dilutions = [DilutionSchemeInputDTO(**item) for item in (dilution_payload or []) if isinstance(item, dict)]
+        hidden_vocab = {k: list(v) for k, v in hidden_vocab_payload.items()} if isinstance(hidden_vocab_payload, dict) else {}
+        provenance = provenance_payload if isinstance(provenance_payload, dict) else {}
+
         assays = [AssayInputDTO(key=item.key, protocol_type=item.protocol_type, protocol_display_name=item.protocol_display_name, xml_name=item.xml_name, aliases=list(item.aliases), metadata=dict(item.metadata)) for item in addon.assays]
         analytes = [AnalyteInputDTO(key=item.key, name=item.name, assay_key=item.assay_key, assay_information_type=item.assay_information_type, metadata=dict(item.metadata)) for item in addon.analytes]
         return InputDTOBundle(
@@ -167,8 +173,8 @@ class GenerationService:
             analytes=analytes,
             sample_prep_steps=sample_prep,
             dilution_schemes=dilutions,
-            hidden_vocab={k: list(v) for k, v in source_metadata.get("hidden_vocab", {}).items()} if isinstance(source_metadata.get("hidden_vocab", {}), dict) else {},
-            provenance=source_metadata.get("provenance", {}) if isinstance(source_metadata.get("provenance", {}), dict) else {},
+            hidden_vocab=hidden_vocab,
+            provenance=provenance,
         )
 
     def build_package(

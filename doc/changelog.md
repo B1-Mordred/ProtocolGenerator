@@ -122,6 +122,20 @@
 
 ## Unreleased
 
+### Fixed
+- Hardened `GenerationService._dto_bundle_from_addon()` to treat nullable source metadata collections (`sample_prep_steps`, `dilution_schemes`, `hidden_vocab`, `provenance`) as empty structures, preventing `NoneType` iteration crashes in generation flows.
+- Corrected DTO bundle metadata type-guards so non-mapping `provenance`/`hidden_vocab` values are safely discarded instead of leaking invalid payload types into downstream validation.
+- Fixed workbook-template Basics parsing identity tracking bug where assay duplicate detection overwrote method identity state, causing `AttributeError: 'tuple' object has no attribute 'get'` during import.
+- Restored workbook-template parser parity by allowing sparse/blank interstitial rows (without terminating parsing), adding assay XML-name fallback (`Protocol Display Name` when `Xml Assay Name` is absent), and preserving unlinked v2 sheet records so expected domain linkage errors (`unknown-assay-key`, `assay-missing-analytes`, `unknown-analyte-key`) surface correctly.
+- Fixed v2 workbook normalization to avoid auto-promoting analyte-only `AssayKey` values into assay definitions when assay identity fields are missing, restoring expected `unknown-assay-key` diagnostics for invalid linkage fixtures.
+- Adjusted domain-validation issue ordering so analyte linkage failures (`unknown-assay-key`) are emitted before derived assay coverage fallout (`assay-missing-analytes`), restoring deterministic fixture error-order expectations.
+- Updated `GenerationService` issue sorting to preserve insertion order within each severity/phase bucket, preventing alphabetical reordering from masking root-cause diagnostics (e.g., `unknown-assay-key` before `assay-missing-analytes`).
+- Fixed v2 workbook normalization to avoid synthesizing analyte records from unit-only rows; dangling unit references now correctly surface `unknown-analyte-key` without introducing spurious `empty-analyte-name`/`unknown-assay-key` noise.
+- Fixed Excel importer normalization and v2 sheet parsing regressions by restoring assay `xml_name` fallback from `ProtocolType` when `XmlAssayName` is absent and by continuing duplicate-row detection per sheet even after prior diagnostics are recorded.
+- Restored Excel/XML canonical parity for flat workbook assays by applying fallback for `protocol_display_name` from `xml_name`/`protocol_type` during workbook row normalization when display labels are omitted.
+- Updated workflow assembly so loading steps no longer emit empty `StepParameters` objects and fragment-only processing group descriptors remain deterministic without schema-breaking placeholder step payloads.
+- Updated protocol JSON generator fragment rendering expectations to match the normalized loading-step contract (no empty parameter maps) and keep deterministic workflow merge assertions stable.
+
 ### Changed
 - Reordered `GenerationService.generate_all` validation into explicit phases (domain/structural, linkage, then projection/schema/cross-file), added deterministic issue sorting, and updated validators/tests so domain linkage errors consistently surface ahead of downstream projection fallout with stable ordering.
 - Excel workbook-template sheet parsers now enforce deterministic duplicate detection per sheet with stable `duplicate-row` diagnostics and duplicate-key metadata: assay identity (`Basics`), analyte identity per assay (`Analytes`), dilution scheme name uniqueness (`Dilutions`), and sample-prep order/action uniqueness (`SamplePrep`); tests were expanded for workbook-template duplicate diagnostics.

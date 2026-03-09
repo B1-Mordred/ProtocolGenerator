@@ -7,6 +7,7 @@ from xml.etree.ElementTree import tostring
 
 import pytest
 
+from addon_generator.importers.excel_importer import ImportDiagnostic
 from addon_generator.importers import (
     ExcelImportValidationError,
     ExcelImporter,
@@ -363,3 +364,148 @@ def test_canonical_comparison_excludes_source_only_metadata_fields() -> None:
     right.source_metadata["source_name"] = "file-b.xml"
 
     assert normalize_addon_for_comparison(left) == normalize_addon_for_comparison(right)
+
+
+def test_read_workbook_rows_v2_preserves_unlinked_records() -> None:
+    importer = ExcelImporter()
+
+    importer._parse_workbook_rows = lambda _path: {  # type: ignore[method-assign]
+        "layout_version": "v2-sheeted",
+        "method": {"method_id": "M-1", "method_version": "1.0", "method_display_name": "Method"},
+        "assays": [{"assay_key": "assay:real", "protocol_type": "CHEM", "assay_display_name": "Chem", "xml_assay_name": "Chem"}],
+        "analytes": [{"analyte_key": "analyte:oops", "analyte_name": "GLU", "assay_key": "assay:missing", "assay_information_type": "CHEM"}],
+        "units": [{"unit_key": "unit:oops", "unit_name": "mg/dL", "analyte_key": "analyte:missing"}],
+    }
+
+    rows = importer.read_workbook_rows("ignored.xlsx")
+
+    assert any(row.get("AssayKey") == "assay:real" and not row.get("AnalyteKey") for row in rows)
+    assert any(row.get("AnalyteKey") == "analyte:oops" and row.get("AssayKey") == "assay:missing" for row in rows)
+    assert any(row.get("UnitKey") == "unit:oops" and row.get("AnalyteKey") == "analyte:missing" for row in rows)
+
+
+def test_normalize_workbook_rows_does_not_promote_analyte_only_assay_key_to_assay_definition() -> None:
+    importer = ExcelImporter()
+
+    payload = importer.normalize_workbook_rows(
+        [
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AssayKey": "assay:real",
+                "ProtocolType": "CHEM",
+                "AssayDisplayName": "Chem",
+                "XmlAssayName": "Chem",
+            },
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AnalyteKey": "analyte:oops",
+                "AnalyteName": "GLU",
+                "AssayKey": "assay:missing",
+                "AssayInformationType": "CHEM",
+            },
+        ]
+    )
+
+    assert [assay["key"] for assay in payload["assays"]] == ["assay:real"]
+    assert payload["analytes"][0]["assay_key"] == "assay:missing"
+
+
+def test_normalize_workbook_rows_does_not_create_analyte_from_unit_only_row() -> None:
+    importer = ExcelImporter()
+
+    payload = importer.normalize_workbook_rows(
+        [
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AssayKey": "assay:chem",
+                "ProtocolType": "CHEM",
+                "AssayDisplayName": "Chem",
+                "XmlAssayName": "Chem",
+                "AnalyteKey": "analyte:glu",
+                "AnalyteName": "GLU",
+            },
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "UnitKey": "unit:bad",
+                "UnitName": "mg/dL",
+                "AnalyteKey": "analyte:missing",
+            },
+        ]
+    )
+
+    assert [analyte["key"] for analyte in payload["analytes"]] == ["analyte:glu"]
+    assert [unit["analyte_key"] for unit in payload["units"]] == ["analyte:missing"]
+
+
+def test_normalize_workbook_rows_falls_back_xml_name_to_protocol_type() -> None:
+    importer = ExcelImporter()
+
+    payload = importer.normalize_workbook_rows(
+        [
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AssayKey": "assay:7",
+                "ProtocolType": "Chem",
+                "AnalyteKey": "analyte:9",
+                "AnalyteName": "Glucose",
+                "UnitKey": "unit:11",
+                "UnitName": "mg/dL",
+            }
+        ]
+    )
+
+    assert payload["assays"][0]["xml_name"] == "Chem"
+
+
+def test_parse_sheet_rows_still_collects_duplicates_when_prior_sheet_has_diagnostic() -> None:
+    importer = ExcelImporter()
+
+    class _Cell:
+        def __init__(self, value):
+            self.value = value
+
+    class _Sheet:
+        title = "Analytes"
+
+        def iter_rows(self, min_row=1, max_row=None):
+            rows = [
+                ["AnalyteKey", "AnalyteName", "AssayKey", "AssayInformationType"],
+                ["a1", "GLU", "assay:1", "CHEM"],
+                ["a1", "GLU", "assay:1", "CHEM"],
+            ]
+            selected = rows[min_row - 1 : max_row if max_row is not None else None]
+            for row in selected:
+                yield tuple(_Cell(value) for value in row)
+
+    diagnostics = [ImportDiagnostic(rule_id="missing-required-column", message="x", sheet="Assays", column="AssayKey")]
+
+    records = importer._parse_sheet_rows(_Sheet(), "v2-sheeted", diagnostics)
+
+    assert records == [{"analyte_key": "a1", "analyte_name": "GLU", "assay_key": "assay:1", "assay_information_type": "CHEM"}]
+    assert any(d.rule_id == "duplicate-row" and d.sheet == "Analytes" and d.row == 3 for d in diagnostics)
+
+
+def test_normalize_workbook_rows_falls_back_protocol_display_name_to_protocol_type() -> None:
+    importer = ExcelImporter()
+
+    payload = importer.normalize_workbook_rows(
+        [
+            {
+                "MethodId": "M-1",
+                "MethodVersion": "1.0",
+                "AssayKey": "assay:7",
+                "ProtocolType": "Chem",
+                "AnalyteKey": "analyte:9",
+                "AnalyteName": "Glucose",
+                "UnitKey": "unit:11",
+                "UnitName": "mg/dL",
+            }
+        ]
+    )
+
+    assert payload["assays"][0]["protocol_display_name"] == "Chem"

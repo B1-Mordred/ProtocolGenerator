@@ -23,14 +23,25 @@ class WorkflowAssembler:
 
     def normalize_loading_steps(self, value: Any) -> list[dict[str, Any]]:
         steps = [dict(item) for item in self._as_list(value) if isinstance(item, dict)]
-        for step in steps:
-            if not isinstance(step.get("StepParameters"), dict):
-                step["StepParameters"] = {}
-        return self._ordered(steps)
+        normalized_steps: list[dict[str, Any]] = []
+        for step in self._ordered(steps):
+            step_name = step.get("StepName")
+            step_type = step.get("StepType")
+            if not (isinstance(step_name, str) and step_name.strip()) and not (isinstance(step_type, str) and step_type.strip()):
+                continue
+            params = step.get("StepParameters")
+            if isinstance(params, dict) and params:
+                step["StepParameters"] = params
+            else:
+                step.pop("StepParameters", None)
+            normalized_steps.append(step)
+        return normalized_steps
 
     def normalize_processing_steps(self, value: Any) -> list[dict[str, Any]]:
         groups = [dict(item) for item in self._as_list(value) if isinstance(item, dict)]
         if groups and all("GroupSteps" not in item for item in groups):
+            if all(self._is_group_descriptor(item) for item in groups):
+                return self._ordered([{"GroupDisplayName": item.get("GroupDisplayName")} for item in groups if isinstance(item.get("GroupDisplayName"), str) and item.get("GroupDisplayName", "").strip()])
             groups = [{"GroupDisplayName": "Default", "GroupSteps": groups}]
 
         normalized_groups: list[dict[str, Any]] = []
@@ -65,6 +76,11 @@ class WorkflowAssembler:
         for idx, group in enumerate(normalized_groups):
             group["GroupIndex"] = idx
         return normalized_groups
+
+    @staticmethod
+    def _is_group_descriptor(item: dict[str, Any]) -> bool:
+        keys = set(item)
+        return "GroupDisplayName" in keys and keys.issubset({"GroupDisplayName", "GroupIndex"})
 
     @staticmethod
     def _as_list(value: Any) -> list[Any]:

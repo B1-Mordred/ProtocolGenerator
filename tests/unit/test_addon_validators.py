@@ -112,3 +112,16 @@ def test_cross_file_validator_detects_assay_mismatch_and_merged_identity_gap() -
     codes = {i.code for i in result.issues.issues}
     assert "cross-file-assay-mismatch" in codes
     assert "missing-merged-method-identity" in codes
+
+
+def test_domain_validator_orders_unknown_assay_before_assay_missing_analytes() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="m", method_id="M", method_version="1.0"),
+        assays=[AssayModel(key="assay:real", protocol_type="CHEM")],
+        analytes=[AnalyteModel(key="analyte:oops", name="GLU", assay_key="assay:missing")],
+        units=[AnalyteUnitModel(key="unit:oops", name="mg/dL", analyte_key="analyte:oops")],
+    )
+
+    codes = [issue.code for issue in validate_domain(addon).issues.issues]
+
+    assert codes.index("unknown-assay-key") < codes.index("assay-missing-analytes")
