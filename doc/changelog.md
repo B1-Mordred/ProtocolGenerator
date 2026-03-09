@@ -22,6 +22,8 @@
 
 ## Fixed
 
+- Fixed `config/mapping.v1.yaml` to use real YAML syntax and updated mapping loader fallback so YAML config remains loadable when PyYAML is unavailable.
+
 - Fixed protocol generator to emit schema-complete minimal `ProtocolFile.json` sections (method, assay, loading, processing) so end-to-end generation validates against `protocol.schema.json`.
 
 - Fixed missing bundled-schema runtime failure by embedding `protocol.schema.json` into the PyInstaller build (`--add-data`) and adding schema path resolution logic that supports frozen execution (`sys._MEIPASS`).

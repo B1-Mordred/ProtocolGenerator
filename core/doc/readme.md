@@ -72,6 +72,7 @@ pytest
 ## AddOn generator backbone
 
 Core now includes a canonical `addon_generator` pipeline:
+- Mapping config `config/mapping.v1.yaml` is now authored in true YAML syntax; loader supports PyYAML and a built-in YAML fallback parser for environments without `yaml` installed.
 
 - Protocol JSON generation now resolves schema-required `MethodInformation`, `AssayInformation`, and minimal valid Loading/Processing workflow defaults via mapping config fallback precedence.
 - Importers map GUI/Excel/XML payloads to `AddonModel`

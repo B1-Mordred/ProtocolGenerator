@@ -18,3 +18,17 @@ def test_config_validation() -> None:
     bad = {"version": 1}
     with pytest.raises(MappingConfigError):
         validate_mapping_config(bad)
+
+
+def test_config_loader_parses_yaml_without_pyyaml(monkeypatch):
+    real_import = __import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):  # noqa: ANN001, A002
+        if name == "yaml":
+            raise ModuleNotFoundError("yaml not installed")
+        return real_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr("builtins.__import__", fake_import)
+    cfg = load_mapping_config("config/mapping.v1.yaml")
+    assert cfg.raw["version"] == 1
+    assert cfg.raw["protocol_defaults"]["method_information"]["DisplayName"] == "Method"

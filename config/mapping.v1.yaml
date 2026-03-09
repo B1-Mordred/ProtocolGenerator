@@ -1,162 +1,124 @@
-{
-  "version": 1,
-  "ids": {
-    "addon": {
-      "fixed": 0
-    },
-    "assay": {
-      "strategy": "sequential",
-      "start": 0
-    },
-    "analyte": {
-      "strategy": "sequential",
-      "start": 0
-    },
-    "analyte_unit": {
-      "strategy": "sequential",
-      "start": 0
-    }
-  },
-  "method_mapping": {
-    "protocol": {
-      "id": "method.method_id",
-      "version": "method.method_version"
-    },
-    "analytes_xml": {
-      "method_id": "method.method_id",
-      "method_version": "method.method_version"
-    }
-  },
-  "assay_mapping": {
-    "internal_identity": "assay.key",
-    "protocol": {
-      "type": "assay.protocol_type",
-      "display_name": "assay.protocol_display_name"
-    },
-    "analytes_xml": {
-      "id": "assay.xml_id",
-      "name": "assay.xml_name",
-      "addon_ref": "addon.addon_id"
-    },
-    "cross_file_match": {
-      "protocol_field": "protocol.type",
-      "analytes_xml_field": "analytes_xml.name",
-      "mode": "exact"
-    }
-  },
-  "analyte_mapping": {
-    "internal_identity": "analyte.key",
-    "analytes_xml": {
-      "id": "analyte.xml_id",
-      "name": "analyte.name",
-      "assay_ref": "analyte.assay_ref",
-      "assay_information_type": "analyte.assay_information_type"
-    }
-  },
-  "unit_mapping": {
-    "analytes_xml": {
-      "id": "unit.xml_id",
-      "name": "unit.name",
-      "analyte_ref": "unit.analyte_ref"
-    }
-  },
-  "protocol_defaults": {
-    "method_information": {
-      "DisplayName": "Method",
-      "MainTitle": "Main",
-      "SubTitle": "Sub",
-      "OrderNumber": "O-1",
-      "MaximumNumberOfSamples": 1,
-      "MaximumNumberOfProcessingCycles": 1,
-      "MaximumNumberOfAssays": 1,
-      "SamplesLayoutType": "SAMPLES_LAYOUT_COMBINED",
-      "MethodInformationType": "REGULAR"
-    },
-    "assay_information": {
-      "DisplayName": "Assay",
-      "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
-      "StopPreparationWithFailedCalibrator": false,
-      "StopPreparationWithFailedControl": false,
-      "ValidDurationInDays": 0,
-      "DilutionFactors": [
-        {
-          "DilutionFactor": "1x",
-          "IsUsed": true,
-          "AspirationVolumeEluate": 0,
-          "DispensationVolumeEluate": 0,
-          "DispensationVolumeDilutionBuffer1": 0,
-          "DispensationVolumeDilutionBuffer2": 0,
-          "DispensationVolumeDilutionBuffer3": 0
-        }
-      ],
-      "CalibratorLayoutRules": [
-        {
-          "DisplayName": "C",
-          "Level": 0,
-          "PrependToPatientSamples": true,
-          "AppendToPatientSamples": false,
-          "FrequencyOfInterspersal": 0,
-          "OffsetOfInterspersal": 0
-        }
-      ],
-      "ControlLayoutRules": [
-        {
-          "DisplayName": "K",
-          "Level": 0,
-          "PrependToPatientSamples": false,
-          "AppendToPatientSamples": true,
-          "FrequencyOfInterspersal": 0,
-          "OffsetOfInterspersal": 0
-        }
-      ]
-    },
-    "loading_workflow_steps": [
-      {
-        "StepType": "LoadMfxCarriers",
-        "StepParameters": {
-          "BarcodeMask": "*",
-          "FullFilename": "file",
-          "RequiredPlates": [
-            {
-              "LabwareType": "L",
-              "DisplayName": "D",
-              "ArticleNumber": "A",
-              "BarcodeMask": "B",
-              "FullFilename": "F",
-              "IsReusable": false,
-              "PlateControlType": "DWP"
-            }
-          ],
-          "RequiredTipRacks": [
-            {
-              "LabwareType": "L",
-              "DisplayName": "D",
-              "ArticleNumber": "A",
-              "BarcodeMask": "B",
-              "FullFilename": "F"
-            }
-          ]
-        }
-      }
-    ],
-    "processing_workflow_steps": [
-      {
-        "GroupDisplayName": "Default",
-        "GroupIndex": 0,
-        "GroupSteps": [
-          {
-            "StepIndex": 0,
-            "StepType": "UnloadHeaterShaker",
-            "StaticDurationInSeconds": 0,
-            "DynamicDurationInSeconds": 0,
-            "StepParameters": {
-              "KeepGripperTools": false,
-              "StaticDurationInSeconds": 0,
-              "DynamicDurationInSeconds": 0
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
+version: 1
+
+ids:
+  addon:
+    fixed: 0
+  assay:
+    strategy: sequential
+    start: 0
+  analyte:
+    strategy: sequential
+    start: 0
+  analyte_unit:
+    strategy: sequential
+    start: 0
+
+method_mapping:
+  protocol:
+    id: method.method_id
+    version: method.method_version
+  analytes_xml:
+    method_id: method.method_id
+    method_version: method.method_version
+
+assay_mapping:
+  internal_identity: assay.key
+  protocol:
+    type: assay.protocol_type
+    display_name: assay.protocol_display_name
+  analytes_xml:
+    id: assay.xml_id
+    name: assay.xml_name
+    addon_ref: addon.addon_id
+  cross_file_match:
+    protocol_field: protocol.type
+    analytes_xml_field: analytes_xml.name
+    mode: exact
+
+analyte_mapping:
+  internal_identity: analyte.key
+  analytes_xml:
+    id: analyte.xml_id
+    name: analyte.name
+    assay_ref: analyte.assay_ref
+    assay_information_type: analyte.assay_information_type
+
+unit_mapping:
+  analytes_xml:
+    id: unit.xml_id
+    name: unit.name
+    analyte_ref: unit.analyte_ref
+
+protocol_defaults:
+  method_information:
+    DisplayName: Method
+    MainTitle: Main
+    SubTitle: Sub
+    OrderNumber: O-1
+    MaximumNumberOfSamples: 1
+    MaximumNumberOfProcessingCycles: 1
+    MaximumNumberOfAssays: 1
+    SamplesLayoutType: SAMPLES_LAYOUT_COMBINED
+    MethodInformationType: REGULAR
+
+  assay_information:
+    DisplayName: Assay
+    MinimumNumberOfPatientSamplesOnFirstPlate: 0
+    StopPreparationWithFailedCalibrator: false
+    StopPreparationWithFailedControl: false
+    ValidDurationInDays: 0
+    DilutionFactors:
+      - DilutionFactor: 1x
+        IsUsed: true
+        AspirationVolumeEluate: 0
+        DispensationVolumeEluate: 0
+        DispensationVolumeDilutionBuffer1: 0
+        DispensationVolumeDilutionBuffer2: 0
+        DispensationVolumeDilutionBuffer3: 0
+    CalibratorLayoutRules:
+      - DisplayName: C
+        Level: 0
+        PrependToPatientSamples: true
+        AppendToPatientSamples: false
+        FrequencyOfInterspersal: 0
+        OffsetOfInterspersal: 0
+    ControlLayoutRules:
+      - DisplayName: K
+        Level: 0
+        PrependToPatientSamples: false
+        AppendToPatientSamples: true
+        FrequencyOfInterspersal: 0
+        OffsetOfInterspersal: 0
+
+  loading_workflow_steps:
+    - StepType: LoadMfxCarriers
+      StepParameters:
+        BarcodeMask: "*"
+        FullFilename: file
+        RequiredPlates:
+          - LabwareType: L
+            DisplayName: D
+            ArticleNumber: A
+            BarcodeMask: B
+            FullFilename: F
+            IsReusable: false
+            PlateControlType: DWP
+        RequiredTipRacks:
+          - LabwareType: L
+            DisplayName: D
+            ArticleNumber: A
+            BarcodeMask: B
+            FullFilename: F
+
+  processing_workflow_steps:
+    - GroupDisplayName: Default
+      GroupIndex: 0
+      GroupSteps:
+        - StepIndex: 0
+          StepType: UnloadHeaterShaker
+          StaticDurationInSeconds: 0
+          DynamicDurationInSeconds: 0
+          StepParameters:
+            KeepGripperTools: false
+            StaticDurationInSeconds: 0
+            DynamicDurationInSeconds: 0
