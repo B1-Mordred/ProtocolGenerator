@@ -43,6 +43,9 @@
 
 ## Unreleased
 
+### Changed
+- Updated `doc/user-guide.md` to document the full 5-stage GUI workflow (import preview/conflicts, editing inputs, validation, output preview/export), align wording to current tab/button labels, and add blocker-focused troubleshooting and examples for validation/export failures.
+
 ### Added
 - Expanded `doc/developer-guide.md` with end-to-end import → canonical model → generation flow, generator/validator internals, extension boundaries, and step-by-step contributor workflows for adding assay families and fragment templates; added `doc/canonical-model-reference.md` and linked both reference docs.
 - Added addon-generation golden snapshot fixtures for representative GUI scenarios and canonical integration assertions for `Analytes.xml` and `ProtocolFile.json`, plus a documented update workflow (`scripts/update_addon_generation_goldens.py`).

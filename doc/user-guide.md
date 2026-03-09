@@ -1,6 +1,6 @@
 # User Guide
 
-This guide explains how to use **Protocol Generator GUI** to author and export a valid `ProtocolFile.json`.
+This guide explains the full **Protocol Generator GUI** workflow for creating and exporting a valid `ProtocolFile.json`: import, edit, validate, preview, and export.
 
 ## 1) Before you start
 
@@ -12,46 +12,62 @@ protocol-generator-gui
 ```
 
 - Keep `protocol.schema.json` in the repository root unchanged unless your team intentionally updates the protocol schema.
+- Prepare any existing protocol JSON draft you may want to import/reopen during setup.
 
-## 2) UI tour
+## 2) UI tour (current labels)
 
-The window title is **Protocol Generator GUI** and the top toolbar includes:
+Top toolbar:
 
 - **Save As**
 - **Export ProtocolFile.json**
-- Progress text (`Step X/3 | Completed: Y/3 | Unresolved errors: Z`)
-- Validation status (`Valid` or `Errors: N (...)`)
-- Autosave status (`Autosave idle`, `Saving…`, `Saved at HH:MM`, `Save failed`, etc.)
+- Progress text (`Stage X/5 | Completed: Y/5 | Unresolved errors: Z`)
+- Validation status (`Valid`, `Errors: N (...)`, or `Not validated`)
+- Autosave status (`Autosave idle`, `Saving…`, `Saved at HH:MM`, `Saved draft at HH:MM`, `Autosave cancelled`, `Save failed`, etc.)
 
-### Step 1 General
+Tabs:
+
+1. **1. Method setup**
+2. **2. Assay/analyte setup**
+3. **3. Import preview/conflicts**
+4. **4. Validation**
+5. **5. Output preview/export**
+
+> Important: You must set a file path with **Save As** before moving past tab 1. If you try to continue first, the app prompts **Save location required**.
+
+## 3) End-to-end workflow
+
+### Stage 1 — Method setup
 
 Use this tab to fill:
 
 - `MethodInformation`
 - `AssayInformation[0]`
 
-Required fields are shown first under **Required fields**, optional values are under **Advanced options** and can be revealed with **Show advanced options**.
+How to work efficiently:
 
-![Step 1 General tab overview](images/step1-general.svg)
+- Fill all fields shown under **Required fields** first.
+- Expand **Show advanced options** only for optional or less-common fields.
+- Click **Save As** as soon as you have a valid destination path so autosave writes to your intended file.
 
-### Step 2 Loading
+### Stage 2 — Assay/analyte setup
 
-Use **Add**, **Delete**, **Move Up**, and **Move Down** to manage `LoadingWorkflowSteps`.
+This stage configures workflow steps used by protocol execution.
 
-Available loading `StepType` values are schema-driven, including:
+For both loading and processing editors:
+
+- Use **Add**, **Delete**, **Move Up**, **Move Down** to manage steps.
+- Choose each row’s `StepType` from the dropdown.
+- Complete generated `StepParameters` for that `StepType`.
+- Confirm safety prompts when reordering/removing rows (**Confirm reorder**, **Confirm delete**).
+
+Typical loading `StepType` values include:
 
 - `LoadCounterweight`
 - `LoadMfxCarriers`
 - `LoadReagentCarrier`
 - `LoadCalibratorAndControlCarrier`
 
-![Step 2 Loading tab overview](images/step2-loading.svg)
-
-### Step 3 Processing
-
-Use the same controls to build `ProcessingWorkflowSteps[0].GroupSteps`.
-
-Common processing `StepType` values include:
+Typical processing `StepType` values include:
 
 - `AliquotTransfer`
 - `CounterweightTransfer`
@@ -61,34 +77,151 @@ Common processing `StepType` values include:
 - `UnloadCentrifuge`
 - `UnloadHeaterShaker`
 
-![Step 3 Processing tab overview](images/step3-processing.svg)
+### Stage 3 — Import preview/conflicts
 
-## 3) End-to-end workflow
+Use this tab after bringing in existing or previously saved data.
 
-1. **Complete Step 1 General**
-   - Enter all required values for `MethodInformation` and `AssayInformation[0]`.
-   - Click **Save As** and select a destination JSON file.
-   - If you try to leave Step 1 before setting a save path, the app shows **Save location required**.
+What you see:
 
-2. **Build Step 2 Loading and Step 3 Processing**
-   - Add step rows.
-   - Pick `StepType` in the dropdown.
-   - Fill `StepParameters` generated for that `StepType`.
-   - Reorder or remove only after confirming dialogs (**Confirm reorder**, **Confirm delete**).
+- Conflict count and field-by-field conflict entries.
+- Imported/current comparison context.
+- A summary of unresolved conflicts that can block later progression/export.
 
-3. **Validate and export**
-   - Ensure status becomes **Valid** and all step indicators show `✓`.
-   - Click **Export ProtocolFile.json** and select a destination directory.
-   - On success, the app shows **Export complete**.
+Recommended workflow:
 
-## 4) Autosave and recovery behavior
+1. Review each conflict entry.
+2. Resolve required conflicts first.
+3. Re-check the unresolved count before proceeding.
+
+### Stage 4 — Validation
+
+This tab consolidates validation feedback before export.
+
+Validation includes:
+
+- Schema validation errors
+- Method editor checks
+- Assay/analyte relationship warnings
+
+Use it as your final checklist:
+
+- No unresolved required-field errors
+- No type/format errors
+- No critical relationship issues
+
+### Stage 5 — Output preview/export
+
+This tab shows:
+
+- **ProtocolFile.json preview** (first section of generated output)
+- Output readiness messages and blockers
+
+Export steps:
+
+1. Confirm status is **Valid** and blockers are cleared.
+2. Click **Export ProtocolFile.json**.
+3. Choose the destination directory.
+4. Confirm success dialog **Export complete**.
+
+Generated artifact name:
+
+- `ProtocolFile.json` (written into the selected folder)
+
+## 4) Worked examples
+
+### Example A — Start from scratch and export
+
+1. In **1. Method setup**, enter required method/assay fields.
+2. Click **Save As** and select `my_protocol_draft.json`.
+3. In **2. Assay/analyte setup**, add required loading and processing steps.
+4. Open **4. Validation** and fix any listed errors.
+5. Open **5. Output preview/export**, confirm preview/messages are clean.
+6. Click **Export ProtocolFile.json** and choose an export folder.
+7. Verify `<folder>/ProtocolFile.json` exists.
+
+### Example B — Recover and finish an interrupted session
+
+1. Relaunch the app after an unexpected close.
+2. At **Recover draft**, choose **Yes**.
+3. Continue edits in any stage.
+4. Re-run validation in **4. Validation**.
+5. Export from **5. Output preview/export**.
+
+### Example C — Resolve an import conflict blocker
+
+1. Go to **3. Import preview/conflicts**.
+2. Locate required-field conflicts.
+3. Resolve conflicts so required fields are no longer unresolved.
+4. Revisit **4. Validation** and **5. Output preview/export** to confirm export readiness.
+
+## 5) Troubleshooting (validation/export blockers)
+
+### Blocker: "Save location required" when switching tabs
+
+Cause:
+
+- No save path selected yet.
+
+Fix:
+
+- Return to **1. Method setup** and click **Save As**.
+
+### Blocker: Validation status shows `Errors: N (...)`
+
+Common causes:
+
+- Missing required fields in `MethodInformation` or `AssayInformation[0]`
+- Missing `StepParameters` required by selected `StepType`
+- Invalid types/formats (for example number vs string mismatches)
+
+Fix:
+
+- Use **4. Validation** for exact path/message details.
+- Jump back to the relevant stage and correct the flagged fields.
+
+### Blocker: Export button action shows **Validation failed**
+
+Cause:
+
+- Final schema validation still finds unresolved errors.
+
+Fix:
+
+1. Read the first listed error paths in the dialog.
+2. Fix those fields in the corresponding stage.
+3. Re-check **4. Validation** and retry export.
+
+### Blocker: Output preview messages indicate not ready
+
+Cause:
+
+- Unresolved conflicts or missing export target requirements.
+
+Fix:
+
+- Resolve conflicts in **3. Import preview/conflicts**.
+- Ensure required values are complete and valid.
+
+### Blocker: Autosave says **Save failed**
+
+Possible causes:
+
+- Destination path unavailable
+- Permission or disk issues
+
+Fix:
+
+- Use **Save As** to choose a writable location.
+- Retry after confirming free disk space and directory access.
+
+## 6) Autosave and recovery behavior
 
 - Every change schedules autosave with a short debounce.
 - Press **Esc** to cancel a pending autosave cycle.
 - Before a save location is chosen, the app writes a temporary draft.
 - On restart, if a temp draft exists, the app prompts **Recover draft**.
 
-## 5) Example exported structure
+## 7) Example exported structure (`ProtocolFile.json`)
 
 ```json
 {
@@ -121,20 +254,3 @@ Common processing `StepType` values include:
   ]
 }
 ```
-
-## 6) FAQ
-
-### Why does pressing Enter switch tabs?
-`Enter` advances to the next tab when your cursor is in a text entry field.
-
-### Why can I not continue to Step 2?
-You must first define a save file path with **Save As** in Step 1.
-
-### What does `✗ (N)` beside a step mean?
-That step has `N` unresolved validation errors.
-
-### What happens if app closes unexpectedly?
-A temporary draft is kept and you can reopen it from the **Recover draft** prompt at next launch.
-
-### Why does export fail even when most fields are filled?
-Export runs final schema validation. One or more required values or valid types are still missing.
