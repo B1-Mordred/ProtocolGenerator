@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from addon_generator.domain.models import AddonModel
+from addon_generator.domain.models import AddonModel, normalize_assay_identity_fields
 from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.input_models.provenance import FieldProvenance
@@ -140,12 +140,17 @@ class ExcelImporter:
             unit_names = self._split_multi_units(unit_raw)
             unit_key = self._to_string(row.get("UnitKey")) or (unit_names[0] if unit_names else "")
             if assay_key:
+                protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
+                    protocol_type=self._to_string(row.get("ProtocolType")),
+                    protocol_display_name=self._to_string(row.get("AssayDisplayName")),
+                    xml_name=self._to_string(row.get("XmlAssayName")),
+                )
                 payload["assays"].append(
                     {
                         "key": assay_key,
-                        "protocol_type": self._to_string(row.get("ProtocolType") or row.get("AssayDisplayName")),
-                        "protocol_display_name": self._to_string(row.get("AssayDisplayName")),
-                        "xml_name": self._to_string(row.get("XmlAssayName") or row.get("ProtocolType") or row.get("AssayDisplayName")),
+                        "protocol_type": protocol_type,
+                        "protocol_display_name": protocol_display_name,
+                        "xml_name": xml_name,
                     }
                 )
             if analyte_key:

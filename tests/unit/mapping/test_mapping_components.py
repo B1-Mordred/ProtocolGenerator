@@ -3,6 +3,8 @@ import pytest
 from addon_generator.mapping.config_loader import MappingConfigError, load_mapping_config, validate_mapping_config
 from addon_generator.mapping.field_path import get_field_value, parse_field_path
 from addon_generator.mapping.normalizers import normalize_for_matching
+from addon_generator.mapping.link_resolver import LinkResolver
+from addon_generator.domain.models import AssayModel
 
 
 def test_field_path_resolution_and_normalize() -> None:
@@ -68,3 +70,24 @@ def test_config_validation_rejects_invalid_samples_layout_type() -> None:
     cfg["protocol_defaults"]["method_information"]["SamplesLayoutType"] = "SAMPLES_LAYOUT_SEPARATE"
     with pytest.raises(MappingConfigError, match="protocol_defaults.method_information.SamplesLayoutType"):
         validate_mapping_config(cfg)
+
+
+def test_link_resolver_does_not_default_xml_name_from_protocol_type() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml")
+    projection = LinkResolver(cfg).resolve_assay_projection(
+        AssayModel(key="assay:1", protocol_type="PROTO-ONLY", xml_name=None, protocol_display_name="Display")
+    )
+
+    assert projection.protocol_type == "PROTO-ONLY"
+    assert projection.protocol_display_name == "Display"
+    assert projection.xml_name == ""
+
+
+def test_link_resolver_applies_explicit_projection_fallbacks_when_configured() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml")
+    cfg.raw["assay_mapping"]["projection_fallbacks"] = {"xml_name": ("protocol_type",)}
+    projection = LinkResolver(cfg).resolve_assay_projection(
+        AssayModel(key="assay:1", protocol_type="PROTO-ONLY", xml_name=None)
+    )
+
+    assert projection.xml_name == "PROTO-ONLY"
