@@ -1,0 +1,160 @@
+{
+  "AssayInformation": [
+    {
+      "CalibratorLayoutRules": [
+        {
+          "AppendToPatientSamples": false,
+          "DisplayName": "C",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": true
+        }
+      ],
+      "ControlLayoutRules": [
+        {
+          "AppendToPatientSamples": true,
+          "DisplayName": "K",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": false
+        }
+      ],
+      "DilutionFactors": [
+        {
+          "AspirationVolumeEluate": 0,
+          "DilutionFactor": "1x",
+          "DispensationVolumeDilutionBuffer1": 0,
+          "DispensationVolumeDilutionBuffer2": 0,
+          "DispensationVolumeDilutionBuffer3": 0,
+          "DispensationVolumeEluate": 0,
+          "IsUsed": true
+        }
+      ],
+      "DisplayName": "Chem",
+      "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
+      "StopPreparationWithFailedCalibrator": false,
+      "StopPreparationWithFailedControl": false,
+      "Type": "CHEM",
+      "ValidDurationInDays": 0
+    },
+    {
+      "CalibratorLayoutRules": [
+        {
+          "AppendToPatientSamples": false,
+          "DisplayName": "C",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": true
+        }
+      ],
+      "ControlLayoutRules": [
+        {
+          "AppendToPatientSamples": true,
+          "DisplayName": "K",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": false
+        }
+      ],
+      "DilutionFactors": [
+        {
+          "AspirationVolumeEluate": 0,
+          "DilutionFactor": "1x",
+          "DispensationVolumeDilutionBuffer1": 0,
+          "DispensationVolumeDilutionBuffer2": 0,
+          "DispensationVolumeDilutionBuffer3": 0,
+          "DispensationVolumeEluate": 0,
+          "IsUsed": true
+        }
+      ],
+      "DisplayName": "Immuno",
+      "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
+      "StopPreparationWithFailedCalibrator": false,
+      "StopPreparationWithFailedControl": false,
+      "Type": "IMM",
+      "ValidDurationInDays": 0
+    }
+  ],
+  "LoadingWorkflowSteps": [
+    {
+      "StepParameters": {
+        "BarcodeMask": "*",
+        "FullFilename": "file",
+        "RequiredPlates": [
+          {
+            "ArticleNumber": "A",
+            "BarcodeMask": "B",
+            "DisplayName": "D",
+            "FullFilename": "F",
+            "IsReusable": false,
+            "LabwareType": "L",
+            "PlateControlType": "DWP"
+          }
+        ],
+        "RequiredTipRacks": [
+          {
+            "ArticleNumber": "A",
+            "BarcodeMask": "B",
+            "DisplayName": "D",
+            "FullFilename": "F",
+            "LabwareType": "L"
+          }
+        ]
+      },
+      "StepType": "LoadMfxCarriers"
+    }
+  ],
+  "MethodInformation": {
+    "DisplayName": "Method",
+    "Id": "M-2A",
+    "MainTitle": "Main",
+    "MaximumNumberOfAssays": 1,
+    "MaximumNumberOfProcessingCycles": 1,
+    "MaximumNumberOfSamples": 1,
+    "MethodInformationType": "REGULAR",
+    "OrderNumber": "O-1",
+    "SamplesLayoutType": "SAMPLES_LAYOUT_SEPARATE",
+    "SubTitle": "Sub",
+    "Version": "2.0"
+  },
+  "ProcessingWorkflowSteps": [
+    {
+      "GroupDisplayName": "Chem",
+      "GroupIndex": 0,
+      "GroupSteps": [
+        {
+          "DynamicDurationInSeconds": 0,
+          "StaticDurationInSeconds": 0,
+          "StepIndex": 0,
+          "StepParameters": {
+            "DynamicDurationInSeconds": 0,
+            "KeepGripperTools": false,
+            "StaticDurationInSeconds": 0
+          },
+          "StepType": "UnloadHeaterShaker"
+        }
+      ]
+    },
+    {
+      "GroupDisplayName": "Immuno",
+      "GroupIndex": 1,
+      "GroupSteps": [
+        {
+          "DynamicDurationInSeconds": 0,
+          "StaticDurationInSeconds": 0,
+          "StepIndex": 0,
+          "StepParameters": {
+            "DynamicDurationInSeconds": 0,
+            "KeepGripperTools": false,
+            "StaticDurationInSeconds": 0
+          },
+          "StepType": "UnloadHeaterShaker"
+        }
+      ]
+    }
+  ]
+}

@@ -63,6 +63,7 @@ pytest
 - Integration tests use a headless wizard-flow harness to verify transition guards, processing-step reorder/edit behavior, and autosave behavior after save-path selection (no Qt helpers are required because the app is Tkinter-based).
 - Addon-generation tests now include deterministic field-path/linkage behavior, matching-mode/alias-map coverage, deterministic ID assignment checks, domain and cross-file validator checks, import-to-canonical integration scenarios, and golden fixture assertions for stable `Analytes.xml` and `ProtocolFile.json` outputs.
 - Integration workbook fixtures under `tests/fixtures/workbooks/` are now scenario-indexed (`index.json` + `README.md`) covering minimal valid, single-assay, multi-assay, multi-analyte, alias-normalization, invalid cross-file linkage, invalid unit linkage, and malformed workbook cases, with shared test loader helpers in `tests/fixture_loader.py` for consistent fixture materialization across integration/unit suites.
+- Golden snapshot workflow for addon generation outputs is documented in `tests/fixtures/README.md`; run `PYTHONPATH=src python scripts/update_addon_generation_goldens.py` to refresh fixtures when intentional output changes occur, then validate with `pytest -q -o addopts='' tests/integration/test_addon_generation_pipeline.py -k golden`.
 - CI runs the same test command on push and pull requests via GitHub Actions.
 
 ## Addon domain package
