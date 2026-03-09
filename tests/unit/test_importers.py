@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 import pytest
 
-from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_addon
+from addon_generator.importers import ExcelImportValidationError, ExcelImporter, XmlImporter, map_gui_payload_to_addon
 
 
 def test_gui_mapper_builds_canonical_addon() -> None:
@@ -32,6 +32,50 @@ def test_excel_importer_reads_rows(tmp_path) -> None:
     wb.save(path)
     addon = ExcelImporter().import_workbook(path)
     assert addon.method is not None and addon.method.method_id == "M"
+
+
+def test_excel_importer_reports_missing_required_columns(tmp_path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    s = wb.active
+    s.append(["MethodId", "AssayKey"])
+    s.append(["M", "A"])
+    path = tmp_path / "missing-columns.xlsx"
+    wb.save(path)
+
+    with pytest.raises(ExcelImportValidationError) as exc_info:
+        ExcelImporter().import_workbook(path)
+
+    diagnostics = exc_info.value.to_dict()["diagnostics"]
+    assert any(d["rule_id"] == "missing-required-column" and d["column"] == "MethodVersion" for d in diagnostics)
+
+
+def test_excel_importer_reports_duplicate_rows_with_metadata(tmp_path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    s = wb.active
+    s.append(["MethodId", "MethodVersion", "AssayKey", "ProtocolType", "AnalyteKey", "AnalyteName", "UnitKey", "UnitName"])
+    s.append(["M", "1", "a", "A", "n", "Name", "u", "mg/dL"])
+    s.append(["M", "1", "a", "A", "n", "Name", "u", "mg/dL"])
+    path = tmp_path / "dupes.xlsx"
+    wb.save(path)
+
+    with pytest.raises(ExcelImportValidationError) as exc_info:
+        ExcelImporter().import_workbook(path)
+
+    duplicate = next(d for d in exc_info.value.to_dict()["diagnostics"] if d["rule_id"] == "duplicate-row")
+    assert duplicate["sheet"] == "Sheet"
+    assert duplicate["row"] == 3
+    assert duplicate["value"]["AssayKey"] == "a"
+
+
+def test_excel_importer_coerces_bool_numeric_and_empty_cells() -> None:
+    importer = ExcelImporter()
+    assert importer._coerce_cell(" true ") is True
+    assert importer._coerce_cell("0") is False
+    assert importer._coerce_cell("42") == 42
+    assert importer._coerce_cell("3.14") == pytest.approx(3.14)
+    assert importer._coerce_cell("   ") is None
 
 
 def test_xml_importer_maps_required_elements(tmp_path) -> None:
