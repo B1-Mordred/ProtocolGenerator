@@ -2,6 +2,7 @@
 
 ## Added
 
+- Added `doc/mapping-config-reference.md` covering mapping-loader/validator top-level sections, validated field-path keys, value shapes, fallback precedence, alias-mode behavior, and deterministic ID assignment rules; linked it from `doc/developer-guide.md`.
 - Added deterministic analyte AddOn XML generation modules with required reference fields and deterministic sort ordering plus pre-write XSD validation that returns structured warning/error issues.
 - Added v1 addon mapping configuration at `config/mapping.v1.yaml` with defaults and ID strategy definitions for method/assay/analyte projection workflows.
 - Added addon mapping utilities under `src/addon_generator/mapping/` including safe field-path resolution, normalization helpers, projection/linkage resolution APIs, and strict config safety validation.
