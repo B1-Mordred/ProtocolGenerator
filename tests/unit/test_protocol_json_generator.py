@@ -106,3 +106,21 @@ def test_protocol_generator_uses_fragment_definitions_for_deterministic_workflow
 
     validation = validate_protocol_schema(payload, schema_path="protocol.schema.json")
     assert validation.is_valid is True
+
+def test_protocol_generator_uses_schema_valid_samples_layout_for_multi_assay() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="m", method_id="MID", method_version="1"),
+        assays=[
+            AssayModel(key="a1", protocol_type="A", xml_name="A"),
+            AssayModel(key="a2", protocol_type="B", xml_name="B"),
+        ],
+    )
+    resolver = LinkResolver(load_mapping_config("config/mapping.v1.yaml"))
+    resolver.assign_ids(addon)
+    payload = generate_protocol_json(addon, resolver).payload
+
+    assert payload["MethodInformation"]["SamplesLayoutType"] in {"SAMPLES_LAYOUT_COMBINED", "SAMPLES_LAYOUT_SPLIT"}
+    assert payload["MethodInformation"]["SamplesLayoutType"] == "SAMPLES_LAYOUT_SPLIT"
+
+    validation = validate_protocol_schema(payload, schema_path="protocol.schema.json")
+    assert validation.is_valid is True

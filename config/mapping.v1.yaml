@@ -58,7 +58,7 @@ protocol_defaults:
     MaximumNumberOfSamples: 1
     MaximumNumberOfProcessingCycles: 1
     MaximumNumberOfAssays: 1
-    SamplesLayoutType: SAMPLES_LAYOUT_COMBINED
+    SamplesLayoutType: SAMPLES_LAYOUT_SPLIT
     MethodInformationType: REGULAR
 
   assay_information:

@@ -56,6 +56,15 @@ def _ensure_bool(value: Any, *, path: str) -> bool:
     return value
 
 
+def _ensure_samples_layout_type(value: Any, *, path: str) -> str:
+    layout = _ensure_string(value, path=path)
+    allowed = {"SAMPLES_LAYOUT_COMBINED", "SAMPLES_LAYOUT_SPLIT"}
+    if layout not in allowed:
+        allowed_values = ", ".join(sorted(allowed))
+        raise MappingConfigError(f"{path} must be one of: {allowed_values}")
+    return layout
+
+
 def _ensure_non_negative_int(value: Any, *, path: str) -> int:
     if not isinstance(value, int) or value < 0:
         raise MappingConfigError(f"{path} must be a non-negative integer")
@@ -372,8 +381,12 @@ def parse_mapping_config_dict(raw: dict[str, Any]) -> MappingConfigModel:
     processing_steps = protocol_defaults_raw.get("processing_workflow_steps", [])
     _ensure_list(loading_steps, path="protocol_defaults.loading_workflow_steps")
     _ensure_list(processing_steps, path="protocol_defaults.processing_workflow_steps")
+    method_information_defaults = _ensure_mapping(protocol_defaults_raw.get("method_information", {}), path="protocol_defaults.method_information")
+    if "SamplesLayoutType" in method_information_defaults:
+        _ensure_samples_layout_type(method_information_defaults["SamplesLayoutType"], path="protocol_defaults.method_information.SamplesLayoutType")
+
     protocol_defaults = FragmentDefaultsConfig(
-        method_information=_ensure_mapping(protocol_defaults_raw.get("method_information", {}), path="protocol_defaults.method_information"),
+        method_information=method_information_defaults,
         assay_information=_ensure_mapping(protocol_defaults_raw.get("assay_information", {}), path="protocol_defaults.assay_information"),
         loading_workflow_steps=loading_steps,
         processing_workflow_steps=processing_steps,
