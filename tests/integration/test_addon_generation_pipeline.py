@@ -16,5 +16,8 @@ def test_generation_pipeline_produces_linked_outputs() -> None:
     result = service.generate_all(addon)
 
     assert result.protocol_json["MethodInformation"]["Id"] == "M-1"
+    assert result.protocol_json["MethodInformation"]["Version"] == "1.0"
+    assert result.protocol_json["LoadingWorkflowSteps"]
+    assert result.protocol_json["ProcessingWorkflowSteps"]
     assert "<MethodId>M-1</MethodId>" in result.analytes_xml_string
     assert result.issues == []

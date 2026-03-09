@@ -8,7 +8,7 @@ from xml.etree import ElementTree as ET
 from addon_generator.domain.issues import ValidationIssue
 from addon_generator.domain.models import AddonModel
 from addon_generator.generators.analytes_xml_generator import generate_analytes_addon_xml
-from addon_generator.generators.protocol_generator import generate_protocol_json
+from addon_generator.generators.protocol_json_generator import generate_protocol_json
 from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_addon
 from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.link_resolver import LinkResolver
@@ -50,7 +50,7 @@ class GenerationService:
 
     def generate_protocol_json(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None):
         self.resolver.assign_ids(addon)
-        return generate_protocol_json(addon, self.resolver)
+        return generate_protocol_json(addon, self.resolver, protocol_fragments)
 
     def generate_all(self, addon: AddonModel, *, xsd_path: str | Path = "AddOn.xsd", protocol_schema_path: str | Path = "protocol.schema.json") -> GenerationResult:
         self.resolver.assign_ids(addon)

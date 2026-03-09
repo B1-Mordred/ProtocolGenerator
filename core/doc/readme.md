@@ -72,6 +72,8 @@ pytest
 ## AddOn generator backbone
 
 Core now includes a canonical `addon_generator` pipeline:
+
+- Protocol JSON generation now resolves schema-required `MethodInformation`, `AssayInformation`, and minimal valid Loading/Processing workflow defaults via mapping config fallback precedence.
 - Importers map GUI/Excel/XML payloads to `AddonModel`
 - `LinkResolver` assigns deterministic IDs from `config/mapping.v1.yaml`
 - Generators emit both `ProtocolFile.json` and `Analytes.xml`

@@ -42,6 +42,10 @@ def validate_mapping_config(raw: dict[str, Any]) -> MappingConfig:
     _validate_field_path(method_mapping["analytes_xml"]["method_version"])
 
     assay_mapping = raw["assay_mapping"]
+
+    protocol_defaults = raw.get("protocol_defaults", {})
+    if protocol_defaults and not isinstance(protocol_defaults, dict):
+        raise MappingConfigError("protocol_defaults must be an object")
     _validate_field_path(assay_mapping["internal_identity"])
     _validate_field_path(assay_mapping["protocol"]["type"])
     _validate_field_path(assay_mapping["analytes_xml"]["name"])
