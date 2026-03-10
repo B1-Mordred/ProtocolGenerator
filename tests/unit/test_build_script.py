@@ -57,3 +57,10 @@ def test_pyinstaller_spec_resolves_repo_root_without___file__() -> None:
     finally:
         namespace.pop("__file__", None)
         namespace.pop("SPECPATH", None)
+
+
+def test_windows_build_script_installs_project_dependencies_before_packaging() -> None:
+    content = WINDOWS_SCRIPT.read_text(encoding="utf-8")
+
+    assert "python -m pip install -e ." in content
+    assert content.index("python -m pip install -e .") < content.index("python -m PyInstaller")

@@ -81,6 +81,7 @@ protocol-generator-gui
 ```
 
 All platform scripts call `python -m PyInstaller` against `build/pyinstaller/addon_authoring.spec` and produce one-folder (`COLLECT`) bundles.
+The Windows build script also runs `python -m pip install -e .` first so desktop dependencies like PySide6 are available to PyInstaller during analysis.
 
 The shared spec uses `src/addon_generator/ui/app.py` as the entry point and bundles runtime resources required by authoring/generation, including `protocol.schema.json`, `AddOn.xsd`, `config/mapping.v1.yaml`, fragment resources, canonical UI resources under `src/addon_generator/resources`, and deploy metadata/icon folders under `deploy/`.
 
