@@ -33,6 +33,7 @@ class ManualEntryView(QWidget):
             "kit_type": ["Solid", "Liquid"],
             "kit_container_type": ["Tube", "Bottle", "Vial"],
             "analyte_unit": ["mg/dL", "mmol/L", "ng/mL"],
+            "sample_prep_action": ["Mix", "Incubate", "Heat"],
         }
         self._build_basics_tab()
         self.assays_table = self._build_table_tab(
@@ -56,7 +57,7 @@ class ManualEntryView(QWidget):
             tab_name="Analytes",
         )
         self.sample_prep_table = self._build_table_tab(
-            ["Step Key", "Action", "Source", "Destination", "Volume", "Duration", "Force"],
+            ["Action", "Source", "Destination", "Volume", "Duration", "Force"],
             tab_name="Sample Prep",
         )
 
@@ -98,10 +99,18 @@ class ManualEntryView(QWidget):
         self.tabs.addTab(container, tab_name)
         return table
 
-    def set_dropdown_options(self, *, kit_types: list[str], container_types: list[str], analyte_units: list[str]) -> None:
+    def set_dropdown_options(
+        self,
+        *,
+        kit_types: list[str],
+        container_types: list[str],
+        analyte_units: list[str],
+        sample_prep_actions: list[str],
+    ) -> None:
         self._dropdown_options["kit_type"] = [v for v in kit_types if v]
         self._dropdown_options["kit_container_type"] = [v for v in container_types if v]
         self._dropdown_options["analyte_unit"] = [v for v in analyte_units if v]
+        self._dropdown_options["sample_prep_action"] = [v for v in sample_prep_actions if v]
         self._apply_table_dropdowns()
 
     def refresh_dynamic_dropdowns(self) -> None:
@@ -114,6 +123,19 @@ class ManualEntryView(QWidget):
         for row in range(self.analytes_table.rowCount()):
             self._ensure_dropdown_cell(self.analytes_table, row, 2, self._dropdown_options["analyte_unit"])
             self._ensure_dropdown_cell(self.analytes_table, row, 1, self._assay_dropdown_values())
+        kit_component_names = self._kit_component_dropdown_values()
+        for row in range(self.sample_prep_table.rowCount()):
+            self._ensure_dropdown_cell(self.sample_prep_table, row, 0, self._dropdown_options["sample_prep_action"])
+            self._ensure_dropdown_cell(self.sample_prep_table, row, 1, kit_component_names)
+            self._ensure_dropdown_cell(self.sample_prep_table, row, 2, kit_component_names)
+
+    def _kit_component_dropdown_values(self) -> list[str]:
+        values: list[str] = []
+        for row in range(self.assays_table.rowCount()):
+            value = self._cell_text(self.assays_table, row, 1)
+            if value and value not in values:
+                values.append(value)
+        return values
 
     def _assay_dropdown_values(self) -> list[str]:
         values: list[str] = []
@@ -194,7 +216,7 @@ class ManualEntryView(QWidget):
             ),
             "sample_prep": self._rows(
                 self.sample_prep_table,
-                ["key", "action", "source", "destination", "volume", "duration", "force"],
+                ["action", "source", "destination", "volume", "duration", "force"],
             ),
             "dilutions": self._rows(
                 self.dilutions_table,

@@ -140,3 +140,22 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assay_combo = shell.manual_entry_view.analytes_table.cellWidget(0, 1)
     assert isinstance(assay_combo, QComboBox)
     assert assay_combo.currentText() == "Basic Kit"
+
+
+def test_shell_admin_menu_has_dedicated_dropdown_configuration_actions(qapp) -> None:
+    shell = MainShell()
+
+    admin_menu = None
+    for action in shell.menuBar().actions():
+        if action.text() == "Admin":
+            admin_menu = action.menu()
+            break
+
+    assert admin_menu is not None
+    labels = [action.text() for action in admin_menu.actions()]
+    assert labels == [
+        "Configure Kit Type Values",
+        "Configure Container Type Values",
+        "Configure Unit of Measurement Values",
+        "Configure Sample Prep Action Values",
+    ]

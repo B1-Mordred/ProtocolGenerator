@@ -217,9 +217,22 @@ class MainShell(QMainWindow):
         data_review_menu.addAction(review_action)
 
         admin_menu = self.menuBar().addMenu("Admin")
-        dropdowns_action = QAction("Configure Drop-down Lists", self)
-        dropdowns_action.triggered.connect(self.configure_dropdown_lists)
-        admin_menu.addAction(dropdowns_action)
+
+        kit_type_action = QAction("Configure Kit Type Values", self)
+        kit_type_action.triggered.connect(self.configure_kit_type_values)
+        admin_menu.addAction(kit_type_action)
+
+        container_type_action = QAction("Configure Container Type Values", self)
+        container_type_action.triggered.connect(self.configure_container_type_values)
+        admin_menu.addAction(container_type_action)
+
+        analyte_unit_action = QAction("Configure Unit of Measurement Values", self)
+        analyte_unit_action.triggered.connect(self.configure_analyte_unit_values)
+        admin_menu.addAction(analyte_unit_action)
+
+        sample_prep_action = QAction("Configure Sample Prep Action Values", self)
+        sample_prep_action.triggered.connect(self.configure_sample_prep_action_values)
+        admin_menu.addAction(sample_prep_action)
 
     def show_manual_entry(self) -> None:
         current_bundle = self._current_merged_bundle()
@@ -396,12 +409,12 @@ class MainShell(QMainWindow):
         )
         bundle.sample_prep_steps = [
             SamplePrepStepInputDTO(
-                key=row["key"],
-                label=row.get("action") or row["key"],
+                key=row.get("key") or f"sample-prep-{index + 1}",
+                label=row.get("action") or row.get("key") or f"sample-prep-{index + 1}",
                 metadata={k: v for k, v in row.items() if k not in {"key"}},
             )
-            for row in payload["sample_prep"]
-            if row.get("key")
+            for index, row in enumerate(payload["sample_prep"])
+            if row.get("action") or row.get("source") or row.get("destination") or row.get("volume") or row.get("duration") or row.get("force")
         ]
         bundle.dilution_schemes = [
             DilutionSchemeInputDTO(
@@ -434,29 +447,63 @@ class MainShell(QMainWindow):
             kit_types=list(settings.get("admin_kit_types", ["Solid", "Liquid"])),
             container_types=list(settings.get("admin_container_types", ["Tube", "Bottle", "Vial"])),
             analyte_units=list(settings.get("admin_analyte_units", ["mg/dL", "mmol/L", "ng/mL"])),
+            sample_prep_actions=list(settings.get("admin_sample_prep_actions", ["Mix", "Incubate", "Heat"])),
         )
 
-    def configure_dropdown_lists(self) -> None:
+    def _configure_dropdown_setting(
+        self,
+        *,
+        setting_key: str,
+        defaults: list[str],
+        title: str,
+        prompt: str,
+        reason: str,
+    ) -> None:
         settings = self.app_state.editor_state.export_settings
-        current_kit_types = ", ".join(settings.get("admin_kit_types", ["Solid", "Liquid"]))
-        kit_types_raw, ok = QInputDialog.getText(self, "Configure Type Values", "Type values (comma-separated):", text=current_kit_types)
+        current = ", ".join(settings.get(setting_key, defaults))
+        raw, ok = QInputDialog.getText(self, title, prompt, text=current)
         if not ok:
             return
-        current_container_types = ", ".join(settings.get("admin_container_types", ["Tube", "Bottle", "Vial"]))
-        container_types_raw, ok = QInputDialog.getText(self, "Configure Container Type Values", "Container Type values (comma-separated):", text=current_container_types)
-        if not ok:
-            return
-        current_units = ", ".join(settings.get("admin_analyte_units", ["mg/dL", "mmol/L", "ng/mL"]))
-        analyte_units_raw, ok = QInputDialog.getText(self, "Configure Unit of Measurement Values", "Unit of Measurement values (comma-separated):", text=current_units)
-        if not ok:
-            return
-
-        settings["admin_kit_types"] = self._parse_csv_options(kit_types_raw, ["Solid", "Liquid"])
-        settings["admin_container_types"] = self._parse_csv_options(container_types_raw, ["Tube", "Bottle", "Vial"])
-        settings["admin_analyte_units"] = self._parse_csv_options(analyte_units_raw, ["mg/dL", "mmol/L", "ng/mL"])
+        settings[setting_key] = self._parse_csv_options(raw, defaults)
         self._apply_admin_dropdown_settings()
-        self._mark_dirty(reason="admin_dropdowns")
+        self._mark_dirty(reason=reason)
         self._refresh_status()
+
+    def configure_kit_type_values(self) -> None:
+        self._configure_dropdown_setting(
+            setting_key="admin_kit_types",
+            defaults=["Solid", "Liquid"],
+            title="Configure Type Values",
+            prompt="Type values (comma-separated):",
+            reason="admin_kit_types",
+        )
+
+    def configure_container_type_values(self) -> None:
+        self._configure_dropdown_setting(
+            setting_key="admin_container_types",
+            defaults=["Tube", "Bottle", "Vial"],
+            title="Configure Container Type Values",
+            prompt="Container Type values (comma-separated):",
+            reason="admin_container_types",
+        )
+
+    def configure_analyte_unit_values(self) -> None:
+        self._configure_dropdown_setting(
+            setting_key="admin_analyte_units",
+            defaults=["mg/dL", "mmol/L", "ng/mL"],
+            title="Configure Unit of Measurement Values",
+            prompt="Unit of Measurement values (comma-separated):",
+            reason="admin_analyte_units",
+        )
+
+    def configure_sample_prep_action_values(self) -> None:
+        self._configure_dropdown_setting(
+            setting_key="admin_sample_prep_actions",
+            defaults=["Mix", "Incubate", "Heat"],
+            title="Configure Sample Prep Action Values",
+            prompt="Sample Prep Action values (comma-separated):",
+            reason="admin_sample_prep_actions",
+        )
 
     def run_validation(self) -> None:
         merged = self._current_merged_bundle()

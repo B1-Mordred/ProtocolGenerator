@@ -46,6 +46,10 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
     view.assays_table.setItem(0, 1, QTableWidgetItem("Component A"))
     view.assays_table.setItem(0, 2, QTableWidgetItem("PS-1"))
 
+    view.sample_prep_table.cellWidget(0, 0).setCurrentText("Mix")
+    view.sample_prep_table.cellWidget(0, 1).setCurrentText("Component A")
+    view.sample_prep_table.cellWidget(0, 2).setCurrentText("Component A")
+
     payload = view.payload()
     assert "method_id" not in payload["method"]
     assert "method_version" not in payload["method"]
@@ -55,6 +59,7 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
     assert payload["assays"][0]["product_number"] == "PN-1"
     assert payload["assays"][0]["component_name"] == "Component A"
     assert payload["assays"][0]["parameter_set_number"] == "PS-1"
+    assert payload["sample_prep"][0]["action"] == "Mix"
     assert called["count"] >= 2
 
 
@@ -87,24 +92,43 @@ def test_manual_entry_tab_order_and_kit_component_headers(qapp) -> None:
     analyte_headers = [view.analytes_table.horizontalHeaderItem(i).text() for i in range(view.analytes_table.columnCount())]
     assert analyte_headers == ["Analyte Name", "Assay", "Unit of Measurement"]
 
+    sample_prep_headers = [view.sample_prep_table.horizontalHeaderItem(i).text() for i in range(view.sample_prep_table.columnCount())]
+    assert sample_prep_headers == ["Action", "Source", "Destination", "Volume", "Duration", "Force"]
+
 
 def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
     view = ManualEntryView()
 
+    view.assays_table.setItem(0, 1, QTableWidgetItem("Component A"))
     view.assays_table.setItem(0, 4, QTableWidgetItem("Basic Kit"))
-    view.set_assays_rows([{"parameter_set_name": "Basic Kit", "type": "Liquid", "container_type": "Bottle"}])
+    view.set_assays_rows([{"component_name": "Component A", "parameter_set_name": "Basic Kit", "type": "Liquid", "container_type": "Bottle"}])
     view.set_analytes_rows([{"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}])
 
     assay_type_combo = view.assays_table.cellWidget(0, 5)
     container_combo = view.assays_table.cellWidget(0, 6)
     analyte_assay_combo = view.analytes_table.cellWidget(0, 1)
     analyte_unit_combo = view.analytes_table.cellWidget(0, 2)
+    sample_action_combo = view.sample_prep_table.cellWidget(0, 0)
+    sample_source_combo = view.sample_prep_table.cellWidget(0, 1)
+    sample_destination_combo = view.sample_prep_table.cellWidget(0, 2)
 
     assert isinstance(assay_type_combo, QComboBox)
     assert isinstance(container_combo, QComboBox)
     assert isinstance(analyte_assay_combo, QComboBox)
     assert isinstance(analyte_unit_combo, QComboBox)
+    assert isinstance(sample_action_combo, QComboBox)
+    assert isinstance(sample_source_combo, QComboBox)
+    assert isinstance(sample_destination_combo, QComboBox)
     assert analyte_assay_combo.findText("Basic Kit") >= 0
+    assert sample_source_combo.findText("Component A") >= 0
+    assert sample_destination_combo.findText("Component A") >= 0
+
+    sample_action_combo.setCurrentText("Mix")
+    sample_source_combo.setCurrentText("Component A")
+    sample_destination_combo.setCurrentText("Component A")
 
     payload = view.payload()
     assert payload["analytes"][0] == {"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}
+    assert payload["sample_prep"][0]["action"] == "Mix"
+    assert payload["sample_prep"][0]["source"] == "Component A"
+    assert payload["sample_prep"][0]["destination"] == "Component A"
