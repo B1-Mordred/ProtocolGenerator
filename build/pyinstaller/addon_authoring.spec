@@ -2,7 +2,24 @@
 
 from pathlib import Path
 
-REPO_ROOT = Path(__file__).resolve().parent.parent.parent
+
+def _resolve_spec_dir() -> Path:
+    spec_file = globals().get('__file__')
+    if spec_file:
+        return Path(spec_file).resolve().parent
+
+    spec_path = globals().get('SPECPATH')
+    if spec_path:
+        return Path(spec_path).resolve()
+
+    default_spec_dir = Path.cwd() / 'build' / 'pyinstaller'
+    if default_spec_dir.exists():
+        return default_spec_dir.resolve()
+
+    return Path.cwd().resolve()
+
+
+REPO_ROOT = _resolve_spec_dir().parent.parent
 
 
 def _data(path: str, target: str) -> tuple[str, str]:

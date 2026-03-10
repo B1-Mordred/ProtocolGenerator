@@ -3,6 +3,7 @@
 ## 2026-03-10
 
 ### Fixed
+- Fixed PyInstaller Windows spec execution when `__file__` is unavailable by adding resilient spec-directory resolution (`__file__` → `SPECPATH` → cwd fallback), preventing `NameError` during `scripts/build_windows.ps1` builds.
 - Updated `build/pyinstaller/addon_authoring.spec` to derive `Analysis` script, `pathex`, and bundled data sources from a repo-root `Path(__file__)` anchor so packaging is resilient to invocation directory changes.
 - Added deterministic resource resolution via `addon_generator.runtime.resources.get_resource_path()` and switched GUI schema loading to that helper so `protocol.schema.json` resolves correctly in both source mode and PyInstaller bundles (`sys._MEIPASS`); added focused runtime/schema resolution unit tests.
 

@@ -10,7 +10,8 @@ LINUX_SCRIPT = Path("scripts/build_linux.sh")
 def test_pyinstaller_spec_uses_addon_authoring_entrypoint() -> None:
     content = SPEC_PATH.read_text(encoding="utf-8")
 
-    assert "src/addon_generator/ui/app.py" in content
+    assert "APP_ENTRYPOINT" in content
+    assert "addon_generator' / 'ui' / 'app.py" in content
     assert "COLLECT(" in content
     assert "--onefile" not in content
 
@@ -34,3 +35,25 @@ def test_platform_build_scripts_use_spec_driven_pyinstaller_invocation() -> None
         assert "python -m PyInstaller" in content
         assert "build/pyinstaller/addon_authoring.spec" in content
         assert "--onefile" not in content
+
+
+def test_pyinstaller_spec_resolves_repo_root_without___file__() -> None:
+    namespace = {"Path": Path, "__builtins__": __builtins__}
+    content = SPEC_PATH.read_text(encoding="utf-8")
+
+    exec(content.split("a = Analysis(", 1)[0], namespace)
+
+    resolver = namespace["_resolve_spec_dir"]
+
+    original_cwd = Path.cwd()
+    try:
+        assert resolver() == (original_cwd / "build" / "pyinstaller").resolve()
+
+        namespace["SPECPATH"] = str(original_cwd / "build" / "pyinstaller")
+        assert resolver() == (original_cwd / "build" / "pyinstaller").resolve()
+
+        namespace["__file__"] = str(original_cwd / "build" / "pyinstaller" / "addon_authoring.spec")
+        assert resolver() == (original_cwd / "build" / "pyinstaller").resolve()
+    finally:
+        namespace.pop("__file__", None)
+        namespace.pop("SPECPATH", None)
