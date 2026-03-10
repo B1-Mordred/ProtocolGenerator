@@ -3,6 +3,7 @@
 ## 2026-03-10
 
 ### Fixed
+- Updated `scripts/build_windows.ps1` to install project dependencies (`pip install -e .`) before invoking PyInstaller so Qt (`PySide6`) is available for analysis/bundling and the packaged desktop app launches instead of exiting immediately.
 - Fixed PyInstaller Windows spec execution when `__file__` is unavailable by adding resilient spec-directory resolution (`__file__` → `SPECPATH` → cwd fallback), preventing `NameError` during `scripts/build_windows.ps1` builds.
 - Hardened the PySide6 desktop entrypoint to detect missing Qt dependencies before importing UI modules, returning a clear install hint instead of crashing with `ModuleNotFoundError: No module named 'PySide6'`.
 - Updated `build/pyinstaller/addon_authoring.spec` to derive `Analysis` script, `pathex`, and bundled data sources from a repo-root `Path(__file__)` anchor so packaging is resilient to invocation directory changes.

@@ -124,6 +124,7 @@ powershell.exe -ExecutionPolicy Bypass -File .\build_windows_exe.ps1
 ```
 
 The script invokes PyInstaller via module mode (`python -m PyInstaller`) so the build works even when `%LOCALAPPDATA%\...\Python313\Scripts` is not on `PATH`.
+Before packaging, it installs project dependencies (`python -m pip install -e .`) to ensure Qt runtime modules (PySide6) are present for PyInstaller analysis and bundling.
 It also embeds `protocol.schema.json` into the executable (`--add-data`) and resolves it at runtime from bundled resources, so no external schema file is required next to the EXE.
 It packages a module-safe entrypoint (absolute imports in `main.py`) to prevent `ImportError: attempted relative import with no known parent package` in the generated EXE.
 
