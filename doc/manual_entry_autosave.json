@@ -1,0 +1,130 @@
+{
+  "analytes": [
+    {
+      "assay_key": "Neuroleptics 2/EXTENDED 2",
+      "name": "Amisulpride",
+      "unit_names": "\u00b5g/L"
+    },
+    {
+      "assay_key": "Neuroleptics 2/EXTENDED 2",
+      "name": "Benperidol",
+      "unit_names": "\u00b5g/L"
+    },
+    {
+      "assay_key": "Neuroleptics 2/EXTENDED 2",
+      "name": "Brexpiprazole",
+      "unit_names": "\u00b5g/L"
+    }
+  ],
+  "assays": [
+    {
+      "assay_abbreviation": "",
+      "component_name": "Precipitation Reagent",
+      "container_type": "BG 50mL",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "92012",
+      "type": "Reagent"
+    },
+    {
+      "assay_abbreviation": "",
+      "component_name": "Extraction Buffer",
+      "container_type": "BG 7mL",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "92005",
+      "type": "Reagent"
+    },
+    {
+      "assay_abbreviation": "",
+      "component_name": "Dilution Buffer 1",
+      "container_type": "BG 50mL",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "92007",
+      "type": "Reagent"
+    },
+    {
+      "assay_abbreviation": "",
+      "component_name": "Dilution Buffer 2",
+      "container_type": "BG 50mL",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "92008",
+      "type": "Reagent"
+    },
+    {
+      "assay_abbreviation": "",
+      "component_name": "96 Well filter plates",
+      "container_type": "",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "92057",
+      "type": "Filter Plate 96 well"
+    },
+    {
+      "assay_abbreviation": "",
+      "component_name": "96 Well collection plates",
+      "container_type": "",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "92058",
+      "type": "Collection Plate 96 well"
+    },
+    {
+      "assay_abbreviation": "NL2-XT2",
+      "component_name": "Plasma Calibrator Blank",
+      "container_type": "Kabe Tube",
+      "parameter_set_name": "Neuroleptics 2/EXTENDED 2",
+      "parameter_set_number": "92714-XT2",
+      "product_number": "92026/0/XT2",
+      "type": "Calibrator"
+    },
+    {
+      "assay_abbreviation": "NL2-XT2",
+      "component_name": "Plasma Calibrator Level 1",
+      "container_type": "Kabe Tube",
+      "parameter_set_name": "Neuroleptics 2/EXTENDED 2",
+      "parameter_set_number": "92714-XT2",
+      "product_number": "92026/1/XT2",
+      "type": "Calibrator"
+    },
+    {
+      "assay_abbreviation": "NL2-XT2",
+      "component_name": "Plasma Calibrator Level 2",
+      "container_type": "Kabe Tube",
+      "parameter_set_name": "Neuroleptics 2/EXTENDED 2",
+      "parameter_set_number": "92714-XT2",
+      "product_number": "92026/21/XT2",
+      "type": "Calibrator"
+    },
+    {
+      "assay_abbreviation": "",
+      "component_name": "Urine",
+      "container_type": "Sample Tube",
+      "parameter_set_name": "",
+      "parameter_set_number": "",
+      "product_number": "",
+      "type": "Sample"
+    }
+  ],
+  "dilutions": [],
+  "method": {
+    "addon_product_name": "TDM Series A",
+    "addon_product_number": "42952",
+    "addon_series": "MassPrep\u00ae",
+    "kit_name": "TDM Series A",
+    "kit_product_number": "92711",
+    "kit_series": "MassTox\u00ae"
+  },
+  "sample_prep": [
+    {
+      "action": "Pipette (1000)",
+      "destination": "",
+      "duration": "",
+      "force": "",
+      "source": "",
+      "volume": ""
+    }
+  ]
+}
