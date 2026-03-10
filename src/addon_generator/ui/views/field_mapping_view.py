@@ -22,6 +22,7 @@ from PySide6.QtWidgets import (
 )
 
 from addon_generator.ui.state.app_state import AppState
+from addon_generator.ui.services.expression_validation import validate_mapping_expression
 
 
 TARGET_OPTIONS = [
@@ -75,10 +76,12 @@ class FieldMappingView(QWidget):
         root.addLayout(template_row)
 
         self.mapping_table = QTableWidget(self)
-        self.mapping_table.setColumnCount(3)
-        self.mapping_table.setHorizontalHeaderLabels(["Enabled", "Target Field", "Source Expression"])
+        self.mapping_table.setColumnCount(4)
+        self.mapping_table.setHorizontalHeaderLabels(["Enabled", "Target Field", "Source Expression", "Status"])
         self.mapping_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        self.mapping_table.horizontalHeader().setStretchLastSection(True)
+        self.mapping_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        self.mapping_table.horizontalHeader().setStretchLastSection(False)
+        self.mapping_table.itemChanged.connect(self._on_item_changed)
         root.addWidget(self.mapping_table)
 
         map_actions = QHBoxLayout()
@@ -107,7 +110,8 @@ class FieldMappingView(QWidget):
             "- input:method.kit_name\n"
             "- default:BASIC Kit\n"
             "- custom:My Value\n"
-            "- concat(input:method.kit_name, default:-, custom:v1)"
+            "- concat(input:method.kit_name, default:-, custom:v1)\n"
+            "- concat(delimiter='-', input:method.kit_name, custom:v1)"
         )
         helper_layout.addRow("Token", self.token_selector)
         helper_layout.addRow("Custom", self.custom_literal)
@@ -168,10 +172,13 @@ class FieldMappingView(QWidget):
             target_box.setEditable(True)
             target_box.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
             target_box.setCurrentText(str(row.get("target", "")))
+            target_box.currentTextChanged.connect(lambda _value, row_idx=idx: self._validate_row(row_idx))
             self.mapping_table.setCellWidget(idx, 1, target_box)
 
             expr_item = QTableWidgetItem(str(row.get("expression", "")))
             self.mapping_table.setItem(idx, 2, expr_item)
+            self._set_status_item(idx, "")
+            self._validate_row(idx)
         self.mapping_table.resizeColumnsToContents()
 
     def _collect_rows(self) -> list[dict[str, object]]:
@@ -190,6 +197,9 @@ class FieldMappingView(QWidget):
     def _save_current_template(self) -> None:
         name = self.template_selector.currentText().strip() or self._active_template_name()
         if not name:
+            return
+        if not self._validate_all_rows_for_save():
+            QMessageBox.warning(self, "Field Mapping", "Cannot save while enabled rows contain invalid expressions.")
             return
         self._templates()[name] = self._collect_rows()
         self._app_state.editor_state.export_settings["field_mapping"]["active_template"] = name
@@ -227,6 +237,9 @@ class FieldMappingView(QWidget):
         name = self.template_selector.currentText().strip()
         if not name:
             return
+        if not self._validate_all_rows_for_save():
+            QMessageBox.warning(self, "Field Mapping", "Cannot activate while enabled rows contain invalid expressions.")
+            return
         self._save_current_template()
         QMessageBox.information(self, "Field Mapping", f"Active mapping template set to '{name}'.")
 
@@ -240,8 +253,10 @@ class FieldMappingView(QWidget):
         target_box.setEditable(True)
         target_box.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         target_box.addItems(TARGET_OPTIONS)
+        target_box.currentTextChanged.connect(lambda _value, row_idx=row: self._validate_row(row_idx))
         self.mapping_table.setCellWidget(row, 1, target_box)
         self.mapping_table.setItem(row, 2, QTableWidgetItem(""))
+        self._set_status_item(row, "⚠️ Error: Expression is required")
 
     def _remove_row(self) -> None:
         selected = self.mapping_table.selectionModel().selectedRows()
@@ -263,6 +278,7 @@ class FieldMappingView(QWidget):
             token = f"custom:{self.custom_literal.text().strip()}"
         prefix = expr_item.text().strip()
         expr_item.setText(f"{prefix}, {token}" if prefix else token)
+        self._validate_row(row)
 
     def _wrap_concat(self) -> None:
         selected = self.mapping_table.selectionModel().selectedRows()
@@ -280,6 +296,48 @@ class FieldMappingView(QWidget):
             expr_item.setText(f"concat(delimiter='{delimiter}', {expr})")
         else:
             expr_item.setText(f"concat({expr})")
+        self._validate_row(row)
+
+    def _on_item_changed(self, item: QTableWidgetItem) -> None:
+        if item.column() in (0, 2):
+            self._validate_row(item.row())
+
+    def _set_status_item(self, row: int, text: str) -> None:
+        current = self.mapping_table.item(row, 3)
+        if current is None:
+            current = QTableWidgetItem(text)
+            current.setFlags(current.flags() & ~Qt.ItemFlag.ItemIsEditable)
+            self.mapping_table.setItem(row, 3, current)
+        else:
+            current.setText(text)
+
+    def _validate_row(self, row: int) -> bool:
+        enabled_item = self.mapping_table.item(row, 0)
+        enabled = enabled_item.checkState() == Qt.CheckState.Checked if enabled_item else True
+        target_widget = self.mapping_table.cellWidget(row, 1)
+        target = target_widget.currentText().strip() if isinstance(target_widget, QComboBox) else ""
+        expr_item = self.mapping_table.item(row, 2)
+        expression = expr_item.text().strip() if expr_item else ""
+
+        if not target and not expression:
+            self._set_status_item(row, "")
+            return True
+        result = validate_mapping_expression(expression)
+        if result.is_valid:
+            self._set_status_item(row, "✅ Valid")
+            return True
+        if not enabled:
+            self._set_status_item(row, f"⚠️ Disabled row: {result.error}")
+            return True
+        self._set_status_item(row, f"❌ Error: {result.error}")
+        return False
+
+    def _validate_all_rows_for_save(self) -> bool:
+        valid = True
+        for row in range(self.mapping_table.rowCount()):
+            if not self._validate_row(row):
+                valid = False
+        return valid
 
     def _notify_change(self) -> None:
         if self._on_state_changed:
