@@ -4,6 +4,7 @@ from xml.etree import ElementTree as ET
 
 import pytest
 
+from addon_generator.__about__ import about_payload
 from addon_generator.services.generation_service import GenerationService
 from fixture_loader import fixture_metadata, materialize_workbook_fixture
 
@@ -161,6 +162,9 @@ def test_package_builder_emits_deterministic_layout(tmp_path) -> None:
 
     assert first.artifacts["ProtocolFile.json"].read_text(encoding="utf-8") == second.artifacts["ProtocolFile.json"].read_text(encoding="utf-8")
     assert first.artifacts["Analytes.xml"].read_text(encoding="utf-8") == second.artifacts["Analytes.xml"].read_text(encoding="utf-8")
+
+    metadata = json.loads(first.artifacts["package-metadata.json"].read_text(encoding="utf-8"))
+    assert metadata["app"] == about_payload()
 
 
 def test_package_builder_overwrite_and_collision_policy(tmp_path) -> None:

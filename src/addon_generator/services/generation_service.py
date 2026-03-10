@@ -10,6 +10,7 @@ from typing import Any
 from xml.etree import ElementTree as ET
 
 from addon_generator.domain.issues import ValidationIssue
+from addon_generator.__about__ import about_payload
 from addon_generator.domain.models import AddonModel
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.generators.analytes_xml_generator import generate_analytes_addon_xml
@@ -213,6 +214,7 @@ class GenerationService:
                 "package_name": final_root.name,
                 "method_id": addon.method.method_id if addon.method else "",
                 "method_version": addon.method.method_version if addon.method else "",
+                "app": about_payload(),
                 "artifacts": ["Analytes.xml", "ProtocolFile.json", "package-metadata.json"],
             }
             metadata_path.write_text(json.dumps(metadata_payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")

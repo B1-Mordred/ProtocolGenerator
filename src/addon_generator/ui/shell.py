@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
+from addon_generator.__about__ import __app_name__
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.export_service import ExportResult, ExportService
 from addon_generator.ui.services.import_service import ImportService
@@ -73,7 +74,7 @@ class MainShell(QMainWindow):
         self.export_service = export_service or ExportService()
         self.draft_service = draft_service or DraftService()
 
-        self.setWindowTitle("AddOn Authoring")
+        self.setWindowTitle(__app_name__)
         self._last_merged_bundle = None
 
         self.sidebar = NavigationSidebar(SECTIONS, self)

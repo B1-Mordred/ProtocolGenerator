@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "protocol-generator-gui"
-version = "0.1.0"
+dynamic = ["version"]
 description = "Schema-driven desktop protocol file generator"
 requires-python = ">=3.10"
 dependencies = [
@@ -27,6 +27,9 @@ package-dir = {"" = "src"}
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.dynamic]
+version = {attr = "addon_generator.__about__.__version__"}
 
 [tool.pytest.ini_options]
 pythonpath = ["src"]
