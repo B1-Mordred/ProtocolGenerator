@@ -272,3 +272,86 @@ def test_sampleprep_action_validation_falls_back_to_actions_vocab(tmp_path: Path
 
     diagnostics = {(d.rule_id, d.sheet, d.column) for d in exc.value.diagnostics}
     assert ("invalid-vocabulary", "SamplePrep", "Action") in diagnostics
+
+
+def test_analytes_resolve_assay_key_from_parameter_set_when_assay_key_column_absent(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    basics = wb.create_sheet("Basics")
+    basics.append(["Method Id", "M-300"])
+    basics.append(["Method Version", "1.0"])
+    basics.append([])
+    basics.append([
+        "Product Number",
+        "Component Name",
+        "Parameter Set Number",
+        "Assay Abbreviation",
+        'Parameter Set Name (or "Basic Kit")',
+        "Type",
+        "Container Type (if Liquid)",
+    ])
+    basics.append(["P-1", "Chemistry Panel", "100", "CHEM", "Chemistry", "KIT", "Tube"])
+    basics.append(["P-2", "Immuno Panel", "200", "IMM", "Immunology", "KIT", "Tube"])
+
+    analytes = wb.create_sheet("Analytes")
+    analytes.append(["Analyte", "Unit", "Parameter Set"])
+    analytes.append(["GLU", "mg/dL", "Chemistry"])
+    analytes.append(["TSH", "IU/mL", "200"])
+
+    hidden = wb.create_sheet("Hidden_Lists")
+    hidden.append(["Units"])
+    hidden.append(["mg/dL"])
+    hidden.append(["IU/mL"])
+
+    path = tmp_path / "parameter-set-linking.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert [(a.name, a.assay_key) for a in bundle.analytes] == [
+        ("GLU", "100"),
+        ("TSH", "200"),
+    ]
+
+
+def test_analytes_emit_missing_assay_link_diagnostic_when_parameter_set_is_unresolved(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    basics = wb.create_sheet("Basics")
+    basics.append(["Method Id", "M-301"])
+    basics.append(["Method Version", "1.0"])
+    basics.append([])
+    basics.append([
+        "Product Number",
+        "Component Name",
+        "Parameter Set Number",
+        "Assay Abbreviation",
+        'Parameter Set Name (or "Basic Kit")',
+        "Type",
+        "Container Type (if Liquid)",
+    ])
+    basics.append(["P-1", "Chemistry Panel", "100", "CHEM", "Chemistry", "KIT", "Tube"])
+
+    analytes = wb.create_sheet("Analytes")
+    analytes.append(["Analyte", "Unit", "Parameter Set"])
+    analytes.append(["GLU", "mg/dL", "Unknown Set"])
+
+    hidden = wb.create_sheet("Hidden_Lists")
+    hidden.append(["Units"])
+    hidden.append(["mg/dL"])
+
+    path = tmp_path / "missing-assay-link.xlsx"
+    wb.save(path)
+
+    with pytest.raises(ExcelImportValidationError) as exc:
+        ExcelImporter().import_workbook_bundle(path)
+
+    diagnostics = [d for d in exc.value.diagnostics if d.rule_id == "missing-assay-link"]
+    assert len(diagnostics) == 1
+    assert diagnostics[0].sheet == "Analytes"
+    assert diagnostics[0].column == "Parameter Set"
+    assert diagnostics[0].value == {"analyte": "GLU", "parameter_set": "Unknown Set"}

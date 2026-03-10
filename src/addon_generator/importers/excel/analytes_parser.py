@@ -12,7 +12,13 @@ class AnalytesParseResult:
         self.units = units
 
 
-def parse_analytes_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostics: list[ImportDiagnostic]) -> AnalytesParseResult:
+def parse_analytes_sheet(
+    sheet: Any,
+    *,
+    vocab: dict[str, set[str]],
+    diagnostics: list[ImportDiagnostic],
+    assay_lookup_by_parameter_set: dict[str, str] | None = None,
+) -> AnalytesParseResult:
     rows = list(sheet.iter_rows())
     header_row, headers = _find_header(rows)
     if header_row is None:
@@ -22,6 +28,7 @@ def parse_analytes_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostics:
     analytes: list[AnalyteInputDTO] = []
     units: list[UnitInputDTO] = []
     known_units = {u.casefold(): u for u in vocab.get("Units", set())}
+    parameter_set_lookup = assay_lookup_by_parameter_set or {}
 
     seen_analytes: set[tuple[str, str]] = set()
 
@@ -30,9 +37,28 @@ def parse_analytes_sheet(sheet: Any, *, vocab: dict[str, set[str]], diagnostics:
         analyte_name = _text(row[headers["analyte"]].value)
         unit_name = _text(row[headers["unit"]].value)
         parameter_set = _text(row[headers["parameter_set"]].value)
-        assay_key = _text(row[headers.get("assay_key", headers["analyte"])].value)
+        assay_key = _text(row[headers["assay_key"]].value) if "assay_key" in headers else ""
+        if not assay_key and parameter_set:
+            assay_key = parameter_set_lookup.get(_identity_token(parameter_set), "")
         if not any((analyte_name, unit_name, parameter_set, assay_key)):
             continue
+
+        if not assay_key:
+            diagnostics.append(
+                ImportDiagnostic(
+                    rule_id="missing-assay-link",
+                    message="Could not resolve assay link from Parameter Set",
+                    sheet=sheet.title,
+                    row=row_idx,
+                    column="Parameter Set",
+                    value={
+                        "analyte": analyte_name,
+                        "parameter_set": parameter_set,
+                    },
+                )
+            )
+            continue
+
         analyte_key = f"analyte:{analyte_name or row_idx}"
         identity = (_identity_token(analyte_name or analyte_key), _identity_token(assay_key))
         if identity in seen_analytes:

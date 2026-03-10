@@ -7,6 +7,7 @@
 
 
 ### Fixed
+- Fixed workbook-template analyte linking to stop defaulting `assay_key` to the analyte name when `Assay Key` is absent; parser now resolves links from `Analytes.Parameter Set` through `Basics` `Parameter Set Name`/`Parameter Set Number` context and emits `missing-assay-link` diagnostics when unresolved.
 - Fixed draft save serialization to persist a sanitized `draft_state.payload` (`{}`) on disk so stale nested session payloads are not re-saved; persisted state now treats top-level `import_state` as the authoritative source while keeping full payload assignment in memory after save.
 - Fixed manual AddOn entry sizing by pre-allocating form-field widths and per-tab table column widths from expected content lengths, and by expanding combo minimum content length for long dropdown options so values remain visible without truncation.
 - Fixed draft recovery/manual-entry synchronization so restored bundles now repopulate Sample Prep and Dilutions tables (plus existing Basics/Kit Components/Analytes), preventing subsequent edits or saves from unintentionally clearing recovered sample-prep steps.
