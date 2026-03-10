@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
-from PySide6.QtWidgets import QTableView
+from PySide6.QtWidgets import QHeaderView, QTableView
 
 
 class SimpleEntityTableModel(QAbstractTableModel):
@@ -30,3 +30,5 @@ class SimpleEntityTableModel(QAbstractTableModel):
 class EntityTable(QTableView):
     def set_table_data(self, headers: list[str], rows: list[list[str]]) -> None:
         self.setModel(SimpleEntityTableModel(headers, rows))
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.horizontalHeader().setStretchLastSection(True)

@@ -91,6 +91,17 @@ def test_draft_service_save_uses_runtime_default_directory(monkeypatch, tmp_path
     assert path.parent == runtime_paths.drafts_dir
     assert path.exists()
 
+
+
+def test_draft_service_save_to_user_selected_path(tmp_path: Path) -> None:
+    app_state = AppState()
+    target = tmp_path / "custom" / "my-draft.json"
+
+    path = DraftService().save(app_state, draft_path=target)
+
+    assert path == target
+    assert target.exists()
+
 def test_draft_service_restore_roundtrip(tmp_path: Path) -> None:
     app_state = AppState()
     app_state.import_state.bundles = [

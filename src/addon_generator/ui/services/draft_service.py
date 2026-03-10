@@ -27,11 +27,15 @@ from addon_generator.ui.state.validation_state import ValidationState
 
 
 class DraftService:
-    def save(self, app_state: AppState, drafts_dir: str | Path | None = None) -> Path:
-        root = Path(drafts_dir) if drafts_dir is not None else get_runtime_paths().drafts_dir
-        root.mkdir(parents=True, exist_ok=True)
-        stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-        path = root / f"addon_draft_{stamp}.json"
+    def save(self, app_state: AppState, drafts_dir: str | Path | None = None, draft_path: str | Path | None = None) -> Path:
+        if draft_path is not None:
+            path = Path(draft_path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+        else:
+            root = Path(drafts_dir) if drafts_dir is not None else get_runtime_paths().drafts_dir
+            root.mkdir(parents=True, exist_ok=True)
+            stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+            path = root / f"addon_draft_{stamp}.json"
         payload = {
             "import_state": asdict(app_state.import_state),
             "editor_state": asdict(app_state.editor_state),

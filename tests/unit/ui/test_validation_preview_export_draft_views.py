@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 try:
-    from PySide6.QtWidgets import QApplication, QMessageBox
+    from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox
 except Exception as exc:  # pragma: no cover - runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
@@ -105,10 +105,11 @@ class _DraftService:
         self.path = path
         self.restore_called = False
 
-    def save(self, app_state, drafts_dir="drafts"):
+    def save(self, app_state, drafts_dir="drafts", draft_path=None):
+        path = Path(draft_path) if draft_path else self.path
         app_state.draft_state.dirty = False
-        app_state.draft_state.path = str(self.path)
-        return self.path
+        app_state.draft_state.path = str(path)
+        return path
 
     def load(self, path):
         return {
@@ -251,10 +252,12 @@ def test_draft_save_restore_dirty_state_handling(qapp, tmp_path, monkeypatch, me
     shell = _build_shell(issues=[], draft_path=draft_path)
     draft_service = shell.draft_service
 
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *args, **kwargs: (str(draft_path), "")))
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: (str(draft_path), "")))
     shell.app_state.draft_state.dirty = True
     shell.save_draft()
     assert shell.app_state.draft_state.dirty is False
-    assert any(title == "Draft Saved" for title, _ in messagebox_spy["info"])
+    assert any(title == "Status Saved" for title, _ in messagebox_spy["info"])
 
     def _deny(*args, **kwargs):
         return QMessageBox.StandardButton.No

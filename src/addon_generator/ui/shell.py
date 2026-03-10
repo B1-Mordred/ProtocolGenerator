@@ -42,6 +42,7 @@ from addon_generator.ui.views.assays_view import AssaysView
 from addon_generator.ui.views.dilutions_view import DilutionsView
 from addon_generator.ui.views.data_entry_home_view import DataEntryHomeView
 from addon_generator.ui.views.export_view import ExportView
+from addon_generator.ui.views.field_mapping_view import FieldMappingView
 from addon_generator.ui.views.import_review_view import ImportReviewView
 from addon_generator.ui.views.manual_entry_view import ManualEntryView
 from addon_generator.ui.views.method_view import MethodView
@@ -66,6 +67,7 @@ SECTIONS = [
     "Import Review",
     "Validation",
     "Output Preview",
+    "Field Mapping",
     "Export",
 ]
 
@@ -136,6 +138,8 @@ class MainShell(QMainWindow):
         self.stack.addWidget(self.validation_view)
         self.preview_view = PreviewView(self)
         self.stack.addWidget(self.preview_view)
+        self.field_mapping_view = FieldMappingView(self, app_state=self.app_state, on_state_changed=self._on_edit_state_changed)
+        self.stack.addWidget(self.field_mapping_view)
         self.export_view = ExportView(self)
         self.stack.addWidget(self.export_view)
 
@@ -163,8 +167,8 @@ class MainShell(QMainWindow):
         self._add_toolbar_action("Import XML", self.import_xml)
         self._add_toolbar_action("Validate", self.run_validation)
         self._add_toolbar_action("Preview Outputs", self.run_preview)
-        self._add_toolbar_action("Save Draft", self.save_draft)
-        self._add_toolbar_action("Restore Draft", self.restore_draft)
+        self._add_toolbar_action("Save Status", self.save_draft)
+        self._add_toolbar_action("Recover from Draft", self.restore_draft)
         self._add_toolbar_action("Export", self.run_export)
         self.addToolBar(self.toolbar)
 
@@ -234,6 +238,10 @@ class MainShell(QMainWindow):
         sample_prep_action.triggered.connect(self.configure_sample_prep_action_values)
         admin_menu.addAction(sample_prep_action)
 
+        field_mapping_action = QAction("Field Mapping", self)
+        field_mapping_action.triggered.connect(self.show_field_mapping)
+        admin_menu.addAction(field_mapping_action)
+
     def show_manual_entry(self) -> None:
         current_bundle = self._current_merged_bundle()
         if current_bundle is not None:
@@ -247,6 +255,10 @@ class MainShell(QMainWindow):
         self.main_stack.setCurrentIndex(2)
         self.sidebar.setCurrentRow(5)
         self.import_review_view.refresh_table()
+
+    def show_field_mapping(self) -> None:
+        self.main_stack.setCurrentIndex(2)
+        self.sidebar.setCurrentRow(8)
 
     def check_for_updates(self) -> None:
         manifest_url = self.app_state.editor_state.export_settings.get("update_manifest_url") or DEFAULT_UPDATE_MANIFEST_URL
@@ -613,13 +625,32 @@ class MainShell(QMainWindow):
         return selected
 
     def save_draft(self) -> None:
-        drafts_dir = self.app_state.editor_state.export_settings.get("drafts_dir") or str(get_runtime_paths().drafts_dir)
-        path = self.draft_service.save(self.app_state, drafts_dir=drafts_dir)
-        QMessageBox.information(self, "Draft Saved", f"Draft saved to:\n{path}")
+        suggested_dir = self.app_state.editor_state.export_settings.get("drafts_dir") or str(get_runtime_paths().drafts_dir)
+        suggested_name = self.app_state.editor_state.export_settings.get("draft_file_name") or "addon_status_draft.json"
+        selected_path, _ = QFileDialog.getSaveFileName(
+            self,
+            "Save Current Status",
+            str(Path(suggested_dir) / suggested_name),
+            "Draft Files (*.json)",
+        )
+        if not selected_path:
+            return
+        path = self.draft_service.save(self.app_state, draft_path=selected_path)
+        self.app_state.editor_state.export_settings["draft_path"] = str(path)
+        self.app_state.editor_state.export_settings["drafts_dir"] = str(Path(path).parent)
+        self.app_state.editor_state.export_settings["draft_file_name"] = Path(path).name
+        QMessageBox.information(self, "Status Saved", f"Current status saved to:\n{path}")
         self._refresh_status()
 
     def restore_draft(self) -> None:
-        draft_path = self.app_state.editor_state.export_settings.get("draft_path") or self.app_state.draft_state.path
+        draft_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Recover from Draft",
+            self.app_state.editor_state.export_settings.get("drafts_dir") or str(get_runtime_paths().drafts_dir),
+            "Draft Files (*.json)",
+        )
+        if not draft_path:
+            draft_path = self.app_state.editor_state.export_settings.get("draft_path") or self.app_state.draft_state.path
         if not draft_path:
             return
         if self.app_state.draft_state.dirty and not self._confirm_unsaved("restore this draft"):
@@ -628,7 +659,7 @@ class MainShell(QMainWindow):
         self.draft_service.restore(self.app_state, payload, source_path=draft_path)
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state) if self.app_state.import_state.bundles else None
-        QMessageBox.information(self, "Draft Restored", f"Draft restored from:\n{draft_path}")
+        QMessageBox.information(self, "Draft Recovered", f"Status recovered from:\n{draft_path}")
         self._refresh_status()
 
     def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
@@ -672,7 +703,8 @@ class MainShell(QMainWindow):
         self.sidebar.set_issue_count(5, self.app_state.import_review_badge_count)
         self.sidebar.set_issue_count(6, self.app_state.validation_badge_count)
         self.sidebar.set_issue_count(7, self.app_state.preview_badge_contribution)
-        self.sidebar.set_issue_count(8, self.app_state.export_badge_contribution + self.app_state.draft_badge_contribution)
+        self.sidebar.set_issue_count(8, 0)
+        self.sidebar.set_issue_count(9, self.app_state.export_badge_contribution + self.app_state.draft_badge_contribution)
         self.status_banner.set_status(
             validation_stale=self.app_state.validation_is_stale,
             preview_stale=self.app_state.preview_is_stale,
