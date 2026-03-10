@@ -3,6 +3,7 @@
 ## 2026-03-10
 
 ### Changed
+- Expanded GUI draft lifecycle handling to restore complete DTO bundles and provenance, persist export/preview payload metadata, track dirty/last-saved/restore state, and guard restore/close actions behind unsaved-change confirmation prompts; added roundtrip tests covering conflict-resolution and preview/validation stale-state reproduction after restore.
 - Enhanced GUI preview flow with richer `PreviewState` snapshots (generated timestamp, error state, validation/export snapshots), structured preview summaries, failure-safe preview responses, per-tab copy controls, and preview status banners that highlight stale/current readiness and user-friendly generation errors.
 - Refined GUI export orchestration to enforce validation gating before write attempts, keep Export actions disabled when blockers exist, and surface structured export outcomes (destination, written files, failure reasons, cleanup notes) directly in the Export screen.
 

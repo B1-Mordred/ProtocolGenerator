@@ -2,7 +2,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from addon_generator.input_models.dtos import DilutionSchemeInputDTO, InputDTOBundle, MethodInputDTO, SamplePrepStepInputDTO
+from addon_generator.input_models.dtos import (
+    AnalyteInputDTO,
+    AssayInputDTO,
+    DilutionSchemeInputDTO,
+    InputDTOBundle,
+    MethodInputDTO,
+    SamplePrepStepInputDTO,
+    UnitInputDTO,
+)
 from addon_generator.input_models.provenance import FieldProvenance
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.import_service import ImportService
@@ -85,6 +93,94 @@ def test_draft_service_restore_roundtrip(tmp_path: Path) -> None:
     assert new_state.editor_state.selected_section_index == 4
     assert new_state.draft_state.path == str(path)
 
+
+
+def test_draft_service_restore_rebuilds_full_bundle_and_metadata(tmp_path: Path) -> None:
+    app_state = AppState()
+    app_state.import_state.bundles = [
+        InputDTOBundle(
+            source_type="excel",
+            source_name="source.xlsx",
+            method=MethodInputDTO(key="m1", method_id="M-1", method_version="1"),
+            assays=[AssayInputDTO(key="a1", protocol_type="PT", protocol_display_name="Disp", xml_name="Xml", aliases=["Alias"])],
+            analytes=[AnalyteInputDTO(key="an1", name="A", assay_key="a1")],
+            units=[UnitInputDTO(key="u1", name="IU", analyte_key="an1")],
+            sample_prep_steps=[SamplePrepStepInputDTO(key="s1", label="Mix", metadata={"order": "1"})],
+            dilution_schemes=[DilutionSchemeInputDTO(key="d1", label="Std", metadata={"ratio": "1:2:3"})],
+            method_information_overrides={"Custom": "X"},
+            assay_fragments=[{"Assay": "A1"}],
+            loading_fragments=[{"Load": "L1"}],
+            processing_fragments=[{"Process": "P1"}],
+            hidden_vocab={"SamplePrepAction": ["Mix"]},
+            provenance={
+                "method.method_id": [
+                    FieldProvenance(source_type="excel", source_file="source.xlsx", source_sheet="Basics", row=2, column="B")
+                ]
+            },
+        )
+    ]
+    app_state.editor_state.manual_overrides["method.method_id"] = "M-2"
+    app_state.editor_state.unresolved_conflicts = {"method.method_id": [{"path": "method.method_id"}]}
+    app_state.validation_state.stale = False
+    app_state.preview_state.stale = False
+
+    service = DraftService()
+    path = service.save(app_state, drafts_dir=str(tmp_path))
+
+    restored_state = AppState()
+    service.restore(restored_state, service.load(path), source_path=str(path))
+
+    bundle = restored_state.import_state.bundles[0]
+    assert bundle.source_name == "source.xlsx"
+    assert bundle.assays[0].key == "a1"
+    assert bundle.analytes[0].assay_key == "a1"
+    assert bundle.units[0].analyte_key == "an1"
+    assert bundle.sample_prep_steps[0].label == "Mix"
+    assert bundle.dilution_schemes[0].label == "Std"
+    assert bundle.method_information_overrides["Custom"] == "X"
+    assert bundle.assay_fragments[0]["Assay"] == "A1"
+    assert bundle.hidden_vocab["SamplePrepAction"] == ["Mix"]
+    assert bundle.provenance["method.method_id"][0].source_sheet == "Basics"
+    assert restored_state.editor_state.manual_overrides["method.method_id"] == "M-2"
+    assert restored_state.editor_state.unresolved_conflicts["method.method_id"][0]["path"] == "method.method_id"
+    assert restored_state.preview_state.stale is False
+    assert restored_state.validation_state.stale is False
+    assert restored_state.draft_state.path == str(path)
+    assert restored_state.draft_state.restore_metadata["source_path"] == str(path)
+
+
+def test_draft_roundtrip_recompute_reproduces_preview_and_validation_state(tmp_path: Path) -> None:
+    app_state = AppState()
+    app_state.import_state.bundles = [
+        InputDTOBundle(
+            source_type="excel",
+            method=MethodInputDTO(key="m", method_id="M-1", method_version="1"),
+        ),
+        InputDTOBundle(
+            source_type="xml",
+            method=MethodInputDTO(key="m", method_id="M-9", method_version="9"),
+        ),
+    ]
+    app_state.editor_state.manual_overrides["method.method_id"] = "M-OVERRIDE"
+
+    merge = MergeServiceAdapter()
+    merged_before = merge.recompute(app_state)
+    assert merged_before.method is not None
+    assert merged_before.method.method_id == "M-OVERRIDE"
+
+    service = DraftService()
+    path = service.save(app_state, drafts_dir=str(tmp_path))
+
+    restored_state = AppState()
+    service.restore(restored_state, service.load(path), source_path=str(path))
+    merged_after = merge.recompute(restored_state)
+
+    assert merged_after.method is not None
+    assert merged_after.method.method_id == "M-OVERRIDE"
+    assert "method.method_id" in restored_state.editor_state.unresolved_conflicts
+    assert restored_state.import_state.conflict_summary["total"] >= 1
+    assert restored_state.validation_state.stale is True
+    assert restored_state.preview_state.stale is True
 
 def test_import_service_coerces_provenance() -> None:
     bundle = InputDTOBundle(
