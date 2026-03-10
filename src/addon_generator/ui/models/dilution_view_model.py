@@ -55,7 +55,7 @@ class DilutionScreenViewModel:
 
     def load_from_state(self) -> None:
         merged = self._merge_adapter.recompute(self._app_state) if self._app_state.import_state.bundles else None
-        overrides = self._app_state.editor_state.manual_overrides.get("dilution_schemes")
+        overrides = self._app_state.editor_state.dilution_overrides or self._app_state.editor_state.manual_overrides.get("dilution_schemes")
         if isinstance(overrides, list):
             source = overrides
             default_provenance = "manual"
@@ -80,20 +80,21 @@ class DilutionScreenViewModel:
                 self._make_scheme(payload, effective, default_provenance=default_provenance)
             )
 
-        self.selected_dilution_id = self.dilutions[0].dilution_id if self.dilutions else None
+        self.selected_dilution_id = (self._app_state.editor_state.selected_dilution_id if self.dilutions else None) or (self.dilutions[0].dilution_id if self.dilutions else None)
         self._validate()
 
     def add_dilution(self) -> str:
         scheme = self._make_scheme({}, {}, default_provenance="manual")
         self.dilutions.append(scheme)
         self.selected_dilution_id = scheme.dilution_id
+        self._app_state.editor_state.selected_dilution_id = scheme.dilution_id
         self._commit()
         return scheme.dilution_id
 
     def delete_dilution(self, dilution_id: str) -> None:
         self.dilutions = [scheme for scheme in self.dilutions if scheme.dilution_id != dilution_id]
         if self.selected_dilution_id == dilution_id:
-            self.selected_dilution_id = self.dilutions[0].dilution_id if self.dilutions else None
+            self.selected_dilution_id = (self._app_state.editor_state.selected_dilution_id if self.dilutions else None) or (self.dilutions[0].dilution_id if self.dilutions else None)
         self._commit()
 
     def duplicate_dilution(self, dilution_id: str) -> str | None:
@@ -128,15 +129,21 @@ class DilutionScreenViewModel:
 
     def select_dilution(self, dilution_id: str | None) -> None:
         self.selected_dilution_id = dilution_id if dilution_id and self._index_of(dilution_id) >= 0 else None
+        self._app_state.editor_state.selected_dilution_id = self.selected_dilution_id
 
     def selected_dilution(self) -> DilutionSchemeState | None:
         return self._get_scheme(self.selected_dilution_id) if self.selected_dilution_id else None
 
     def _commit(self) -> None:
         self._validate()
-        self._app_state.editor_state.manual_overrides["dilution_schemes"] = [
+        self._app_state.editor_state.dilution_overrides = [
             {name: scheme.fields[name].value for name in DILUTION_FIELDS} for scheme in self.dilutions
         ]
+        self._app_state.editor_state.manual_overrides["dilution_schemes"] = list(self._app_state.editor_state.dilution_overrides)
+        for scheme in self.dilutions:
+            for name in DILUTION_FIELDS:
+                if scheme.fields[name].provenance == "manual":
+                    self._app_state.editor_state.mark_manual_edit(f"dilution_schemes.{scheme.dilution_id}.{name}")
         merged = self._merge_adapter.recompute(self._app_state)
         effective_payloads = self._effective_payloads(merged)
         for idx, scheme in enumerate(self.dilutions):

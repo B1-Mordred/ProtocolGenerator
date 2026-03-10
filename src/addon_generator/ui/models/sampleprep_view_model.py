@@ -51,7 +51,7 @@ class SamplePrepScreenViewModel:
             for v in (merged.hidden_vocab.get("SamplePrepAction", []) if merged else [])
             if str(v).strip()
         }
-        overrides = self._app_state.editor_state.manual_overrides.get("sample_prep.steps")
+        overrides = self._app_state.editor_state.sample_prep_overrides or self._app_state.editor_state.manual_overrides.get("sample_prep.steps")
         if isinstance(overrides, list):
             source_steps = overrides
             provenance = "manual"
@@ -72,7 +72,7 @@ class SamplePrepScreenViewModel:
         for payload in source_steps:
             self.steps.append(self._make_step(payload, default_provenance=provenance))
         if self.steps:
-            self.selected_step_id = self.steps[0].step_id
+            self.selected_step_id = self._app_state.editor_state.selected_sample_prep_step_id or self.steps[0].step_id
         else:
             self.selected_step_id = None
         self._validate()
@@ -81,6 +81,7 @@ class SamplePrepScreenViewModel:
         step = self._make_step({}, default_provenance="manual")
         self.steps.append(step)
         self.selected_step_id = step.step_id
+        self._app_state.editor_state.selected_sample_prep_step_id = step.step_id
         self._commit()
         return step.step_id
 
@@ -133,15 +134,21 @@ class SamplePrepScreenViewModel:
 
     def select_step(self, step_id: str | None) -> None:
         self.selected_step_id = step_id if step_id and self._index_of(step_id) >= 0 else None
+        self._app_state.editor_state.selected_sample_prep_step_id = self.selected_step_id
 
     def selected_step(self) -> SamplePrepStepState | None:
         return self._get_step(self.selected_step_id) if self.selected_step_id else None
 
     def _commit(self) -> None:
         self._validate()
-        self._app_state.editor_state.manual_overrides["sample_prep.steps"] = [
+        self._app_state.editor_state.sample_prep_overrides = [
             {name: step.fields[name].value for name in FIELD_ORDER} for step in self.steps
         ]
+        self._app_state.editor_state.manual_overrides["sample_prep.steps"] = list(self._app_state.editor_state.sample_prep_overrides)
+        for step in self.steps:
+            for name in FIELD_ORDER:
+                if step.fields[name].provenance == "manual":
+                    self._app_state.editor_state.mark_manual_edit(f"sample_prep.steps.{step.step_id}.{name}")
         self._merge_adapter.recompute(self._app_state)
 
     def _validate(self) -> None:

@@ -19,26 +19,32 @@ class ImportService:
     def _coerce_provenance(bundle: InputDTOBundle) -> dict[str, list[dict[str, str]]]:
         out: dict[str, list[dict[str, str]]] = {}
         for key, entries in (bundle.provenance or {}).items():
-            out[key] = [
-                {
-                    "source": getattr(entry, "source_type", "default"),
-                    "location": ":".join(
-                        [
-                            str(part)
-                            for part in (
-                                getattr(entry, "source_file", None),
-                                getattr(entry, "source_sheet", None),
-                                getattr(entry, "row", None),
-                                getattr(entry, "column", None),
-                            )
-                            if part not in (None, "")
-                        ]
-                    ),
-                    "note": getattr(entry, "field_key", "") or "",
-                }
-                for entry in entries
-            ]
+            out[key] = [ImportService._entry_dict(entry) for entry in entries]
         return out
+
+    @staticmethod
+    def _entry_dict(entry: object) -> dict[str, str]:
+        source = getattr(entry, "source_type", "default")
+        source_label = {"excel": "Excel", "xml": "XML", "gui": "GUI", "default": "Default"}.get(source, str(source).title())
+        location = ":".join(
+            [
+                str(part)
+                for part in (
+                    getattr(entry, "source_file", None),
+                    getattr(entry, "source_sheet", None),
+                    getattr(entry, "row", None),
+                    getattr(entry, "column", None),
+                )
+                if part not in (None, "")
+            ]
+        )
+        return {
+            "source": source,
+            "source_label": source_label,
+            "location": location,
+            "location_text": location or "(unknown location)",
+            "note": getattr(entry, "field_key", "") or "",
+        }
 
 
 def issue_from_validation_issue(issue: ValidationIssue, section: str = "Validation") -> IssueViewModel:

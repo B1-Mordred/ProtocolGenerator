@@ -47,7 +47,12 @@ class DraftService:
         app_state.import_state = ImportState(
             bundles=bundles,
             provenance=import_payload.get("provenance", {}),
+            imported_sample_prep_dtos=import_payload.get("imported_sample_prep_dtos", []),
+            imported_dilution_dtos=import_payload.get("imported_dilution_dtos", []),
+            conflict_summary=import_payload.get("conflict_summary", {}),
+            provenance_lookup=import_payload.get("provenance_lookup", {}),
             issues=[],
+            review_resolutions=import_payload.get("review_resolutions", {}),
         )
         app_state.editor_state = EditorState(**editor_payload)
         app_state.validation_state = ValidationState(**validation_payload)
