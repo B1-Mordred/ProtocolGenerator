@@ -103,6 +103,38 @@ def test_draft_service_save_to_user_selected_path(tmp_path: Path) -> None:
     assert path == target
     assert target.exists()
 
+
+def test_draft_service_save_excludes_stale_nested_payload_from_disk(tmp_path: Path) -> None:
+    app_state = AppState()
+    app_state.import_state.provenance = {"source": "current-session"}
+    app_state.draft_state.payload = {
+        "import_state": {"provenance": {"source": "stale-session"}},
+        "editor_state": {"manual_overrides": {"method.method_id": "STALE"}},
+    }
+
+    path = DraftService().save(app_state, draft_path=tmp_path / "draft.json")
+    saved = json.loads(path.read_text(encoding="utf-8"))
+
+    assert saved["draft_state"]["payload"] == {}
+    assert saved["import_state"]["provenance"] == {"source": "current-session"}
+    assert saved["import_state"]["provenance"] != {"source": "stale-session"}
+
+
+def test_draft_service_save_persists_top_level_import_state_as_source_of_truth(tmp_path: Path) -> None:
+    app_state = AppState()
+    app_state.import_state.provenance = {"authoritative": "top-level"}
+    app_state.draft_state.payload = {
+        "import_state": {"provenance": {"authoritative": "old-nested"}},
+    }
+
+    path = DraftService().save(app_state, draft_path=tmp_path / "draft.json")
+    saved = json.loads(path.read_text(encoding="utf-8"))
+
+    assert saved["import_state"]["provenance"] == {"authoritative": "top-level"}
+    assert saved["draft_state"]["payload"].get("import_state") is None
+    assert app_state.draft_state.payload["import_state"]["provenance"] == {"authoritative": "top-level"}
+
+
 def test_draft_service_restore_roundtrip(tmp_path: Path) -> None:
     app_state = AppState()
     app_state.import_state.bundles = [

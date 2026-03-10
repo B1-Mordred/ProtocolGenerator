@@ -37,12 +37,15 @@ class DraftService:
             root.mkdir(parents=True, exist_ok=True)
             stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             path = root / f"addon_draft_{stamp}.json"
+
+        sanitized_draft_state = asdict(app_state.draft_state)
+        sanitized_draft_state["payload"] = {}
         payload = {
             "import_state": asdict(app_state.import_state),
             "editor_state": asdict(app_state.editor_state),
             "validation_state": asdict(app_state.validation_state),
             "preview_state": asdict(app_state.preview_state),
-            "draft_state": asdict(app_state.draft_state),
+            "draft_state": sanitized_draft_state,
         }
         path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
         app_state.draft_state.path = str(path)
