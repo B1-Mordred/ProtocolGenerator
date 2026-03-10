@@ -92,6 +92,123 @@ def test_field_mapping_target_picker_items_have_help_tooltips(qapp) -> None:
     assert isinstance(tooltip, str) and tooltip
 
 
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_new_template_uses_next_available_name(qapp) -> None:
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {"Default": [], "Template": [], "Template 2": []},
+    }
+    view = FieldMappingView(app_state=state)
+
+    view._new_template()
+
+    assert "Template 3" in state.editor_state.export_settings["field_mapping"]["templates"]
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_duplicate_template_generates_conflict_free_name(qapp) -> None:
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {"Default": [], "Default Copy": [], "Default Copy 2": []},
+    }
+    view = FieldMappingView(app_state=state)
+
+    view._duplicate_template()
+
+    assert "Default Copy 3" in state.editor_state.export_settings["field_mapping"]["templates"]
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_validate_template_name_rules(qapp) -> None:
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {"Default": [], "Existing": []},
+    }
+    view = FieldMappingView(app_state=state)
+
+    assert view._validate_template_name("   ") == (None, "Template name is required.")
+    assert view._validate_template_name(" Default ", current_name="Existing") == (None, "Template name 'Default' is reserved.")
+    assert view._validate_template_name("Existing") == (None, "Template 'Existing' already exists.")
+    assert view._validate_template_name("Default", current_name="Default") == (None, "Default template cannot be renamed.")
+    assert view._validate_template_name("  New Name  ") == ("New Name", None)
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_rename_template_rejects_duplicates(qapp, monkeypatch) -> None:
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Custom",
+        "templates": {"Default": [], "Custom": [], "Custom 2": []},
+    }
+    view = FieldMappingView(app_state=state)
+    warned = []
+    monkeypatch.setattr("addon_generator.ui.views.field_mapping_view.QInputDialog.getText", lambda *a, **k: ("Custom 2", True))
+    monkeypatch.setattr("addon_generator.ui.views.field_mapping_view.QMessageBox.warning", lambda *a, **k: warned.append(True))
+
+    view.template_selector.setCurrentText("Custom")
+    view._rename_template()
+
+    assert warned
+    assert "Custom" in state.editor_state.export_settings["field_mapping"]["templates"]
+    assert "Custom 2" in state.editor_state.export_settings["field_mapping"]["templates"]
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_delete_template_requires_confirmation_and_shows_usage(qapp, monkeypatch) -> None:
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {"Default": [], "Custom": []},
+    }
+    view = FieldMappingView(app_state=state)
+    prompts = []
+
+    def fake_question(*args, **kwargs):
+        prompts.append(args[2])
+        return QMessageBox.StandardButton.No
+
+    from PySide6.QtWidgets import QMessageBox
+    monkeypatch.setattr("addon_generator.ui.views.field_mapping_view.QMessageBox.question", fake_question)
+
+    view.template_selector.setCurrentText("Custom")
+    view._delete_template()
+
+    assert prompts
+    assert "Active template remains 'Default'." in prompts[0]
+    assert "Custom" in state.editor_state.export_settings["field_mapping"]["templates"]
+
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_delete_active_template_confirmation_updates_active(qapp, monkeypatch) -> None:
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Custom",
+        "templates": {"Default": [], "Custom": []},
+    }
+    view = FieldMappingView(app_state=state)
+    prompts = []
+
+    def fake_question(*args, **kwargs):
+        prompts.append(args[2])
+        return QMessageBox.StandardButton.Yes
+
+    from PySide6.QtWidgets import QMessageBox
+    monkeypatch.setattr("addon_generator.ui.views.field_mapping_view.QMessageBox.question", fake_question)
+
+    view.template_selector.setCurrentText("Custom")
+    view._delete_template()
+
+    assert prompts
+    assert "This template is currently active." in prompts[0]
+    assert "Custom" not in state.editor_state.export_settings["field_mapping"]["templates"]
+    assert state.editor_state.export_settings["field_mapping"]["active_template"] == "Default"
+
 @pytest.mark.parametrize(
     ("expression", "is_valid"),
     [

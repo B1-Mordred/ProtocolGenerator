@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QLineEdit,
+    QInputDialog,
     QMessageBox,
     QPushButton,
     QHeaderView,
@@ -96,9 +97,17 @@ class FieldMappingView(QWidget):
         self.template_selector = QComboBox(self)
         self.new_template_btn = QPushButton("New Template", self)
         self.duplicate_template_btn = QPushButton("Duplicate", self)
+        self.rename_template_btn = QPushButton("Rename", self)
         self.delete_template_btn = QPushButton("Delete", self)
         self.set_active_btn = QPushButton("Set Active", self)
-        for w in (self.template_selector, self.new_template_btn, self.duplicate_template_btn, self.delete_template_btn, self.set_active_btn):
+        for w in (
+            self.template_selector,
+            self.new_template_btn,
+            self.duplicate_template_btn,
+            self.rename_template_btn,
+            self.delete_template_btn,
+            self.set_active_btn,
+        ):
             template_row.addWidget(w)
         root.addLayout(template_row)
 
@@ -149,6 +158,7 @@ class FieldMappingView(QWidget):
 
         self.new_template_btn.clicked.connect(self._new_template)
         self.duplicate_template_btn.clicked.connect(self._duplicate_template)
+        self.rename_template_btn.clicked.connect(self._rename_template)
         self.delete_template_btn.clicked.connect(self._delete_template)
         self.set_active_btn.clicked.connect(self._set_active_template)
         self.add_row_btn.clicked.connect(self._add_row)
@@ -229,7 +239,7 @@ class FieldMappingView(QWidget):
         self._notify_change()
 
     def _new_template(self) -> None:
-        name = f"Template {len(self._templates()) + 1}"
+        name = self._next_available_template_name("Template")
         self._templates()[name] = []
         self._refresh_templates()
         self.template_selector.setCurrentText(name)
@@ -238,10 +248,32 @@ class FieldMappingView(QWidget):
         source = self.template_selector.currentText().strip()
         if not source:
             return
-        clone_name = f"{source} Copy"
+        clone_name = self._next_available_template_name(f"{source} Copy")
         self._templates()[clone_name] = [dict(row) for row in self._templates().get(source, [])]
         self._refresh_templates()
         self.template_selector.setCurrentText(clone_name)
+
+    def _rename_template(self) -> None:
+        current_name = self.template_selector.currentText().strip()
+        if not current_name:
+            return
+        entered_name, accepted = QInputDialog.getText(self, "Rename Template", "New template name:", text=current_name)
+        if not accepted:
+            return
+        valid_name, error = self._validate_template_name(entered_name, current_name=current_name)
+        if error:
+            QMessageBox.warning(self, "Field Mapping", error)
+            return
+        if not valid_name or valid_name == current_name:
+            return
+
+        templates = self._templates()
+        templates[valid_name] = templates.pop(current_name)
+        if self._active_template_name() == current_name:
+            self._app_state.editor_state.export_settings["field_mapping"]["active_template"] = valid_name
+        self._refresh_templates()
+        self.template_selector.setCurrentText(valid_name)
+        self._notify_change()
 
     def _delete_template(self) -> None:
         name = self.template_selector.currentText().strip()
@@ -249,12 +281,48 @@ class FieldMappingView(QWidget):
         if name == "Default":
             QMessageBox.information(self, "Field Mapping", "Default template cannot be deleted.")
             return
+        active_name = self._active_template_name()
+        usage_context = "This template is currently active." if name == active_name else f"Active template remains '{active_name}'."
+        response = QMessageBox.question(
+            self,
+            "Delete Template",
+            f"Delete template '{name}'?\n{usage_context}",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
         templates.pop(name, None)
         if not templates:
             templates["Default"] = []
-        self._app_state.editor_state.export_settings["field_mapping"]["active_template"] = next(iter(templates.keys()))
+        if name == active_name:
+            self._app_state.editor_state.export_settings["field_mapping"]["active_template"] = next(iter(templates.keys()))
         self._refresh_templates()
         self._notify_change()
+
+    def _validate_template_name(self, name: str, *, current_name: str | None = None) -> tuple[str | None, str | None]:
+        normalized = name.strip()
+        if not normalized:
+            return None, "Template name is required."
+        if current_name == "Default":
+            return None, "Default template cannot be renamed."
+        if normalized == "Default" and current_name != "Default":
+            return None, "Template name 'Default' is reserved."
+        if normalized in self._templates() and normalized != current_name:
+            return None, f"Template '{normalized}' already exists."
+        return normalized, None
+
+    def _next_available_template_name(self, base_name: str) -> str:
+        normalized = base_name.strip() or "Template"
+        templates = self._templates()
+        if normalized not in templates:
+            return normalized
+        index = 2
+        while True:
+            candidate = f"{normalized} {index}"
+            if candidate not in templates:
+                return candidate
+            index += 1
 
     def _set_active_template(self) -> None:
         name = self.template_selector.currentText().strip()
