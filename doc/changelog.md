@@ -3,6 +3,10 @@
 ### Added
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 
+
+### Fixed
+- Fixed draft save serialization to persist a sanitized `draft_state.payload` (`{}`) on disk so stale nested session payloads are not re-saved; persisted state now treats top-level `import_state` as the authoritative source while keeping full payload assignment in memory after save.
+
 ### Changed
 - Enhanced Admin → Field Mapping template management with a `Rename` action, template-name validation rules (trimmed/non-empty/unique plus reserved `Default` protection), conflict-free duplicate naming (`<name> Copy`, `<name> Copy 2`, ...), and delete confirmation that shows whether the template is active.
 - Added Field Mapping expression validation for supported tokens (`input:`, `default:`, `custom:`), balanced `concat(...)`, and quoted `delimiter=...` syntax; the mapping table now shows a per-row inline `Status` column and save/activate are blocked when enabled rows are invalid.
