@@ -73,3 +73,18 @@ def test_shell_window_title_uses_about_metadata(qapp) -> None:
     shell = MainShell()
 
     assert shell.windowTitle() == __app_name__
+
+
+def test_shell_data_entry_and_review_views(qapp) -> None:
+    shell = MainShell()
+
+    shell.show_manual_entry()
+    assert shell.main_stack.currentIndex() == 1
+
+    shell.show_data_entry_home()
+    assert shell.main_stack.currentIndex() == 0
+
+    shell.show_data_review()
+    assert shell.main_stack.currentIndex() == 2
+    assert shell.stack.currentIndex() == 5
+

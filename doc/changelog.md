@@ -1,5 +1,12 @@
 ## Unreleased
 
+### Added
+- Added AddOn data-entry shell flows with dedicated top-level `AddOn Data Entry` and `Data Review` menus, a home selector screen (`Enter Data Manually`/`Import Excel File`), manual tabbed entry for Basics/Kit Components/Analytes/Sample Prep/Dilutions, and immediate autosave snapshots of manual edits for recovery.
+- Added Qt unit coverage for the new data-entry selector/manual entry views and shell view-mode switching behavior.
+
+### Changed
+- Changed import completion behavior to automatically route users into the Data Review section after Excel/XML ingestion so imported data is immediately available for review and editing.
+
 ### Fixed
 - Fixed GUI toolbar `Import Excel`/`Import XML` buttons doing nothing when no import path was preconfigured by opening a file-picker fallback and saving the selected path before executing import.
 

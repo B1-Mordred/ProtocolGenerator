@@ -25,6 +25,8 @@ from addon_generator.__about__ import (
     __draft_format_version__,
     __version__,
 )
+from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
+from addon_generator.input_models.dtos import DilutionSchemeInputDTO, SamplePrepStepInputDTO
 from addon_generator.runtime.paths import get_runtime_paths
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.export_service import ExportResult, ExportService
@@ -37,8 +39,10 @@ from addon_generator.ui.state.app_state import AppState
 from addon_generator.ui.views.analytes_view import AnalytesView
 from addon_generator.ui.views.assays_view import AssaysView
 from addon_generator.ui.views.dilutions_view import DilutionsView
+from addon_generator.ui.views.data_entry_home_view import DataEntryHomeView
 from addon_generator.ui.views.export_view import ExportView
 from addon_generator.ui.views.import_review_view import ImportReviewView
+from addon_generator.ui.views.manual_entry_view import ManualEntryView
 from addon_generator.ui.views.method_view import MethodView
 from addon_generator.ui.views.preview_view import PreviewView
 from addon_generator.ui.views.sampleprep_view import SamplePrepView
@@ -98,6 +102,7 @@ class MainShell(QMainWindow):
         dock.setWidget(self.sidebar)
         self.addDockWidget(Qt.DockWidgetArea.LeftDockWidgetArea, dock)
 
+        self.main_stack = QStackedWidget(self)
         self.stack = QStackedWidget(self)
         self.stack.addWidget(MethodView(self))
         self.stack.addWidget(AssaysView(self))
@@ -132,7 +137,19 @@ class MainShell(QMainWindow):
         self.stack.addWidget(self.preview_view)
         self.export_view = ExportView(self)
         self.stack.addWidget(self.export_view)
-        self.setCentralWidget(self.stack)
+
+        self.entry_home_view = DataEntryHomeView(
+            self,
+            on_manual_selected=self.show_manual_entry,
+            on_excel_selected=self.import_excel,
+        )
+        self.manual_entry_view = ManualEntryView(self, on_data_changed=self._on_manual_data_changed)
+
+        self.main_stack.addWidget(self.entry_home_view)
+        self.main_stack.addWidget(self.manual_entry_view)
+        self.main_stack.addWidget(self.stack)
+        self.main_stack.setCurrentIndex(2)
+        self.setCentralWidget(self.main_stack)
 
         context_dock = QDockWidget("Context", self)
         context_dock.setWidget(FieldHelpPanel("Field Help", "Select a field to view provenance and validation context."))
@@ -150,6 +167,7 @@ class MainShell(QMainWindow):
         self.addToolBar(self.toolbar)
 
         self.help_menu = self._build_help_menu()
+        self._build_main_menu()
 
         self.status_banner = StatusBanner(self)
         status_bar = QStatusBar(self)
@@ -180,6 +198,32 @@ class MainShell(QMainWindow):
         about_action.triggered.connect(self.show_about_dialog)
         help_menu.addAction(about_action)
         return help_menu
+
+    def _build_main_menu(self) -> None:
+        data_entry_menu = self.menuBar().addMenu("AddOn Data Entry")
+        manual_action = QAction("Enter Data Manually", self)
+        manual_action.triggered.connect(self.show_manual_entry)
+        data_entry_menu.addAction(manual_action)
+
+        import_action = QAction("Import Excel File", self)
+        import_action.triggered.connect(self.import_excel)
+        data_entry_menu.addAction(import_action)
+
+        data_review_menu = self.menuBar().addMenu("Data Review")
+        review_action = QAction("Open Data Review", self)
+        review_action.triggered.connect(self.show_data_review)
+        data_review_menu.addAction(review_action)
+
+    def show_manual_entry(self) -> None:
+        self.main_stack.setCurrentIndex(1)
+
+    def show_data_entry_home(self) -> None:
+        self.main_stack.setCurrentIndex(0)
+
+    def show_data_review(self) -> None:
+        self.main_stack.setCurrentIndex(2)
+        self.sidebar.setCurrentRow(5)
+        self.import_review_view.refresh_table()
 
     def check_for_updates(self) -> None:
         manifest_url = self.app_state.editor_state.export_settings.get("update_manifest_url") or DEFAULT_UPDATE_MANIFEST_URL
@@ -256,6 +300,7 @@ class MainShell(QMainWindow):
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
         self._mark_dirty(reason="excel_import")
         self.import_review_view.refresh_table()
+        self.show_data_review()
         self._refresh_status()
 
     def import_xml(self) -> None:
@@ -271,7 +316,57 @@ class MainShell(QMainWindow):
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
         self._mark_dirty(reason="xml_import")
         self.import_review_view.refresh_table()
+        self.show_data_review()
         self._refresh_status()
+
+    def _on_manual_data_changed(self) -> None:
+        payload = self.manual_entry_view.payload()
+        method = payload["method"]
+        bundle = map_gui_payload_to_bundle(
+            {
+                "method_id": method.get("method_id", ""),
+                "method_version": method.get("method_version", ""),
+                "MethodInformation": {
+                    "DisplayName": method.get("display_name", ""),
+                    "SeriesName": method.get("kit_series", ""),
+                    "OrderNumber": method.get("kit_product_number", ""),
+                    "MainTitle": method.get("addon_series", ""),
+                    "SubTitle": method.get("addon_product_name", ""),
+                    "ProductNumber": method.get("addon_product_number", ""),
+                },
+                "assays": payload["assays"],
+                "analytes": payload["analytes"],
+            }
+        )
+        bundle.sample_prep_steps = [
+            SamplePrepStepInputDTO(
+                key=row["key"],
+                label=row.get("action") or row["key"],
+                metadata={k: v for k, v in row.items() if k not in {"key"}},
+            )
+            for row in payload["sample_prep"]
+            if row.get("key")
+        ]
+        bundle.dilution_schemes = [
+            DilutionSchemeInputDTO(
+                key=row["key"],
+                label=row["key"],
+                metadata={k: v for k, v in row.items() if k not in {"key"}},
+            )
+            for row in payload["dilutions"]
+            if row.get("key")
+        ]
+        self.app_state.import_state.replace(bundles=[bundle], provenance={}, issues=[])
+        self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self.import_review_view.refresh_table()
+        self._mark_dirty(reason="manual_entry")
+        self._autosave_manual_snapshot(payload)
+        self._refresh_status()
+
+    def _autosave_manual_snapshot(self, payload: dict[str, object]) -> None:
+        autosave_path = get_runtime_paths().runtime_support_dir / "manual_entry_autosave.json"
+        autosave_path.parent.mkdir(parents=True, exist_ok=True)
+        autosave_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
 
     def run_validation(self) -> None:
         merged = self._current_merged_bundle()
