@@ -1,37 +1,17 @@
 from __future__ import annotations
 
 import json
-import sys
 from pathlib import Path
 from typing import Any, Dict
+
+from addon_generator.runtime.resources import get_resource_path
 
 SCHEMA_FILENAME = "protocol.schema.json"
 
 
 def default_schema_path() -> Path:
     """Resolve schema path for source, installed, and PyInstaller-frozen execution."""
-    search_roots: list[Path] = []
-
-    meipass = getattr(sys, "_MEIPASS", None)
-    if meipass:
-        search_roots.append(Path(meipass))
-
-    current_file = Path(__file__).resolve()
-    search_roots.extend(
-        [
-            Path.cwd(),
-            current_file.parent,
-            current_file.parents[1],
-            current_file.parents[2],
-        ]
-    )
-
-    for root in search_roots:
-        candidate = root / SCHEMA_FILENAME
-        if candidate.exists():
-            return candidate
-
-    return search_roots[0] / SCHEMA_FILENAME
+    return get_resource_path(SCHEMA_FILENAME, anchor_file=__file__)
 
 
 def load_schema(schema_path: str | Path | None = None) -> Dict[str, Any]:

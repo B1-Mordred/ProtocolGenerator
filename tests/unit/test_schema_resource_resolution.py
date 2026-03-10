@@ -9,7 +9,7 @@ def test_default_schema_path_prefers_meipass_when_available(monkeypatch, tmp_pat
     bundled = tmp_path / "protocol.schema.json"
     bundled.write_text('{"type": "object"}', encoding="utf-8")
 
-    monkeypatch.setattr(schema_utils.sys, "_MEIPASS", str(tmp_path), raising=False)
+    monkeypatch.setattr("sys._MEIPASS", str(tmp_path), raising=False)
 
     resolved = schema_utils.default_schema_path()
 
