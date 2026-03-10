@@ -314,3 +314,48 @@ def test_field_mapping_preview_updates_when_switching_templates(qapp) -> None:
     updated = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
     assert "method.version = Series-1" in updated
     assert "method.id = Kit-A" not in updated
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_remove_selected_rows_removes_all_selected(qapp) -> None:
+    view = FieldMappingView(app_state=AppState())
+
+    for _ in range(4):
+        view._add_row()
+
+    model = view.mapping_table.selectionModel()
+    model.select(view.mapping_table.model().index(1, 0), model.SelectionFlag.Select | model.SelectionFlag.Rows)
+    model.select(view.mapping_table.model().index(3, 0), model.SelectionFlag.Select | model.SelectionFlag.Rows)
+
+    view._remove_row()
+
+    assert view.mapping_table.rowCount() == 2
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_row_reorder_persists_after_save_and_reload(qapp) -> None:
+    state = AppState()
+    view = FieldMappingView(app_state=state)
+
+    view._add_row()
+    view._add_row()
+
+    first_target = view.mapping_table.cellWidget(0, 1)
+    first_target.setCurrentText("ProtocolFile.json:method.id")
+    view.mapping_table.item(0, 2).setText("input:method.kit_name")
+
+    second_target = view.mapping_table.cellWidget(1, 1)
+    second_target.setCurrentText("ProtocolFile.json:method.version")
+    view.mapping_table.item(1, 2).setText("default:v2")
+
+    view.mapping_table.selectRow(1)
+    view._move_selected_rows(-1)
+    view._save_current_template()
+
+    view._load_template(view.template_selector.currentText())
+    saved_rows = view._collect_rows()
+
+    assert saved_rows[0]["target"] == "ProtocolFile.json:method.version"
+    assert saved_rows[0]["expression"] == "default:v2"
+    assert saved_rows[1]["target"] == "ProtocolFile.json:method.id"
+    assert saved_rows[1]["expression"] == "input:method.kit_name"
