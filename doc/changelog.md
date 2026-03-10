@@ -4,6 +4,7 @@
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 
 ### Changed
+- Enhanced Admin → Field Mapping template management with a `Rename` action, template-name validation rules (trimmed/non-empty/unique plus reserved `Default` protection), conflict-free duplicate naming (`<name> Copy`, `<name> Copy 2`, ...), and delete confirmation that shows whether the template is active.
 - Added Field Mapping expression validation for supported tokens (`input:`, `default:`, `custom:`), balanced `concat(...)`, and quoted `delimiter=...` syntax; the mapping table now shows a per-row inline `Status` column and save/activate are blocked when enabled rows are invalid.
 - Refactored Admin → Field Mapping target/source token selectors into grouped, searchable combo boxes with per-option help tooltips; picker serialization remains backward-compatible so existing templates continue loading/saving legacy target/token values.
 - Fixed Admin → Field Mapping `Target Field` rendering to auto-size with content (column + combo sizing), and fixed manual-entry row rehydration so repeated row edits/reloads no longer carry stale combo values that could shift Product/Component/Parameter Set/Assay field assignments.
