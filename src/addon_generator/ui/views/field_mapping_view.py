@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from typing import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QStandardItem
+from PySide6.QtGui import QAction, QKeySequence, QShortcut, QStandardItem
 from PySide6.QtWidgets import (
+    QAbstractItemView,
     QComboBox,
     QCompleter,
     QFormLayout,
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QInputDialog,
     QMessageBox,
+    QMenu,
     QPushButton,
     QHeaderView,
     QTableWidget,
@@ -115,6 +117,9 @@ class FieldMappingView(QWidget):
         self.mapping_table = QTableWidget(self)
         self.mapping_table.setColumnCount(4)
         self.mapping_table.setHorizontalHeaderLabels(["Enabled", "Target Field", "Source Expression", "Status"])
+        self.mapping_table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.mapping_table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.mapping_table.setContextMenuPolicy(Qt.ContextMenuPolicy.CustomContextMenu)
         self.mapping_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.mapping_table.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
         self.mapping_table.horizontalHeader().setStretchLastSection(False)
@@ -124,8 +129,22 @@ class FieldMappingView(QWidget):
         map_actions = QHBoxLayout()
         self.add_row_btn = QPushButton("Add Mapping", self)
         self.remove_row_btn = QPushButton("Remove Selected", self)
+        self.duplicate_row_btn = QPushButton("Duplicate Selected", self)
+        self.move_row_up_btn = QPushButton("Move Up", self)
+        self.move_row_down_btn = QPushButton("Move Down", self)
+        self.enable_rows_btn = QPushButton("Enable Selected", self)
+        self.disable_rows_btn = QPushButton("Disable Selected", self)
         self.save_template_btn = QPushButton("Save Template", self)
-        for w in (self.add_row_btn, self.remove_row_btn, self.save_template_btn):
+        for w in (
+            self.add_row_btn,
+            self.remove_row_btn,
+            self.duplicate_row_btn,
+            self.move_row_up_btn,
+            self.move_row_down_btn,
+            self.enable_rows_btn,
+            self.disable_rows_btn,
+            self.save_template_btn,
+        ):
             map_actions.addWidget(w)
         map_actions.addStretch(1)
         root.addLayout(map_actions)
@@ -184,11 +203,22 @@ class FieldMappingView(QWidget):
         self.set_active_btn.clicked.connect(self._set_active_template)
         self.add_row_btn.clicked.connect(self._add_row)
         self.remove_row_btn.clicked.connect(self._remove_row)
+        self.duplicate_row_btn.clicked.connect(self._duplicate_selected_rows)
+        self.move_row_up_btn.clicked.connect(lambda: self._move_selected_rows(-1))
+        self.move_row_down_btn.clicked.connect(lambda: self._move_selected_rows(1))
+        self.enable_rows_btn.clicked.connect(lambda: self._set_selected_enabled(True))
+        self.disable_rows_btn.clicked.connect(lambda: self._set_selected_enabled(False))
         self.save_template_btn.clicked.connect(self._save_current_template)
         self.template_selector.currentTextChanged.connect(self._load_template)
         self.append_token_btn.clicked.connect(self._append_token)
         self.wrap_concat_btn.clicked.connect(self._wrap_concat)
         self.refresh_preview_btn.clicked.connect(self._refresh_preview)
+        self.mapping_table.customContextMenuRequested.connect(self._show_mapping_table_context_menu)
+
+        QShortcut(QKeySequence(Qt.Key.Key_Delete), self.mapping_table, activated=self._remove_row)
+        QShortcut(QKeySequence("Ctrl+D"), self.mapping_table, activated=self._duplicate_selected_rows)
+        QShortcut(QKeySequence("Alt+Up"), self.mapping_table, activated=lambda: self._move_selected_rows(-1))
+        QShortcut(QKeySequence("Alt+Down"), self.mapping_table, activated=lambda: self._move_selected_rows(1))
 
         self._ensure_mapping_settings()
         self._refresh_templates()
@@ -227,7 +257,7 @@ class FieldMappingView(QWidget):
 
             target_box = self._create_picker_combo(TARGET_OPTIONS, TARGET_OPTION_GROUPS)
             target_box.setCurrentText(str(row.get("target", "")))
-            target_box.currentTextChanged.connect(lambda _value, row_idx=idx: self._on_target_changed(row_idx))
+            target_box.currentTextChanged.connect(lambda _value, combo=target_box: self._on_target_changed_for_combo(combo))
             self.mapping_table.setCellWidget(idx, 1, target_box)
 
             expr_item = QTableWidgetItem(str(row.get("expression", "")))
@@ -365,17 +395,61 @@ class FieldMappingView(QWidget):
         enabled_item.setCheckState(Qt.CheckState.Checked)
         self.mapping_table.setItem(row, 0, enabled_item)
         target_box = self._create_picker_combo(TARGET_OPTIONS, TARGET_OPTION_GROUPS)
-        target_box.currentTextChanged.connect(lambda _value, row_idx=row: self._on_target_changed(row_idx))
+        target_box.currentTextChanged.connect(lambda _value, combo=target_box: self._on_target_changed_for_combo(combo))
         self.mapping_table.setCellWidget(row, 1, target_box)
         self.mapping_table.setItem(row, 2, QTableWidgetItem(""))
         self._set_status_item(row, "⚠️ Error: Expression is required")
         self._refresh_preview()
 
     def _remove_row(self) -> None:
-        selected = self.mapping_table.selectionModel().selectedRows()
-        if not selected:
+        selected_rows = self._selected_row_indexes()
+        if not selected_rows:
             return
-        self.mapping_table.removeRow(selected[0].row())
+        for row in sorted(selected_rows, reverse=True):
+            self.mapping_table.removeRow(row)
+        self._refresh_preview()
+
+    def _duplicate_selected_rows(self) -> None:
+        selected_rows = self._selected_row_indexes()
+        if not selected_rows:
+            return
+        rows = self._table_row_snapshots()
+        inserts = [(row + 1 + offset, rows[row]) for offset, row in enumerate(selected_rows)]
+        for insert_idx, row_data in inserts:
+            rows.insert(insert_idx, row_data)
+        duplicated_rows = [insert_idx for insert_idx, _row_data in inserts]
+        self._apply_table_row_snapshots(rows, selected_rows=duplicated_rows)
+
+    def _move_selected_rows(self, direction: int) -> None:
+        selected_rows = self._selected_row_indexes()
+        if not selected_rows:
+            return
+        rows = self._table_row_snapshots()
+        row_count = len(rows)
+        if direction < 0:
+            for row in selected_rows:
+                if row > 0 and (row - 1) not in selected_rows:
+                    rows[row - 1], rows[row] = rows[row], rows[row - 1]
+            new_selection = [max(0, row - 1) if row > 0 and (row - 1) not in selected_rows else row for row in selected_rows]
+        else:
+            for row in reversed(selected_rows):
+                if row < row_count - 1 and (row + 1) not in selected_rows:
+                    rows[row + 1], rows[row] = rows[row], rows[row + 1]
+            new_selection = [min(row_count - 1, row + 1) if row < row_count - 1 and (row + 1) not in selected_rows else row for row in selected_rows]
+        self._apply_table_row_snapshots(rows, selected_rows=new_selection)
+
+    def _set_selected_enabled(self, enabled: bool) -> None:
+        selected_rows = self._selected_row_indexes()
+        if not selected_rows:
+            return
+        state = Qt.CheckState.Checked if enabled else Qt.CheckState.Unchecked
+        for row in selected_rows:
+            enabled_item = self.mapping_table.item(row, 0)
+            if enabled_item is None:
+                enabled_item = QTableWidgetItem("Yes" if enabled else "No")
+                self.mapping_table.setItem(row, 0, enabled_item)
+            enabled_item.setCheckState(state)
+            self._validate_row(row)
         self._refresh_preview()
 
     def _append_token(self) -> None:
@@ -416,6 +490,65 @@ class FieldMappingView(QWidget):
 
     def _on_target_changed(self, row: int) -> None:
         self._validate_row(row)
+        self._refresh_preview()
+
+    def _on_target_changed_for_combo(self, combo: QComboBox) -> None:
+        for row in range(self.mapping_table.rowCount()):
+            if self.mapping_table.cellWidget(row, 1) is combo:
+                self._on_target_changed(row)
+                return
+
+    def _show_mapping_table_context_menu(self, pos) -> None:
+        menu = QMenu(self.mapping_table)
+        actions = [
+            ("Remove Selected", self._remove_row),
+            ("Duplicate Selected", self._duplicate_selected_rows),
+            ("Move Up", lambda: self._move_selected_rows(-1)),
+            ("Move Down", lambda: self._move_selected_rows(1)),
+            ("Enable Selected", lambda: self._set_selected_enabled(True)),
+            ("Disable Selected", lambda: self._set_selected_enabled(False)),
+        ]
+        for text, callback in actions:
+            action = QAction(text, menu)
+            action.triggered.connect(callback)
+            menu.addAction(action)
+        menu.exec(self.mapping_table.viewport().mapToGlobal(pos))
+
+    def _selected_row_indexes(self) -> list[int]:
+        selected = self.mapping_table.selectionModel().selectedRows()
+        return sorted({index.row() for index in selected})
+
+    def _table_row_snapshots(self) -> list[MappingRow]:
+        snapshots: list[MappingRow] = []
+        for row in range(self.mapping_table.rowCount()):
+            enabled_item = self.mapping_table.item(row, 0)
+            enabled = enabled_item.checkState() == Qt.CheckState.Checked if enabled_item else True
+            target_widget = self.mapping_table.cellWidget(row, 1)
+            target = self._combo_value(target_widget) if isinstance(target_widget, QComboBox) else ""
+            expr_item = self.mapping_table.item(row, 2)
+            expression = expr_item.text() if expr_item else ""
+            snapshots.append(MappingRow(target=target, expression=expression, enabled=enabled))
+        return snapshots
+
+    def _apply_table_row_snapshots(self, rows: list[MappingRow], *, selected_rows: list[int] | None = None) -> None:
+        self.mapping_table.setRowCount(0)
+        for idx, row in enumerate(rows):
+            self.mapping_table.insertRow(idx)
+            enabled_item = QTableWidgetItem("Yes" if row.enabled else "No")
+            enabled_item.setCheckState(Qt.CheckState.Checked if row.enabled else Qt.CheckState.Unchecked)
+            self.mapping_table.setItem(idx, 0, enabled_item)
+            target_box = self._create_picker_combo(TARGET_OPTIONS, TARGET_OPTION_GROUPS)
+            target_box.setCurrentText(row.target)
+            target_box.currentTextChanged.connect(lambda _value, combo=target_box: self._on_target_changed_for_combo(combo))
+            self.mapping_table.setCellWidget(idx, 1, target_box)
+            self.mapping_table.setItem(idx, 2, QTableWidgetItem(row.expression))
+            self._set_status_item(idx, "")
+            self._validate_row(idx)
+
+        self.mapping_table.clearSelection()
+        for row in selected_rows or []:
+            if 0 <= row < self.mapping_table.rowCount():
+                self.mapping_table.selectRow(row)
         self._refresh_preview()
 
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
