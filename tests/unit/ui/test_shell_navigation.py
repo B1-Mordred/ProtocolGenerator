@@ -3,12 +3,12 @@ from __future__ import annotations
 import pytest
 
 try:
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QComboBox
 except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
 from addon_generator.__about__ import __app_name__
-from addon_generator.input_models.dtos import AssayInputDTO, InputDTOBundle, MethodInputDTO
+from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, InputDTOBundle, MethodInputDTO, UnitInputDTO
 from addon_generator.ui.shell import MainShell
 
 
@@ -96,7 +96,14 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
 
     bundle = InputDTOBundle(
         source_type="excel",
-        method=MethodInputDTO(key="method:M-1", method_id="M-1", method_version="1.0", display_name="Kit One"),
+        method=MethodInputDTO(
+            key="method:M-1",
+            method_id="M-1",
+            method_version="1.0",
+            display_name="Kit One",
+            series_name="Series-1",
+            order_number="KIT-001",
+        ),
         assays=[
             AssayInputDTO(
                 key="PS-1",
@@ -114,6 +121,8 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
                 },
             )
         ],
+        analytes=[AnalyteInputDTO(key="analyte:1", name="Glucose", assay_key="Basic Kit")],
+        units=[UnitInputDTO(key="unit:1", name="mg/dL", analyte_key="analyte:1")],
     )
 
     shell._populate_manual_entry_from_bundle(bundle)
@@ -121,4 +130,13 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-1"
     assert shell.manual_entry_view.assays_table.item(0, 1).text() == "Component A"
     assert shell.manual_entry_view.assays_table.item(0, 2).text() == "PS-1"
-    assert shell.manual_entry_view.assays_table.item(0, 6).text() == "Tube"
+    assert shell.manual_entry_view.basics_fields["kit_series"].text() == "Series-1"
+    assert shell.manual_entry_view.basics_fields["kit_product_number"].text() == "KIT-001"
+
+    container_combo = shell.manual_entry_view.assays_table.cellWidget(0, 6)
+    assert isinstance(container_combo, QComboBox)
+    assert container_combo.currentText() == "Tube"
+
+    assay_combo = shell.manual_entry_view.analytes_table.cellWidget(0, 1)
+    assert isinstance(assay_combo, QComboBox)
+    assert assay_combo.currentText() == "Basic Kit"

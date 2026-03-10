@@ -1,4 +1,5 @@
 ## Unreleased
+- Fixed manual AddOn entry persistence for `Kit Series` and `Kit Product Number`; updated manual tables so `Kit Components` headers auto-size (no truncation), introduced Admin-configurable drop-down lists for `Type`, `Container Type (if Liquid)`, and analyte `Unit of Measurement`, renamed analytes column `Assay Key` to `Assay` with values sourced from Kit Components `Parameter Set Name`, and removed manual analyte entry fields `Analyte Key`/`Assay Information Type`.
 - Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 - Fixed AddOn Data Entry `Import Excel File` workbook-template detection to accept case/spacing variants in sheet names (e.g. ` Basics ` / `hidden_lists`) so supported templates import instead of silently falling back to unsupported parsers.
 - Changed manual Basics data entry fields to remove `Method ID`, `Method Version`, and `Display Name`, and add `Kit Name` below `Kit Series`.
@@ -126,6 +127,7 @@
 - Changed test suite coverage to include dedicated unit tests for mapping mode behavior (`exact`, `normalized`, `alias_map`, `explicit_key`), ID assignment, and cross-file linkage validation.
 
 ## Unreleased
+- Fixed manual AddOn entry persistence for `Kit Series` and `Kit Product Number`; updated manual tables so `Kit Components` headers auto-size (no truncation), introduced Admin-configurable drop-down lists for `Type`, `Container Type (if Liquid)`, and analyte `Unit of Measurement`, renamed analytes column `Assay Key` to `Assay` with values sourced from Kit Components `Parameter Set Name`, and removed manual analyte entry fields `Analyte Key`/`Assay Information Type`.
 - Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 
 ### Added
@@ -203,6 +205,7 @@
 - Refactored `GenerationService` import entrypoints to delegate domain mapping to the new importer layer (PR pending).
 
 ## Unreleased
+- Fixed manual AddOn entry persistence for `Kit Series` and `Kit Product Number`; updated manual tables so `Kit Components` headers auto-size (no truncation), introduced Admin-configurable drop-down lists for `Type`, `Container Type (if Liquid)`, and analyte `Unit of Measurement`, renamed analytes column `Assay Key` to `Assay` with values sourced from Kit Components `Parameter Set Name`, and removed manual analyte entry fields `Analyte Key`/`Assay Information Type`.
 - Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 
 ### Changed

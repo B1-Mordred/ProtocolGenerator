@@ -33,6 +33,10 @@ def map_gui_payload_to_bundle(payload: dict[str, Any]) -> InputDTOBundle:
         display_name=method_info.get("DisplayName"),
         main_title=method_info.get("MainTitle"),
         sub_title=method_info.get("SubTitle"),
+        order_number=method_info.get("OrderNumber"),
+        series_name=method_info.get("SeriesName"),
+        product_name=method_info.get("ProductName"),
+        product_number=method_info.get("ProductNumber"),
     )
 
     assay_rows = payload.get("assays") if isinstance(payload.get("assays"), list) else []
@@ -70,11 +74,23 @@ def map_gui_payload_to_bundle(payload: dict[str, Any]) -> InputDTOBundle:
                 metadata=metadata,
             )
         )
-    analytes = [AnalyteInputDTO(key=str(row["key"]), name=str(row.get("name") or ""), assay_key=str(row.get("assay_key") or ""), assay_information_type=row.get("assay_information_type")) for row in analyte_rows]
+    analytes: list[AnalyteInputDTO] = []
+    for idx, row in enumerate(analyte_rows):
+        key = str(row.get("key") or row.get("analyte_key") or f"analyte:{idx + 1}").strip()
+        name = str(row.get("name") or row.get("analyte_name") or "").strip()
+        assay_key = str(row.get("assay_key") or row.get("assay") or "").strip()
+        analytes.append(
+            AnalyteInputDTO(
+                key=key,
+                name=name,
+                assay_key=assay_key,
+                assay_information_type=row.get("assay_information_type"),
+            )
+        )
 
     normalized_unit_rows = list(unit_rows)
-    for analyte_row in analyte_rows:
-        analyte_key = str(analyte_row.get("key") or "").strip()
+    for analyte_idx, analyte_row in enumerate(analyte_rows):
+        analyte_key = str(analyte_row.get("key") or analyte_row.get("analyte_key") or f"analyte:{analyte_idx + 1}").strip()
         unit_names = _split_multi_value(analyte_row.get("unit_names") or analyte_row.get("units"))
         for idx, unit_name in enumerate(unit_names):
             normalized_unit_rows.append({"key": f"{analyte_key}:unit:{idx}:{unit_name}", "name": unit_name, "analyte_key": analyte_key})
