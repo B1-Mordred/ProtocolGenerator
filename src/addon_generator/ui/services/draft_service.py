@@ -5,6 +5,7 @@ from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
 
+from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
 from addon_generator.runtime.paths import get_runtime_paths
 from typing import Any
 
@@ -51,7 +52,8 @@ class DraftService:
         return path
 
     def load(self, path: str | Path) -> dict[str, Any]:
-        return json.loads(Path(path).read_text(encoding="utf-8"))
+        raw = json.loads(Path(path).read_text(encoding="utf-8"))
+        return self._normalize_recovery_payload(raw)
 
     def restore(self, app_state: AppState, payload: dict[str, Any], *, source_path: str | None = None) -> None:
         import_payload = payload.get("import_state", {})
@@ -86,6 +88,110 @@ class DraftService:
                 "previous_path": draft_payload.get("path"),
             },
         )
+
+    @staticmethod
+    def _normalize_recovery_payload(raw: Any) -> dict[str, Any]:
+        if not isinstance(raw, dict):
+            return DraftService._empty_recovery_payload()
+
+        draft_candidate = raw.get("draft") if isinstance(raw.get("draft"), dict) else raw
+        if DraftService._is_manual_entry_snapshot(draft_candidate):
+            return DraftService._build_payload_from_manual_snapshot(draft_candidate)
+
+        payload = draft_candidate if DraftService._is_draft_payload(draft_candidate) else DraftService._empty_recovery_payload()
+        manual_snapshot = raw.get("manual_entry_snapshot")
+        if DraftService._is_manual_entry_snapshot(manual_snapshot):
+            payload = DraftService._merge_manual_snapshot(payload, manual_snapshot)
+        return payload
+
+    @staticmethod
+    def _is_draft_payload(candidate: Any) -> bool:
+        if not isinstance(candidate, dict):
+            return False
+        required = {"import_state", "editor_state", "validation_state", "preview_state", "draft_state"}
+        return required.issubset(candidate.keys())
+
+    @staticmethod
+    def _is_manual_entry_snapshot(candidate: Any) -> bool:
+        if not isinstance(candidate, dict):
+            return False
+        required = {"method", "assays", "analytes", "dilutions", "sample_prep"}
+        return required.issubset(candidate.keys())
+
+    @staticmethod
+    def _empty_recovery_payload() -> dict[str, Any]:
+        return {
+            "import_state": asdict(ImportState()),
+            "editor_state": asdict(EditorState()),
+            "validation_state": asdict(ValidationState()),
+            "preview_state": asdict(PreviewState()),
+            "draft_state": asdict(DraftState()),
+        }
+
+    @staticmethod
+    def _build_payload_from_manual_snapshot(snapshot: dict[str, Any]) -> dict[str, Any]:
+        return DraftService._merge_manual_snapshot(DraftService._empty_recovery_payload(), snapshot)
+
+    @staticmethod
+    def _merge_manual_snapshot(payload: dict[str, Any], snapshot: dict[str, Any]) -> dict[str, Any]:
+        merged = {
+            "import_state": dict(payload.get("import_state", {})),
+            "editor_state": dict(payload.get("editor_state", {})),
+            "validation_state": dict(payload.get("validation_state", {})),
+            "preview_state": dict(payload.get("preview_state", {})),
+            "draft_state": dict(payload.get("draft_state", {})),
+        }
+        bundle = DraftService._manual_snapshot_to_bundle(snapshot)
+        import_state = merged["import_state"]
+        import_state["bundles"] = [asdict(bundle)]
+        import_state["issues"] = []
+        import_state["provenance"] = {}
+        import_state["review_resolutions"] = {}
+        import_state["provenance_lookup"] = {}
+
+        editor_state = merged["editor_state"]
+        editor_state.setdefault("sample_prep_overrides", [])
+        editor_state.setdefault("dilution_overrides", [])
+        return merged
+
+    @staticmethod
+    def _manual_snapshot_to_bundle(snapshot: dict[str, Any]) -> InputDTOBundle:
+        method_payload = snapshot.get("method", {}) if isinstance(snapshot.get("method"), dict) else {}
+        gui_payload = {
+            "method_id": "",
+            "method_version": "",
+            "MethodInformation": {
+                "DisplayName": method_payload.get("kit_name", ""),
+                "SeriesName": method_payload.get("kit_series", ""),
+                "OrderNumber": method_payload.get("kit_product_number", ""),
+                "MainTitle": method_payload.get("addon_series", ""),
+                "SubTitle": method_payload.get("addon_product_name", ""),
+                "ProductNumber": method_payload.get("addon_product_number", ""),
+            },
+            "assays": snapshot.get("assays", []),
+            "analytes": snapshot.get("analytes", []),
+        }
+        bundle = map_gui_payload_to_bundle(gui_payload)
+        bundle.sample_prep_steps = [
+            SamplePrepStepInputDTO(
+                key=row.get("key") or f"sample-prep-{index + 1}",
+                label=row.get("action") or row.get("key") or f"sample-prep-{index + 1}",
+                metadata={k: v for k, v in row.items() if k not in {"key"}},
+            )
+            for index, row in enumerate(snapshot.get("sample_prep", []))
+            if isinstance(row, dict)
+            and (row.get("action") or row.get("source") or row.get("destination") or row.get("volume") or row.get("duration") or row.get("force"))
+        ]
+        bundle.dilution_schemes = [
+            DilutionSchemeInputDTO(
+                key=str(row.get("key") or ""),
+                label=str(row.get("key") or ""),
+                metadata={k: v for k, v in row.items() if k not in {"key"}},
+            )
+            for row in snapshot.get("dilutions", [])
+            if isinstance(row, dict) and row.get("key")
+        ]
+        return bundle
 
     @staticmethod
     def _bundle_from_dict(raw: dict[str, Any]) -> InputDTOBundle:
