@@ -6,10 +6,10 @@ from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDockWidget, QMainWindow, QPushButton, QStackedWidget, QStatusBar, QToolBar
+from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QPushButton, QStackedWidget, QStatusBar, QToolBar
 
 from addon_generator.ui.services.draft_service import DraftService
-from addon_generator.ui.services.export_service import ExportService
+from addon_generator.ui.services.export_service import ExportResult, ExportService
 from addon_generator.ui.services.import_service import ImportService
 from addon_generator.ui.services.merge_service_adapter import MergeServiceAdapter
 from addon_generator.ui.services.preview_service import PreviewService
@@ -130,6 +130,8 @@ class MainShell(QMainWindow):
         self.setStatusBar(status_bar)
 
         self.preview_view.regenerate_button.clicked.connect(self.run_preview)
+        self.export_view.choose_destination_button.clicked.connect(self.choose_export_destination)
+        self.export_view.validate_button.clicked.connect(self.run_validation)
         self.export_view.export_button.clicked.connect(self.run_export)
         self.validation_view.issues.issue_navigation_requested.connect(self._on_issue_selected)
 
@@ -205,13 +207,39 @@ class MainShell(QMainWindow):
         merged = self._current_merged_bundle()
         if merged is None:
             return
+
+        if self.app_state.validation_state.stale:
+            self.run_validation()
+        if self.app_state.validation_state.has_blockers:
+            self.export_view.set_export_result(
+                ExportResult(
+                    status="failure",
+                    destination=self.export_view.destination.text().strip(),
+                    failure_reason="Export blocked by validation blockers. Resolve errors and validate again.",
+                )
+            )
+            return
+
         destination = self.export_view.destination.text().strip() or self.app_state.editor_state.export_settings.get("destination_folder")
         if not destination:
+            self.export_view.set_export_result(
+                ExportResult(
+                    status="failure",
+                    failure_reason="Select a destination folder before exporting.",
+                )
+            )
             return
         overwrite = self.export_view.overwrite.isChecked()
         self.app_state.editor_state.export_settings["destination_folder"] = destination
         self.app_state.editor_state.export_settings["overwrite"] = overwrite
-        self.export_service.export(merged, destination_folder=destination, overwrite=overwrite)
+        result = self.export_service.export(merged, destination_folder=destination, overwrite=overwrite)
+        self.export_view.set_export_result(result)
+
+    def choose_export_destination(self) -> None:
+        current = self.export_view.destination.text().strip() or str(Path.cwd())
+        selected = QFileDialog.getExistingDirectory(self, "Select Export Destination", current)
+        if selected:
+            self.export_view.destination.setText(selected)
 
     def save_draft(self) -> None:
         drafts_dir = self.app_state.editor_state.export_settings.get("drafts_dir", "drafts")

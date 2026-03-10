@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass, field
 from pathlib import Path
 
 from addon_generator.input_models.dtos import InputDTOBundle
@@ -7,15 +8,44 @@ from addon_generator.services.canonical_model_builder import CanonicalModelBuild
 from addon_generator.services.generation_service import GenerationService
 
 
+@dataclass(slots=True)
+class ExportResult:
+    status: str
+    written_paths: list[str] = field(default_factory=list)
+    destination: str = ""
+    failure_reason: str | None = None
+    cleanup_note: str | None = None
+
+    @property
+    def success(self) -> bool:
+        return self.status == "success"
+
+
 class ExportService:
     def __init__(self) -> None:
         self._builder = CanonicalModelBuilder()
         self._service = GenerationService()
 
-    def export(self, merged_bundle: InputDTOBundle, *, destination_folder: str, overwrite: bool = False) -> dict[str, str]:
+    def export(self, merged_bundle: InputDTOBundle, *, destination_folder: str, overwrite: bool = False) -> ExportResult:
+        destination = str(Path(destination_folder))
         addon = self._builder.build(merged_bundle)
         validation = self._service.generate_all(addon, dto_bundle=merged_bundle)
         if validation.issues:
-            raise ValueError("Export blocked due to validation errors")
-        package = self._service.build_package(addon, destination_root=Path(destination_folder), overwrite=overwrite)
-        return {name: str(path) for name, path in package.artifacts.items()}
+            return ExportResult(
+                status="failure",
+                destination=destination,
+                failure_reason="Export blocked due to validation errors.",
+            )
+
+        try:
+            package = self._service.build_package(addon, destination_root=Path(destination_folder), overwrite=overwrite)
+        except Exception as exc:
+            return ExportResult(
+                status="failure",
+                destination=destination,
+                failure_reason=f"Export failed: {exc}",
+                cleanup_note="Partial files may exist in the destination and might require manual cleanup.",
+            )
+
+        written_paths = [str(path) for path in package.artifacts.values()]
+        return ExportResult(status="success", written_paths=written_paths, destination=destination)

@@ -4,12 +4,14 @@
 
 ### Changed
 - Enhanced GUI preview flow with richer `PreviewState` snapshots (generated timestamp, error state, validation/export snapshots), structured preview summaries, failure-safe preview responses, per-tab copy controls, and preview status banners that highlight stale/current readiness and user-friendly generation errors.
+- Refined GUI export orchestration to enforce validation gating before write attempts, keep Export actions disabled when blockers exist, and surface structured export outcomes (destination, written files, failure reasons, cleanup notes) directly in the Export screen.
 
 
 ### Added
 - Expanded GUI regression coverage with new unit tests for Sample Prep, Dilutions, and Import Review interaction flows (add/edit/reorder/duplicate/delete, filter switching, resolution actions, navigation callbacks) plus sidebar badge-refresh assertions in shell navigation tests.
 - Expanded UI integration coverage in `tests/integration/test_ui_authoring_flow.py` to exercise import review conflict handling, Sample Prep editing, validation/preview stale-flag lifecycle transitions, and post-preview stale re-triggering after edits.
 - Added validation-service regression tests for issue-category assignment, severity/category counts, and export-blocking derivation; updated shell orchestration tests to assert the new validation summary/state wiring.
+- Added export-service and shell orchestration regression tests for validation-blocked export state, successful export result rendering with written file paths, and failed export rendering with clear reason/cleanup messaging.
 
 ### Changed
 - Refactored UI validation orchestration to classify issues into Import Issues, Domain Validation, Cross-file Validation, Schema/XSD Validation, Export Blockers, Warnings, and Info, with per-issue navigation targets and optional recommended actions.
