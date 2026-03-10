@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
     QWidget,
+    QHeaderView,
 )
 
 from addon_generator.ui.models.import_review_view_model import ImportReviewFilter, ImportReviewScreenViewModel
@@ -48,6 +49,8 @@ class ImportReviewView(QWidget):
         self.table.setColumnCount(7)
         self.table.setHorizontalHeaderLabels(["Entity", "Field", "Imported", "Effective", "Source", "Override", "Conflict"])
         self.table.itemSelectionChanged.connect(self._update_detail_panel)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        self.table.horizontalHeader().setStretchLastSection(True)
         left.addWidget(self.table)
 
         action_row = QHBoxLayout()

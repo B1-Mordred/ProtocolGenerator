@@ -99,10 +99,11 @@ class _DraftService:
     def __init__(self, draft_path: Path):
         self._draft_path = draft_path
 
-    def save(self, app_state, drafts_dir="drafts"):
-        app_state.draft_state.path = str(self._draft_path)
+    def save(self, app_state, drafts_dir="drafts", draft_path=None):
+        chosen = Path(draft_path) if draft_path else self._draft_path
+        app_state.draft_state.path = str(chosen)
         app_state.draft_state.dirty = False
-        return self._draft_path
+        return chosen
 
     def load(self, path):
         return {
@@ -199,13 +200,15 @@ def test_gui_workflow_import_edit_resolve_validate_preview_export_save_restore(q
     assert export_service.calls
     assert shell.export_view.result_status.text() == "Export succeeded"
 
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *args, **kwargs: (str(tmp_path / "draft.json"), "")))
     shell.save_draft()
     assert shell.app_state.draft_state.dirty is False
 
     shell.app_state.editor_state.export_settings["draft_path"] = str(tmp_path / "draft.json")
     shell.app_state.draft_state.dirty = True
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: (str(tmp_path / "draft.json"), "")))
     shell.restore_draft()
     assert shell.app_state.draft_state.dirty is False
     assert shell.stack.currentIndex() == 8
-    assert any(title == "Draft Saved" for title, _ in info_calls)
-    assert any(title == "Draft Restored" for title, _ in info_calls)
+    assert any(title == "Status Saved" for title, _ in info_calls)
+    assert any(title == "Draft Recovered" for title, _ in info_calls)

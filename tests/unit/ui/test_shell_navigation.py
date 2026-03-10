@@ -23,9 +23,9 @@ def test_shell_navigation_switches_sections(qapp) -> None:
     shell.sidebar.setCurrentRow(3)
     assert shell.stack.currentIndex() == 3
     assert shell.app_state.editor_state.selected_section_index == 3
-    shell.sidebar.setCurrentRow(8)
-    assert shell.stack.currentIndex() == 8
-    assert shell.app_state.editor_state.selected_section_index == 8
+    shell.sidebar.setCurrentRow(9)
+    assert shell.stack.currentIndex() == 9
+    assert shell.app_state.editor_state.selected_section_index == 9
 
 
 def test_shell_sidebar_badges_refresh_when_counts_change(qapp) -> None:
@@ -158,4 +158,5 @@ def test_shell_admin_menu_has_dedicated_dropdown_configuration_actions(qapp) -> 
         "Configure Container Type Values",
         "Configure Unit of Measurement Values",
         "Configure Sample Prep Action Values",
+        "Field Mapping",
     ]

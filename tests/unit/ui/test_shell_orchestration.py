@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 try:
@@ -124,8 +126,9 @@ class _DraftService:
     def __init__(self):
         self.saved = False
 
-    def save(self, app_state, drafts_dir="drafts"):
+    def save(self, app_state, drafts_dir="drafts", draft_path=None):
         self.saved = True
+        return Path(draft_path) if draft_path else Path("drafts/mock.json")
 
     def load(self, path):
         return {
@@ -247,7 +250,7 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
     assert export_service.called is True
 
 
-def test_shell_restore_draft_applies_section_selection(qapp, messagebox_spy):
+def test_shell_restore_draft_applies_section_selection(qapp, messagebox_spy, monkeypatch):
     draft_service = _DraftService()
     shell = MainShell(
         app_state=AppState(),
@@ -258,7 +261,7 @@ def test_shell_restore_draft_applies_section_selection(qapp, messagebox_spy):
         export_service=_ExportService(),
         draft_service=draft_service,
     )
-    shell.app_state.editor_state.export_settings["draft_path"] = "drafts/sample.json"
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: ("drafts/sample.json", "")))
 
     shell.restore_draft()
 
@@ -268,7 +271,7 @@ def test_shell_restore_draft_applies_section_selection(qapp, messagebox_spy):
 
 
 
-def test_shell_prompts_before_restore_when_dirty(qapp, messagebox_spy):
+def test_shell_prompts_before_restore_when_dirty(qapp, messagebox_spy, monkeypatch):
     draft_service = _DraftService()
     shell = MainShell(
         app_state=AppState(),
@@ -279,8 +282,8 @@ def test_shell_prompts_before_restore_when_dirty(qapp, messagebox_spy):
         export_service=_ExportService(),
         draft_service=draft_service,
     )
-    shell.app_state.editor_state.export_settings["draft_path"] = "drafts/sample.json"
     shell.app_state.draft_state.dirty = True
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: ("drafts/sample.json", "")))
 
     shell.restore_draft()
 
@@ -400,6 +403,7 @@ def test_shell_status_transitions_post_edit_validate_preview_export_and_save_res
     assert shell.status_banner.text() == "Validation: current | Preview: current | Export: ready | Draft: dirty"
 
     # post-save transition
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *args, **kwargs: (str(tmp_path / "draft.json"), "")))
     shell.save_draft()
     assert shell.app_state.draft_is_saved is True
     assert shell.sidebar.item(8).text() == "Export"
