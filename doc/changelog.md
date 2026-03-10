@@ -97,6 +97,12 @@
 ## Unreleased
 
 ### Added
+- Added a cross-platform, spec-driven PyInstaller packaging layout with `build/pyinstaller/addon_authoring.spec`, new platform scripts (`scripts/build_windows.ps1`, `scripts/build_macos.sh`, `scripts/build_linux.sh`), and packaging artifact homes under `deploy/manifests/` and `deploy/icons/`.
+
+### Changed
+- Updated build documentation/tests to validate one-folder PyInstaller invocation from the shared spec and required bundled data assets (`protocol.schema.json`, `AddOn.xsd`, mapping config, fragment resources, and canonical addon UI resource paths).
+
+### Added
 - Added fragment resolver plugin modules under `src/addon_generator/fragments/resolvers/` plus `src/addon_generator/fragments/registry.py` to collect concern-specific protocol section contributions and feed centralized deterministic ordering in protocol JSON generation.
 - Added typed mapping-schema models and a strict schema validation layer for addon mapping YAML (`src/addon_generator/config/models.py`, `src/addon_generator/config/schema_validator.py`), including actionable errors for unknown keys, invalid field paths, invalid enum/strategy modes, and missing mandatory sections.
 - Added DTO-first addon input model modules (`input_models/dtos.py`, `input_models/provenance.py`) and canonical conversion boundary (`services/canonical_model_builder.py`) to centralize DTO→domain transformation.
