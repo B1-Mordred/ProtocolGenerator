@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from typing import Callable
 
+from PySide6.QtGui import QFontMetrics
 from PySide6.QtWidgets import (
     QComboBox,
     QFormLayout,
@@ -19,6 +20,38 @@ from PySide6.QtWidgets import (
 
 
 class ManualEntryView(QWidget):
+    _BASICS_FIELD_WIDTH_CHARS = 36
+    _TABLE_COLUMN_WIDTH_HINTS: dict[str, dict[str, int]] = {
+        "Kit Components": {
+            "Product Number": 20,
+            "Component Name": 28,
+            "Parameter Set Number": 22,
+            "Assay Abbreviation": 18,
+            'Parameter Set Name (or "BASIC Kit")': 34,
+            "Type": 14,
+            "Container Type (if Liquid)": 24,
+        },
+        "Dilutions": {
+            "Dilution Key": 22,
+            "Buffer1 Ratio": 16,
+            "Buffer2 Ratio": 16,
+            "Buffer3 Ratio": 16,
+        },
+        "Analytes": {
+            "Analyte Name": 28,
+            "Assay": 24,
+            "Unit of Measurement": 22,
+        },
+        "Sample Prep": {
+            "Action": 16,
+            "Source": 24,
+            "Destination": 24,
+            "Volume": 16,
+            "Duration": 16,
+            "Force": 16,
+        },
+    }
+
     def __init__(self, parent=None, *, on_data_changed: Callable[[], None] | None = None) -> None:
         super().__init__(parent)
         self._on_data_changed = on_data_changed
@@ -74,6 +107,7 @@ class ManualEntryView(QWidget):
         ]
         for key, label in fields:
             line = QLineEdit(widget)
+            self._set_line_edit_width(line, self._BASICS_FIELD_WIDTH_CHARS)
             line.textChanged.connect(self._emit_data_changed)
             self.basics_fields[key] = line
             layout.addRow(label, line)
@@ -86,6 +120,7 @@ class ManualEntryView(QWidget):
         table.setHorizontalHeaderLabels(headers)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         table.horizontalHeader().setStretchLastSection(True)
+        self._apply_table_widths(table, headers, tab_name)
         table.itemChanged.connect(lambda _item: self._emit_data_changed())
         layout.addWidget(table)
 
@@ -152,6 +187,7 @@ class ManualEntryView(QWidget):
             combo = QComboBox(table)
             combo.currentTextChanged.connect(lambda _text: self._emit_data_changed())
             table.setCellWidget(row, col, combo)
+        combo.setMinimumContentsLength(max(12, max((len(option) for option in options), default=0)))
         combo.blockSignals(True)
         combo.clear()
         combo.addItem("")
@@ -230,6 +266,20 @@ class ManualEntryView(QWidget):
             for col in range(table.columnCount()):
                 table.setCellWidget(row, col, None)
                 table.setItem(row, col, None)
+
+    @staticmethod
+    def _set_line_edit_width(edit: QLineEdit, characters: int) -> None:
+        metrics = QFontMetrics(edit.font())
+        width = metrics.horizontalAdvance("M" * characters) + 24
+        edit.setMinimumWidth(width)
+
+    def _apply_table_widths(self, table: QTableWidget, headers: list[str], tab_name: str) -> None:
+        metrics = QFontMetrics(table.font())
+        width_hints = self._TABLE_COLUMN_WIDTH_HINTS.get(tab_name, {})
+        for index, header in enumerate(headers):
+            expected_chars = width_hints.get(header, len(header) + 6)
+            target_width = metrics.horizontalAdvance("M" * expected_chars) + 36
+            table.setColumnWidth(index, target_width)
 
 
 

@@ -149,3 +149,33 @@ def test_manual_entry_set_rows_replaces_existing_combo_values_without_carryover(
     assert payload["assays"][0]["type"] == "Solid"
     assert payload["assays"][0]["container_type"] == "Tube"
     assert payload["analytes"][0] == {"name": "Analyte 2", "assay_key": "Assay B", "unit_names": "ng/mL"}
+
+
+def test_manual_entry_applies_content_width_hints(qapp) -> None:
+    view = ManualEntryView()
+
+    for field in view.basics_fields.values():
+        assert field.minimumWidth() > 250
+
+    kit_components_widths = [view.assays_table.columnWidth(i) for i in range(view.assays_table.columnCount())]
+    assert kit_components_widths[1] > kit_components_widths[0]
+    assert kit_components_widths[4] > kit_components_widths[3]
+
+    analytes_widths = [view.analytes_table.columnWidth(i) for i in range(view.analytes_table.columnCount())]
+    assert analytes_widths[0] > analytes_widths[2]
+
+
+def test_manual_entry_dropdowns_expand_for_long_option_values(qapp) -> None:
+    view = ManualEntryView()
+
+    long_action = "Very Long Sample Preparation Action Label"
+    view.set_dropdown_options(
+        kit_types=["Solid"],
+        container_types=["Tube"],
+        analyte_units=["mg/dL"],
+        sample_prep_actions=[long_action],
+    )
+
+    action_combo = view.sample_prep_table.cellWidget(0, 0)
+    assert isinstance(action_combo, QComboBox)
+    assert action_combo.minimumContentsLength() >= len(long_action)
