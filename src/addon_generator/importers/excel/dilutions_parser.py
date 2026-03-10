@@ -17,7 +17,12 @@ def parse_dilutions_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) ->
     for row_idx in range(header_row + 1, len(rows) + 1):
         row = rows[row_idx - 1]
         name = _text(row[header_map["name"]].value)
-        ratio = _text(row[header_map["ratio"]].value)
+        ratio = _text(row[header_map["ratio"]].value) if "ratio" in header_map else ""
+        buffer1_ratio = _text(row[header_map["buffer1_ratio"]].value) if "buffer1_ratio" in header_map else ""
+        buffer2_ratio = _text(row[header_map["buffer2_ratio"]].value) if "buffer2_ratio" in header_map else ""
+        buffer3_ratio = _text(row[header_map["buffer3_ratio"]].value) if "buffer3_ratio" in header_map else ""
+        if "ratio" not in header_map and any([buffer1_ratio, buffer2_ratio, buffer3_ratio]):
+            ratio = ":".join(part for part in [buffer1_ratio, buffer2_ratio, buffer3_ratio] if part)
         if not name and not ratio:
             continue
         if not name:
@@ -36,15 +41,35 @@ def parse_dilutions_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) ->
             )
             continue
         seen_names.add(identity)
-        schemes.append(DilutionSchemeInputDTO(key=f"dilution:{name}", label=name, metadata={"ratio": ratio}))
+        metadata: dict[str, str] = {"ratio": ratio}
+        if any(field in header_map for field in ["buffer1_ratio", "buffer2_ratio", "buffer3_ratio"]):
+            metadata["buffer1_ratio"] = buffer1_ratio
+            metadata["buffer2_ratio"] = buffer2_ratio
+            metadata["buffer3_ratio"] = buffer3_ratio
+            metadata["ratio"] = ":".join(part for part in [buffer1_ratio, buffer2_ratio, buffer3_ratio] if part)
+        schemes.append(DilutionSchemeInputDTO(key=f"dilution:{name}", label=name, metadata=metadata))
     return schemes
 
 
 def _find_header(rows: list[Any]) -> tuple[int | None, dict[str, int]]:
+    aliases = {
+        "dilution name": "name",
+        "dilution buffer 1 ratio": "buffer1_ratio",
+        "dilution buffer 2 ratio": "buffer2_ratio",
+        "dilution buffer 3 ratio": "buffer3_ratio",
+    }
     for idx, row in enumerate(rows, start=1):
         labels = {_text(c.value).casefold(): i for i, c in enumerate(row) if _text(c.value)}
-        if "name" in labels and "ratio" in labels:
-            return idx, {"name": labels["name"], "ratio": labels["ratio"]}
+        normalized_labels = {aliases.get(label, label): col for label, col in labels.items()}
+        if "name" in normalized_labels and (
+            "ratio" in normalized_labels
+            or any(key in normalized_labels for key in ["buffer1_ratio", "buffer2_ratio", "buffer3_ratio"])
+        ):
+            return idx, {
+                name: normalized_labels[name]
+                for name in ["name", "ratio", "buffer1_ratio", "buffer2_ratio", "buffer3_ratio"]
+                if name in normalized_labels
+            }
     return None, {}
 
 
