@@ -1,4 +1,6 @@
 ## Unreleased
+- Fixed AddOn Data Entry `Import Excel File` workbook-template detection to accept case/spacing variants in sheet names (e.g. ` Basics ` / `hidden_lists`) so supported templates import instead of silently falling back to unsupported parsers.
+- Changed manual Basics data entry fields to remove `Method ID`, `Method Version`, and `Display Name`, and add `Kit Name` below `Kit Series`.
 
 ### Added
 - Added AddOn data-entry shell flows with dedicated top-level `AddOn Data Entry` and `Data Review` menus, a home selector screen (`Enter Data Manually`/`Import Excel File`), manual tabbed entry for Basics/Kit Components/Analytes/Sample Prep/Dilutions, and immediate autosave snapshots of manual edits for recovery.

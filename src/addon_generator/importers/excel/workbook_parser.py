@@ -57,12 +57,14 @@ class ExcelWorkbookParser:
 
     def parse_workbook(self, workbook: Any, *, source_name: str | None = None) -> WorkbookParseArtifacts:
         diagnostics: list[ImportDiagnostic] = []
-        vocab = self._extract_vocab(workbook["Hidden_Lists"]) if "Hidden_Lists" in workbook.sheetnames else {}
+        sheet_names = self._sheet_lookup(workbook.sheetnames)
 
-        basics = parse_basics_sheet(workbook["Basics"], diagnostics=diagnostics) if "Basics" in workbook.sheetnames else None
-        analytes = parse_analytes_sheet(workbook["Analytes"], vocab=vocab, diagnostics=diagnostics) if "Analytes" in workbook.sheetnames else None
-        sample_prep = parse_sampleprep_sheet(workbook["SamplePrep"], vocab=vocab, diagnostics=diagnostics) if "SamplePrep" in workbook.sheetnames else []
-        dilutions = parse_dilutions_sheet(workbook["Dilutions"], diagnostics=diagnostics) if "Dilutions" in workbook.sheetnames else []
+        vocab = self._extract_vocab(workbook[sheet_names["hidden_lists"]]) if "hidden_lists" in sheet_names else {}
+
+        basics = parse_basics_sheet(workbook[sheet_names["basics"]], diagnostics=diagnostics) if "basics" in sheet_names else None
+        analytes = parse_analytes_sheet(workbook[sheet_names["analytes"]], vocab=vocab, diagnostics=diagnostics) if "analytes" in sheet_names else None
+        sample_prep = parse_sampleprep_sheet(workbook[sheet_names["sampleprep"]], vocab=vocab, diagnostics=diagnostics) if "sampleprep" in sheet_names else []
+        dilutions = parse_dilutions_sheet(workbook[sheet_names["dilutions"]], diagnostics=diagnostics) if "dilutions" in sheet_names else []
 
         if basics is None:
             diagnostics.append(ImportDiagnostic(rule_id="missing-sheet", message="Required Basics sheet is missing", sheet="(workbook)"))
@@ -99,8 +101,23 @@ class ExcelWorkbookParser:
 
     @staticmethod
     def supports_workbook_template(sheet_names: list[str]) -> bool:
-        effective_sheets = {name for name in sheet_names if name not in READ_ONLY_SHEETS | VOCAB_SHEETS}
-        return {"Basics", "Analytes"}.issubset(effective_sheets)
+        effective_sheets = {
+            ExcelWorkbookParser._normalize_sheet_name(name)
+            for name in sheet_names
+            if ExcelWorkbookParser._normalize_sheet_name(name)
+            not in {
+                ExcelWorkbookParser._normalize_sheet_name(value)
+                for value in READ_ONLY_SHEETS | VOCAB_SHEETS
+            }
+        }
+        return {"basics", "analytes"}.issubset(effective_sheets)
+
+    @staticmethod
+    def _normalize_sheet_name(name: str) -> str:
+        return str(name or "").strip().replace(" ", "").replace("_", "").casefold()
+
+    def _sheet_lookup(self, sheet_names: list[str]) -> dict[str, str]:
+        return {self._normalize_sheet_name(name): name for name in sheet_names}
 
     @staticmethod
     def _text(value: Any) -> str:
