@@ -48,11 +48,38 @@ class ImportService:
 
 
 def issue_from_validation_issue(issue: ValidationIssue, section: str = "Validation") -> IssueViewModel:
+    details = issue.details or {}
+    path = issue.path.lower()
+    section_index = 6
+    entity = "/".join(issue.entity_keys) or issue.path
+    category = "Validation"
+    if "method" in path:
+        section_index = 0
+        category = "Method"
+    elif "assay" in path:
+        section_index = 1
+        category = "Assays"
+    elif "analyte" in path:
+        section_index = 2
+        category = "Analytes"
+    elif "sample" in path or "prep" in path:
+        section_index = 3
+        category = "Sample Prep"
+    elif "dilution" in path:
+        section_index = 4
+        category = "Dilutions"
+    elif section == "Import":
+        section_index = 5
+        category = "Import Review"
+
     return IssueViewModel(
         code=issue.code,
         severity=issue.severity.value,
         summary=issue.message,
         section=section,
-        entity_context="/".join(issue.entity_keys),
+        category=category,
+        entity_context="/".join(issue.entity_keys) or issue.path,
         provenance=issue.source_location or "",
+        recommended_action=str(details.get("recommended_action", "Resolve mapped field values and rerun validation.")),
+        navigation_target={"section_index": section_index, "entity": entity, "path": issue.path},
     )
