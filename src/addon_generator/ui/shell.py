@@ -657,6 +657,7 @@ class MainShell(QMainWindow):
             return
         payload = self.draft_service.load(draft_path)
         self.draft_service.restore(self.app_state, payload, source_path=draft_path)
+        self._apply_admin_dropdown_settings()
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state) if self.app_state.import_state.bundles else None
         QMessageBox.information(self, "Draft Recovered", f"Status recovered from:\n{draft_path}")
