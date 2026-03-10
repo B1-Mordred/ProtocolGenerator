@@ -37,6 +37,32 @@ def test_gui_mapper_builds_canonical_addon() -> None:
     assert addon.assays[0].key == "assay:1"
 
 
+
+def test_gui_mapper_preserves_manual_method_and_analyte_fields() -> None:
+    addon = map_gui_payload_to_addon(
+        {
+            "method_id": "M-2",
+            "method_version": "2.0",
+            "MethodInformation": {
+                "DisplayName": "Kit Name",
+                "SeriesName": "Series-1",
+                "OrderNumber": "KIT-123",
+                "MainTitle": "Addon Series",
+                "SubTitle": "Addon Name",
+                "ProductNumber": "AD-9",
+            },
+            "assays": [{"parameter_set_name": "Basic Kit", "component_name": "Chem"}],
+            "analytes": [{"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}],
+        }
+    )
+
+    assert addon.method is not None
+    assert addon.method.series_name == "Series-1"
+    assert addon.method.order_number == "KIT-123"
+    assert addon.method.product_number == "AD-9"
+    assert addon.analytes[0].key == "analyte:1"
+
+
 def test_excel_importer_reads_rows(tmp_path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     wb = openpyxl.Workbook()

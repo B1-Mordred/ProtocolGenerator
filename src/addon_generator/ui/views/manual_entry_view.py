@@ -3,7 +3,9 @@ from __future__ import annotations
 from typing import Callable
 
 from PySide6.QtWidgets import (
+    QComboBox,
     QFormLayout,
+    QHeaderView,
     QHBoxLayout,
     QLabel,
     QLineEdit,
@@ -27,6 +29,11 @@ class ManualEntryView(QWidget):
         root.addWidget(self.tabs)
 
         self.basics_fields: dict[str, QLineEdit] = {}
+        self._dropdown_options: dict[str, list[str]] = {
+            "kit_type": ["Solid", "Liquid"],
+            "kit_container_type": ["Tube", "Bottle", "Vial"],
+            "analyte_unit": ["mg/dL", "mmol/L", "ng/mL"],
+        }
         self._build_basics_tab()
         self.assays_table = self._build_table_tab(
             [
@@ -36,7 +43,7 @@ class ManualEntryView(QWidget):
                 "Assay Abbreviation",
                 'Parameter Set Name (or "BASIC Kit")',
                 "Type",
-                "Container Type (if liquid)",
+                "Container Type (if Liquid)",
             ],
             tab_name="Kit Components",
         )
@@ -45,7 +52,7 @@ class ManualEntryView(QWidget):
             tab_name="Dilutions",
         )
         self.analytes_table = self._build_table_tab(
-            ["Analyte Key", "Analyte Name", "Assay Key", "Assay Information Type", "Unit Names"],
+            ["Analyte Name", "Assay", "Unit of Measurement"],
             tab_name="Analytes",
         )
         self.sample_prep_table = self._build_table_tab(
@@ -76,6 +83,8 @@ class ManualEntryView(QWidget):
         layout = QVBoxLayout(container)
         table = QTableWidget(1, len(headers), container)
         table.setHorizontalHeaderLabels(headers)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
+        table.horizontalHeader().setStretchLastSection(True)
         table.itemChanged.connect(lambda _item: self._emit_data_changed())
         layout.addWidget(table)
 
@@ -89,22 +98,73 @@ class ManualEntryView(QWidget):
         self.tabs.addTab(container, tab_name)
         return table
 
+    def set_dropdown_options(self, *, kit_types: list[str], container_types: list[str], analyte_units: list[str]) -> None:
+        self._dropdown_options["kit_type"] = [v for v in kit_types if v]
+        self._dropdown_options["kit_container_type"] = [v for v in container_types if v]
+        self._dropdown_options["analyte_unit"] = [v for v in analyte_units if v]
+        self._apply_table_dropdowns()
+
+    def refresh_dynamic_dropdowns(self) -> None:
+        self._apply_table_dropdowns()
+
+    def _apply_table_dropdowns(self) -> None:
+        for row in range(self.assays_table.rowCount()):
+            self._ensure_dropdown_cell(self.assays_table, row, 5, self._dropdown_options["kit_type"])
+            self._ensure_dropdown_cell(self.assays_table, row, 6, self._dropdown_options["kit_container_type"])
+        for row in range(self.analytes_table.rowCount()):
+            self._ensure_dropdown_cell(self.analytes_table, row, 2, self._dropdown_options["analyte_unit"])
+            self._ensure_dropdown_cell(self.analytes_table, row, 1, self._assay_dropdown_values())
+
+    def _assay_dropdown_values(self) -> list[str]:
+        values: list[str] = []
+        for row in range(self.assays_table.rowCount()):
+            value = self._cell_text(self.assays_table, row, 4)
+            if value and value not in values:
+                values.append(value)
+        return values
+
+    def _ensure_dropdown_cell(self, table: QTableWidget, row: int, col: int, options: list[str]) -> None:
+        existing = self._cell_text(table, row, col)
+        combo = table.cellWidget(row, col)
+        if not isinstance(combo, QComboBox):
+            combo = QComboBox(table)
+            combo.currentTextChanged.connect(lambda _text: self._emit_data_changed())
+            table.setCellWidget(row, col, combo)
+        combo.blockSignals(True)
+        combo.clear()
+        combo.addItem("")
+        for option in options:
+            combo.addItem(option)
+        if existing:
+            if combo.findText(existing) < 0:
+                combo.addItem(existing)
+            combo.setCurrentText(existing)
+        combo.blockSignals(False)
+
     def _append_row(self, table: QTableWidget) -> None:
         table.insertRow(table.rowCount())
+        self._apply_table_dropdowns()
 
     def _emit_data_changed(self) -> None:
         if self._on_data_changed:
             self._on_data_changed()
 
     @staticmethod
-    def _rows(table: QTableWidget, keys: list[str]) -> list[dict[str, str]]:
+    def _cell_text(table: QTableWidget, row: int, col: int) -> str:
+        combo = table.cellWidget(row, col)
+        if isinstance(combo, QComboBox):
+            return combo.currentText().strip()
+        item = table.item(row, col)
+        return item.text().strip() if item else ""
+
+    @classmethod
+    def _rows(cls, table: QTableWidget, keys: list[str]) -> list[dict[str, str]]:
         rows: list[dict[str, str]] = []
         for row in range(table.rowCount()):
             values = {}
             empty = True
             for col, key in enumerate(keys):
-                item = table.item(row, col)
-                text = item.text().strip() if item else ""
+                text = cls._cell_text(table, row, col)
                 if text:
                     empty = False
                 values[key] = text
@@ -130,7 +190,7 @@ class ManualEntryView(QWidget):
             ),
             "analytes": self._rows(
                 self.analytes_table,
-                ["key", "name", "assay_key", "assay_information_type", "unit_names"],
+                ["name", "assay_key", "unit_names"],
             ),
             "sample_prep": self._rows(
                 self.sample_prep_table,
@@ -167,3 +227,16 @@ class ManualEntryView(QWidget):
                 if value:
                     self.assays_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
         self.assays_table.blockSignals(False)
+        self._apply_table_dropdowns()
+
+    def set_analytes_rows(self, rows: list[dict[str, str]]) -> None:
+        self.analytes_table.blockSignals(True)
+        self.analytes_table.setRowCount(max(1, len(rows)))
+        keys = ["name", "assay_key", "unit_names"]
+        for row_idx, row in enumerate(rows):
+            for col_idx, key in enumerate(keys):
+                value = row.get(key, "")
+                if value:
+                    self.analytes_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+        self.analytes_table.blockSignals(False)
+        self._apply_table_dropdowns()

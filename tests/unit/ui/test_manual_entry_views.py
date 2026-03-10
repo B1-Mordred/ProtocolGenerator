@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 try:
-    from PySide6.QtWidgets import QApplication, QPushButton, QTableWidgetItem
+    from PySide6.QtWidgets import QApplication, QComboBox, QPushButton, QTableWidgetItem
 except Exception as exc:  # pragma: no cover - runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
@@ -81,5 +81,30 @@ def test_manual_entry_tab_order_and_kit_component_headers(qapp) -> None:
         "Assay Abbreviation",
         'Parameter Set Name (or "BASIC Kit")',
         "Type",
-        "Container Type (if liquid)",
+        "Container Type (if Liquid)",
     ]
+
+    analyte_headers = [view.analytes_table.horizontalHeaderItem(i).text() for i in range(view.analytes_table.columnCount())]
+    assert analyte_headers == ["Analyte Name", "Assay", "Unit of Measurement"]
+
+
+def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
+    view = ManualEntryView()
+
+    view.assays_table.setItem(0, 4, QTableWidgetItem("Basic Kit"))
+    view.set_assays_rows([{"parameter_set_name": "Basic Kit", "type": "Liquid", "container_type": "Bottle"}])
+    view.set_analytes_rows([{"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}])
+
+    assay_type_combo = view.assays_table.cellWidget(0, 5)
+    container_combo = view.assays_table.cellWidget(0, 6)
+    analyte_assay_combo = view.analytes_table.cellWidget(0, 1)
+    analyte_unit_combo = view.analytes_table.cellWidget(0, 2)
+
+    assert isinstance(assay_type_combo, QComboBox)
+    assert isinstance(container_combo, QComboBox)
+    assert isinstance(analyte_assay_combo, QComboBox)
+    assert isinstance(analyte_unit_combo, QComboBox)
+    assert analyte_assay_combo.findText("Basic Kit") >= 0
+
+    payload = view.payload()
+    assert payload["analytes"][0] == {"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}

@@ -10,6 +10,7 @@ from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices
 from PySide6.QtWidgets import (
     QDockWidget,
     QFileDialog,
+    QInputDialog,
     QMainWindow,
     QMenu,
     QMessageBox,
@@ -144,6 +145,7 @@ class MainShell(QMainWindow):
             on_excel_selected=self.import_excel,
         )
         self.manual_entry_view = ManualEntryView(self, on_data_changed=self._on_manual_data_changed)
+        self._apply_admin_dropdown_settings()
 
         self.main_stack.addWidget(self.entry_home_view)
         self.main_stack.addWidget(self.manual_entry_view)
@@ -213,6 +215,11 @@ class MainShell(QMainWindow):
         review_action = QAction("Open Data Review", self)
         review_action.triggered.connect(self.show_data_review)
         data_review_menu.addAction(review_action)
+
+        admin_menu = self.menuBar().addMenu("Admin")
+        dropdowns_action = QAction("Configure Drop-down Lists", self)
+        dropdowns_action.triggered.connect(self.configure_dropdown_lists)
+        admin_menu.addAction(dropdowns_action)
 
     def show_manual_entry(self) -> None:
         current_bundle = self._current_merged_bundle()
@@ -352,7 +359,22 @@ class MainShell(QMainWindow):
             )
         self.manual_entry_view.set_assays_rows(assay_rows)
 
+        analyte_rows = []
+        units_by_analyte: dict[str, list[str]] = {}
+        for unit in bundle.units:
+            units_by_analyte.setdefault(unit.analyte_key, []).append(str(unit.name or ""))
+        for analyte in bundle.analytes:
+            analyte_rows.append(
+                {
+                    "name": str(analyte.name or ""),
+                    "assay_key": str(analyte.assay_key or ""),
+                    "unit_names": "; ".join([u for u in units_by_analyte.get(analyte.key, []) if u]),
+                }
+            )
+        self.manual_entry_view.set_analytes_rows(analyte_rows)
+
     def _on_manual_data_changed(self) -> None:
+        self.manual_entry_view.refresh_dynamic_dropdowns()
         payload = self.manual_entry_view.payload()
         method = payload["method"]
         current_method = self._current_merged_bundle().method if self._current_merged_bundle() else None
@@ -401,6 +423,40 @@ class MainShell(QMainWindow):
         autosave_path = get_runtime_paths().runtime_support_dir / "manual_entry_autosave.json"
         autosave_path.parent.mkdir(parents=True, exist_ok=True)
         autosave_path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+
+    def _parse_csv_options(self, raw: str, defaults: list[str]) -> list[str]:
+        values = [part.strip() for part in raw.split(",") if part.strip()]
+        return values or defaults
+
+    def _apply_admin_dropdown_settings(self) -> None:
+        settings = self.app_state.editor_state.export_settings
+        self.manual_entry_view.set_dropdown_options(
+            kit_types=list(settings.get("admin_kit_types", ["Solid", "Liquid"])),
+            container_types=list(settings.get("admin_container_types", ["Tube", "Bottle", "Vial"])),
+            analyte_units=list(settings.get("admin_analyte_units", ["mg/dL", "mmol/L", "ng/mL"])),
+        )
+
+    def configure_dropdown_lists(self) -> None:
+        settings = self.app_state.editor_state.export_settings
+        current_kit_types = ", ".join(settings.get("admin_kit_types", ["Solid", "Liquid"]))
+        kit_types_raw, ok = QInputDialog.getText(self, "Configure Type Values", "Type values (comma-separated):", text=current_kit_types)
+        if not ok:
+            return
+        current_container_types = ", ".join(settings.get("admin_container_types", ["Tube", "Bottle", "Vial"]))
+        container_types_raw, ok = QInputDialog.getText(self, "Configure Container Type Values", "Container Type values (comma-separated):", text=current_container_types)
+        if not ok:
+            return
+        current_units = ", ".join(settings.get("admin_analyte_units", ["mg/dL", "mmol/L", "ng/mL"]))
+        analyte_units_raw, ok = QInputDialog.getText(self, "Configure Unit of Measurement Values", "Unit of Measurement values (comma-separated):", text=current_units)
+        if not ok:
+            return
+
+        settings["admin_kit_types"] = self._parse_csv_options(kit_types_raw, ["Solid", "Liquid"])
+        settings["admin_container_types"] = self._parse_csv_options(container_types_raw, ["Tube", "Bottle", "Vial"])
+        settings["admin_analyte_units"] = self._parse_csv_options(analyte_units_raw, ["mg/dL", "mmol/L", "ng/mL"])
+        self._apply_admin_dropdown_settings()
+        self._mark_dirty(reason="admin_dropdowns")
+        self._refresh_status()
 
     def run_validation(self) -> None:
         merged = self._current_merged_bundle()
