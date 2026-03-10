@@ -8,7 +8,15 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
 from addon_generator.__about__ import __app_name__
-from addon_generator.input_models.dtos import AnalyteInputDTO, AssayInputDTO, InputDTOBundle, MethodInputDTO, UnitInputDTO
+from addon_generator.input_models.dtos import (
+    AnalyteInputDTO,
+    AssayInputDTO,
+    DilutionSchemeInputDTO,
+    InputDTOBundle,
+    MethodInputDTO,
+    SamplePrepStepInputDTO,
+    UnitInputDTO,
+)
 from addon_generator.ui.shell import MainShell
 
 
@@ -123,6 +131,16 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
         ],
         analytes=[AnalyteInputDTO(key="analyte:1", name="Glucose", assay_key="Basic Kit")],
         units=[UnitInputDTO(key="unit:1", name="mg/dL", analyte_key="analyte:1")],
+        sample_prep_steps=[
+            SamplePrepStepInputDTO(
+                key="sample-prep-1",
+                label="Mix",
+                metadata={"source": "Component A", "destination": "Component A", "duration": "00:30"},
+            )
+        ],
+        dilution_schemes=[
+            DilutionSchemeInputDTO(key="1+4", label="1+4", metadata={"buffer1_ratio": "50", "buffer2_ratio": "50"})
+        ],
     )
 
     shell._populate_manual_entry_from_bundle(bundle)
@@ -140,6 +158,12 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assay_combo = shell.manual_entry_view.analytes_table.cellWidget(0, 1)
     assert isinstance(assay_combo, QComboBox)
     assert assay_combo.currentText() == "Basic Kit"
+
+    assert shell.manual_entry_view.sample_prep_table.cellWidget(0, 0).currentText() == "Mix"
+    assert shell.manual_entry_view.sample_prep_table.cellWidget(0, 1).currentText() == "Component A"
+    assert shell.manual_entry_view.sample_prep_table.item(0, 4).text() == "00:30"
+    assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+4"
+    assert shell.manual_entry_view.dilutions_table.item(0, 1).text() == "50"
 
 
 def test_shell_admin_menu_has_dedicated_dropdown_configuration_actions(qapp) -> None:

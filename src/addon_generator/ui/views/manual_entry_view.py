@@ -320,3 +320,27 @@ class ManualEntryView(QWidget):
                 self.analytes_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
         self.analytes_table.blockSignals(False)
         self._apply_table_dropdowns()
+
+    def set_sample_prep_rows(self, rows: list[dict[str, str]]) -> None:
+        self.sample_prep_table.blockSignals(True)
+        self.sample_prep_table.setRowCount(max(1, len(rows)))
+        self._reset_table_cells(self.sample_prep_table)
+        keys = ["action", "source", "destination", "volume", "duration", "force"]
+        for row_idx, row in enumerate(rows):
+            for col_idx, key in enumerate(keys):
+                value = str(row.get(key, ""))
+                self.sample_prep_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+        self.sample_prep_table.blockSignals(False)
+        self._apply_table_dropdowns()
+
+    def set_dilutions_rows(self, rows: list[dict[str, str]]) -> None:
+        self.dilutions_table.blockSignals(True)
+        self.dilutions_table.setRowCount(max(1, len(rows)))
+        self._reset_table_cells(self.dilutions_table)
+        keys = ["key", "buffer1_ratio", "buffer2_ratio", "buffer3_ratio"]
+        for row_idx, row in enumerate(rows):
+            for col_idx, key in enumerate(keys):
+                value = str(row.get(key, ""))
+                self.dilutions_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+        self.dilutions_table.blockSignals(False)
+        self._apply_table_dropdowns()
