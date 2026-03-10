@@ -270,6 +270,46 @@ def test_shell_restore_draft_applies_section_selection(qapp, messagebox_spy, mon
     assert messagebox_spy["info"]
 
 
+def test_shell_restore_draft_reapplies_admin_dropdown_values(qapp, monkeypatch):
+    class _DraftServiceWithAdmin(_DraftService):
+        def load(self, path):
+            payload = super().load(path)
+            payload["editor_state"]["export_settings"] = {
+                "admin_kit_types": ["Solid", "Powder"],
+                "admin_container_types": ["Bottle", "Pouch"],
+                "admin_analyte_units": ["mg/dL", "IU/L"],
+                "admin_sample_prep_actions": ["Mix", "Shake"],
+            }
+            return payload
+
+        def restore(self, app_state, payload, *, source_path=None):
+            app_state.editor_state.export_settings = dict(payload["editor_state"]["export_settings"])
+            super().restore(app_state, payload, source_path=source_path)
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftServiceWithAdmin(),
+    )
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: ("drafts/sample.json", "")))
+    shell.restore_draft()
+
+    assay_type_combo = shell.manual_entry_view.assays_table.cellWidget(0, 5)
+    container_combo = shell.manual_entry_view.assays_table.cellWidget(0, 6)
+    analyte_unit_combo = shell.manual_entry_view.analytes_table.cellWidget(0, 2)
+    action_combo = shell.manual_entry_view.sample_prep_table.cellWidget(0, 0)
+
+    assert assay_type_combo.findText("Powder") >= 0
+    assert container_combo.findText("Pouch") >= 0
+    assert analyte_unit_combo.findText("IU/L") >= 0
+    assert action_combo.findText("Shake") >= 0
+
+
 
 def test_shell_prompts_before_restore_when_dirty(qapp, messagebox_spy, monkeypatch):
     draft_service = _DraftService()
