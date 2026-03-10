@@ -15,6 +15,15 @@ IDENTITY_LABELS = {
 }
 
 COMPONENT_HEADERS = {"assay key": "key", "protocol type": "protocol_type", "protocol display name": "protocol_display_name", "xml assay name": "xml_name"}
+KIT_COMPONENT_HEADERS = {
+    "product number": "product_number",
+    "component name": "component_name",
+    "parameter set number": "parameter_set_number",
+    "assay abbreviation": "assay_abbreviation",
+    'parameter set name (or "basic kit")': "parameter_set_name",
+    "type": "type",
+    "container type (if liquid)": "container_type",
+}
 
 
 @dataclass(slots=True)
@@ -47,19 +56,33 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
         seen_assays: set[tuple[str, str]] = set()
         for row_idx in range(header_row_idx + 1, len(rows) + 1):
             row = rows[row_idx - 1]
-            key = _text(row[header_map["key"]].value)
-            protocol = _text(row[header_map["protocol_type"]].value)
-            display = _text(row[header_map["protocol_display_name"]].value) if "protocol_display_name" in header_map else ""
-            xml_name = _text(row[header_map["xml_name"]].value) if "xml_name" in header_map else ""
-            if not any((key, protocol, display, xml_name)):
+
+            key = _value(row, header_map, "key")
+            protocol = _value(row, header_map, "protocol_type")
+            display = _value(row, header_map, "protocol_display_name")
+            xml_name = _value(row, header_map, "xml_name")
+
+            product_number = _value(row, header_map, "product_number")
+            component_name = _value(row, header_map, "component_name")
+            parameter_set_number = _value(row, header_map, "parameter_set_number")
+            assay_abbreviation = _value(row, header_map, "assay_abbreviation")
+            parameter_set_name = _value(row, header_map, "parameter_set_name")
+            assay_type = _value(row, header_map, "type")
+            container_type = _value(row, header_map, "container_type")
+
+            if not any((key, protocol, display, xml_name, product_number, component_name, parameter_set_number, assay_abbreviation, parameter_set_name, assay_type, container_type)):
                 continue
+
+            if not key:
+                key = parameter_set_number or component_name
             if not key:
                 diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Assay key is required", sheet=sheet.title, row=row_idx, column="Assay Key"))
                 continue
+
             protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
-                protocol_type=protocol,
-                protocol_display_name=display,
-                xml_name=xml_name,
+                protocol_type=protocol or assay_type,
+                protocol_display_name=display or component_name,
+                xml_name=xml_name or parameter_set_name or component_name,
                 fallback_order={"xml_name": ("protocol_display_name", "protocol_type")},
             )
             assay_identity = (_identity_token(key), _identity_token(protocol_type))
@@ -79,7 +102,23 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                 )
                 continue
             seen_assays.add(assay_identity)
-            assays.append(AssayInputDTO(key=key, protocol_type=protocol_type, protocol_display_name=protocol_display_name, xml_name=xml_name))
+            assays.append(
+                AssayInputDTO(
+                    key=key,
+                    protocol_type=protocol_type,
+                    protocol_display_name=protocol_display_name,
+                    xml_name=xml_name,
+                    metadata={
+                        "product_number": product_number,
+                        "component_name": component_name,
+                        "parameter_set_number": parameter_set_number,
+                        "assay_abbreviation": assay_abbreviation,
+                        "parameter_set_name": parameter_set_name,
+                        "type": assay_type,
+                        "container_type": container_type,
+                    },
+                )
+            )
 
     method = MethodInputDTO(key=f"method:{method_id or 'unknown'}", method_id=method_id, method_version=method_version, display_name=identity.get("display_name") or None)
     return BasicsParseResult(method=method, assays=assays)
@@ -88,11 +127,24 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
 def _find_component_header_row(rows: list[Any]) -> tuple[int | None, dict[str, int]]:
     for idx, row in enumerate(rows, start=1):
         labels = {_text(cell.value).casefold(): i for i, cell in enumerate(row) if _text(cell.value)}
-        if "assay key" in labels and "protocol type" in labels:
+        has_legacy_headers = "assay key" in labels and "protocol type" in labels
+        has_kit_headers = "component name" in labels and "parameter set number" in labels
+        if has_legacy_headers or has_kit_headers:
             mapped = {target: labels[src] for src, target in COMPONENT_HEADERS.items() if src in labels}
+            mapped.update({target: labels[src] for src, target in KIT_COMPONENT_HEADERS.items() if src in labels})
             return idx, mapped
     return None, {}
 
+
+
+
+def _value(row: Any, header_map: dict[str, int], key: str) -> str:
+    if key not in header_map:
+        return ""
+    index = header_map[key]
+    if index >= len(row):
+        return ""
+    return _text(row[index].value)
 
 def _text(value: Any) -> str:
     if value is None:

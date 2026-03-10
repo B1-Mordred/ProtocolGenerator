@@ -1,9 +1,10 @@
 ## Unreleased
+- Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 - Fixed AddOn Data Entry `Import Excel File` workbook-template detection to accept case/spacing variants in sheet names (e.g. ` Basics ` / `hidden_lists`) so supported templates import instead of silently falling back to unsupported parsers.
 - Changed manual Basics data entry fields to remove `Method ID`, `Method Version`, and `Display Name`, and add `Kit Name` below `Kit Series`.
 
 ### Added
-- Added AddOn data-entry shell flows with dedicated top-level `AddOn Data Entry` and `Data Review` menus, a home selector screen (`Enter Data Manually`/`Import Excel File`), manual tabbed entry for Basics/Kit Components/Analytes/Sample Prep/Dilutions, and immediate autosave snapshots of manual edits for recovery.
+- Added AddOn data-entry shell flows with dedicated top-level `AddOn Data Entry` and `Data Review` menus, a home selector screen (`Enter Data Manually`/`Import Excel File`), manual tabbed entry for Basics/Kit Components/Dilutions/Analytes/Sample Prep, and immediate autosave snapshots of manual edits for recovery.
 - Added Qt unit coverage for the new data-entry selector/manual entry views and shell view-mode switching behavior.
 
 ### Changed
@@ -125,6 +126,7 @@
 - Changed test suite coverage to include dedicated unit tests for mapping mode behavior (`exact`, `normalized`, `alias_map`, `explicit_key`), ID assignment, and cross-file linkage validation.
 
 ## Unreleased
+- Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 
 ### Added
 - Added a cross-platform, spec-driven PyInstaller packaging layout with `build/pyinstaller/addon_authoring.spec`, new platform scripts (`scripts/build_windows.ps1`, `scripts/build_macos.sh`, `scripts/build_linux.sh`), and packaging artifact homes under `deploy/manifests/` and `deploy/icons/`.
@@ -201,6 +203,7 @@
 - Refactored `GenerationService` import entrypoints to delegate domain mapping to the new importer layer (PR pending).
 
 ## Unreleased
+- Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 
 ### Changed
 - Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.

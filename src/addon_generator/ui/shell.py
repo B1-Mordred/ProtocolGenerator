@@ -215,6 +215,9 @@ class MainShell(QMainWindow):
         data_review_menu.addAction(review_action)
 
     def show_manual_entry(self) -> None:
+        current_bundle = self._current_merged_bundle()
+        if current_bundle is not None:
+            self._populate_manual_entry_from_bundle(current_bundle)
         self.main_stack.setCurrentIndex(1)
 
     def show_data_entry_home(self) -> None:
@@ -298,6 +301,7 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_excel(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self._populate_manual_entry_from_bundle(bundle)
         self._mark_dirty(reason="excel_import")
         self.import_review_view.refresh_table()
         self.show_data_review()
@@ -314,10 +318,39 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_xml(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self._populate_manual_entry_from_bundle(bundle)
         self._mark_dirty(reason="xml_import")
         self.import_review_view.refresh_table()
         self.show_data_review()
         self._refresh_status()
+
+    def _populate_manual_entry_from_bundle(self, bundle) -> None:
+        method = bundle.method
+        basics = {
+            "kit_series": str(method.series_name or "") if method else "",
+            "kit_name": str(method.display_name or "") if method else "",
+            "kit_product_number": str(method.order_number or "") if method else "",
+            "addon_series": str(method.main_title or "") if method else "",
+            "addon_product_name": str(method.sub_title or "") if method else "",
+            "addon_product_number": str(method.product_number or "") if method else "",
+        }
+        self.manual_entry_view.set_basics_values(basics)
+
+        assay_rows = []
+        for assay in bundle.assays:
+            meta = dict(assay.metadata or {})
+            assay_rows.append(
+                {
+                    "product_number": str(meta.get("product_number") or ""),
+                    "component_name": str(meta.get("component_name") or assay.protocol_display_name or assay.xml_name or ""),
+                    "parameter_set_number": str(meta.get("parameter_set_number") or assay.key or ""),
+                    "assay_abbreviation": str(meta.get("assay_abbreviation") or ""),
+                    "parameter_set_name": str(meta.get("parameter_set_name") or assay.xml_name or ""),
+                    "type": str(meta.get("type") or assay.protocol_type or ""),
+                    "container_type": str(meta.get("container_type") or ""),
+                }
+            )
+        self.manual_entry_view.set_assays_rows(assay_rows)
 
     def _on_manual_data_changed(self) -> None:
         payload = self.manual_entry_view.payload()
