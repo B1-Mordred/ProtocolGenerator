@@ -399,6 +399,15 @@ class MainShell(QMainWindow):
         self.manual_entry_view.set_analytes_rows(analyte_rows)
 
     def _on_manual_data_changed(self) -> None:
+        payload = self._sync_manual_entry_to_state()
+        if payload is None:
+            return
+        self.import_review_view.refresh_table()
+        self._mark_dirty(reason="manual_entry")
+        self._autosave_manual_snapshot(payload)
+        self._refresh_status()
+
+    def _sync_manual_entry_to_state(self) -> dict[str, object] | None:
         self.manual_entry_view.refresh_dynamic_dropdowns()
         payload = self.manual_entry_view.payload()
         method = payload["method"]
@@ -439,10 +448,7 @@ class MainShell(QMainWindow):
         ]
         self.app_state.import_state.replace(bundles=[bundle], provenance={}, issues=[])
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
-        self.import_review_view.refresh_table()
-        self._mark_dirty(reason="manual_entry")
-        self._autosave_manual_snapshot(payload)
-        self._refresh_status()
+        return payload
 
     def _autosave_manual_snapshot(self, payload: dict[str, object]) -> None:
         autosave_path = get_runtime_paths().runtime_support_dir / "manual_entry_autosave.json"
@@ -625,6 +631,7 @@ class MainShell(QMainWindow):
         return selected
 
     def save_draft(self) -> None:
+        self._sync_manual_entry_to_state()
         suggested_dir = self.app_state.editor_state.export_settings.get("drafts_dir") or str(get_runtime_paths().drafts_dir)
         suggested_name = self.app_state.editor_state.export_settings.get("draft_file_name") or "addon_status_draft.json"
         selected_path, _ = QFileDialog.getSaveFileName(

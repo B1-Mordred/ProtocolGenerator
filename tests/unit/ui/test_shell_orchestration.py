@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 import pytest
@@ -15,6 +16,7 @@ from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from addon_generator.ui.models.issue_view_model import IssueViewModel
 from addon_generator.ui.services.export_service import ExportResult
+from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.shell import MainShell
 from addon_generator.ui.services.validation_service import ValidationSummary
 from addon_generator.ui.state.app_state import AppState
@@ -145,6 +147,59 @@ class _DraftService:
         app_state.preview_state.stale = payload["preview_state"]["stale"]
         app_state.draft_state.dirty = False
 
+
+def test_shell_save_draft_syncs_manual_entry_into_saved_json(qapp, monkeypatch, tmp_path):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=DraftService(),
+    )
+
+    shell.manual_entry_view.set_assays_rows(
+        [
+            {
+                "product_number": "P-100",
+                "component_name": "Calibrator",
+                "parameter_set_number": "PS-01",
+                "assay_abbreviation": "CAL",
+                "parameter_set_name": "BASIC Kit",
+                "type": "Liquid",
+                "container_type": "Vial",
+            }
+        ]
+    )
+    shell.manual_entry_view.set_analytes_rows(
+        [
+            {
+                "name": "Glucose",
+                "assay_key": "BASIC Kit",
+                "unit_names": "mg/dL",
+            }
+        ]
+    )
+
+    shell.manual_entry_view.sample_prep_table.setItem(0, 0, None)
+    shell.manual_entry_view.sample_prep_table.setItem(0, 1, None)
+    shell.manual_entry_view.sample_prep_table.setItem(0, 2, None)
+    shell.manual_entry_view.sample_prep_table.cellWidget(0, 0).setCurrentText("Mix")
+    shell.manual_entry_view.sample_prep_table.cellWidget(0, 1).setCurrentText("Calibrator")
+    shell.manual_entry_view.sample_prep_table.cellWidget(0, 2).setCurrentText("Calibrator")
+
+    draft_path = tmp_path / "synced-draft.json"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *args, **kwargs: (str(draft_path), "")))
+
+    shell.save_draft()
+
+    payload = json.loads(draft_path.read_text(encoding="utf-8"))
+    bundle = payload["import_state"]["bundles"][0]
+
+    assert bundle["analytes"]
+    assert bundle["sample_prep_steps"]
+    assert bundle["assays"][0]["metadata"]["component_name"] == "Calibrator"
 
 def test_shell_blocks_export_button_when_validation_has_blockers(qapp):
     shell = MainShell(
