@@ -19,6 +19,12 @@ def test_config_validation_returns_typed_wrapper() -> None:
     assert cfg.raw["version"] == 1
 
 
+def test_config_loader_accepts_windows_style_relative_path() -> None:
+    cfg = load_mapping_config(r"config\mapping.v1.yaml")
+
+    assert cfg.raw["version"] == 1
+
+
 def test_config_validation_requires_mandatory_sections() -> None:
     with pytest.raises(MappingConfigError, match="Missing mandatory section: ids"):
         validate_mapping_config({"version": 1})
