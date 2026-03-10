@@ -9,6 +9,7 @@
 - Added Qt unit coverage for the new data-entry selector/manual entry views and shell view-mode switching behavior.
 
 ### Changed
+- Updated manual Sample Prep entry to remove `Step Key`, drive `Action` from an Admin-configurable drop-down list, and source `Source`/`Destination` drop-down values from unique `Kit Components` `Component Name` entries; split Admin drop-down management into dedicated per-item submenu actions.
 - Changed import completion behavior to automatically route users into the Data Review section after Excel/XML ingestion so imported data is immediately available for review and editing.
 
 ### Fixed
