@@ -9,6 +9,7 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
 
 from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
 from addon_generator.ui.models.issue_view_model import IssueViewModel
+from addon_generator.ui.services.export_service import ExportResult
 from addon_generator.ui.shell import MainShell
 from addon_generator.ui.services.validation_service import ValidationSummary
 from addon_generator.ui.state.app_state import AppState
@@ -62,12 +63,14 @@ class _PreviewService:
 
 
 class _ExportService:
-    def __init__(self):
+    def __init__(self, result: ExportResult | None = None):
         self.called = False
+        self.result = result or ExportResult(status="success", written_paths=[])
 
     def export(self, merged, *, destination_folder, overwrite=False):
         self.called = True
-        return {"ProtocolFile.json": f"{destination_folder}/ProtocolFile.json"}
+        self.result.destination = destination_folder
+        return self.result
 
 
 class _DraftService:
@@ -90,6 +93,79 @@ class _DraftService:
         app_state.editor_state.selected_section_index = payload["editor_state"]["selected_section_index"]
 
 
+def test_shell_blocks_export_button_when_validation_has_blockers(qapp):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([IssueViewModel(code="E1", severity="error", summary="bad", category="Export Blockers")]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+    shell.import_excel()
+
+    shell.run_validation()
+    assert shell.export_view.export_button.isEnabled() is False
+
+
+def test_shell_renders_successful_export_result_with_written_files(qapp, tmp_path):
+    export_service = _ExportService(
+        ExportResult(
+            status="success",
+            written_paths=[str(tmp_path / "ProtocolFile.json"), str(tmp_path / "Analytes.xml")],
+        )
+    )
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=export_service,
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+    shell.import_excel()
+    shell.run_validation()
+    shell.export_view.destination.setText(str(tmp_path))
+    shell.run_export()
+
+    assert export_service.called is True
+    assert shell.export_view.result_status.text() == "Export succeeded"
+    assert shell.export_view.result_written_paths.count() == 2
+    assert shell.export_view.result_written_paths.item(0).text().endswith("ProtocolFile.json")
+
+
+def test_shell_renders_failed_export_result_with_reason(qapp, tmp_path):
+    export_service = _ExportService(
+        ExportResult(
+            status="failure",
+            destination=str(tmp_path),
+            failure_reason="disk full",
+            cleanup_note="Partial files may exist.",
+        )
+    )
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=export_service,
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+    shell.import_excel()
+    shell.run_validation()
+    shell.export_view.destination.setText(str(tmp_path))
+    shell.run_export()
+
+    assert shell.export_view.result_status.text() == "Export failed: disk full"
+    assert shell.export_view.result_cleanup_note.text() == "Partial files may exist."
+
+
 def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
     export_service = _ExportService()
     shell = MainShell(
@@ -106,11 +182,11 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
 
     shell.run_validation()
     assert shell.status_banner.text() == "Validation errors present"
-    assert shell.export_view.export_button.isEnabled() is False
 
     shell.app_state.validation_state.issues = []
     shell.app_state.validation_state.severity_counts = {"error": 0, "warning": 0, "info": 0}
     shell.app_state.validation_state.export_blocked = False
+    shell.app_state.validation_state.stale = False
     shell.run_preview()
     assert shell.app_state.preview_state.protocol_json == "{}"
     assert shell.preview_view.stale_banner.text() == "Preview status: current"
