@@ -9,6 +9,7 @@
 - Updated `build/pyinstaller/addon_authoring.spec` to derive `Analysis` script, `pathex`, and bundled data sources from a repo-root `Path(__file__)` anchor so packaging is resilient to invocation directory changes.
 - Added deterministic resource resolution via `addon_generator.runtime.resources.get_resource_path()` and switched GUI schema loading to that helper so `protocol.schema.json` resolves correctly in both source mode and PyInstaller bundles (`sys._MEIPASS`); added focused runtime/schema resolution unit tests.
 - Fixed mapping-config loading to normalize Windows-style relative paths (for example `config\mapping.v1.yaml`) through runtime resource resolution before reading, preventing startup `FileNotFoundError` when packaged or launched from different working directories; added regression coverage for the Windows-style path form.
+- Fixed the Addon Authoring shell startup crash caused by constructing `FieldHelpPanel`/`QLabel` with two string positional arguments by adding an explicit widget initializer that sets help text via `set_help(...)`.
 
 ### Changed
 - Added a Help menu to the PySide6 shell (`Check for Updates`, `Open Logs`, `About`), wired About metadata rendering from `addon_generator.__about__`, connected update checks/staging prompts through the new UI update service, and opened runtime log locations via the centralized runtime path utility; added UI unit tests for menu actions and callback flows.
