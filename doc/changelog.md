@@ -2,6 +2,10 @@
 
 ## 2026-03-10
 
+### Changed
+- Enhanced GUI preview flow with richer `PreviewState` snapshots (generated timestamp, error state, validation/export snapshots), structured preview summaries, failure-safe preview responses, per-tab copy controls, and preview status banners that highlight stale/current readiness and user-friendly generation errors.
+
+
 ### Added
 - Expanded GUI regression coverage with new unit tests for Sample Prep, Dilutions, and Import Review interaction flows (add/edit/reorder/duplicate/delete, filter switching, resolution actions, navigation callbacks) plus sidebar badge-refresh assertions in shell navigation tests.
 - Expanded UI integration coverage in `tests/integration/test_ui_authoring_flow.py` to exercise import review conflict handling, Sample Prep editing, validation/preview stale-flag lifecycle transitions, and post-preview stale re-triggering after edits.

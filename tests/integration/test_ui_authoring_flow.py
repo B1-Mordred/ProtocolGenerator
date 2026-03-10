@@ -30,7 +30,7 @@ def test_ui_flow_import_edit_validate_preview_export(monkeypatch, tmp_path) -> N
             ),
         ),
     )
-    monkeypatch.setattr(PreviewService, "generate", lambda self, merged: ("{}", "<xml/>", {"export_readiness": True}))
+    monkeypatch.setattr(PreviewService, "generate", lambda self, merged: ("{}", "<xml/>", {"export_readiness": True, "validation_status": "valid"}, None))
     monkeypatch.setattr(ExportService, "export", lambda self, merged_bundle, *, destination_folder, overwrite=False: {"ProtocolFile.json": str(tmp_path / "ProtocolFile.json")})
 
     imported, provenance, issues = ImportService().load_excel("tests/AddOn_Input_92111_v03.xlsx")
@@ -40,7 +40,8 @@ def test_ui_flow_import_edit_validate_preview_export(monkeypatch, tmp_path) -> N
     merged = MergeServiceAdapter().recompute(app_state)
 
     _, validation_summary = ValidationService().validate(merged)
-    protocol, analytes, summary = PreviewService().generate(merged)
+    protocol, analytes, summary, failure = PreviewService().generate(merged)
+    assert failure is None
     exported = ExportService().export(merged, destination_folder=str(tmp_path))
 
     assert merged.method is not None
@@ -99,7 +100,7 @@ def test_ui_flow_import_review_edit_and_stale_preview_lifecycle(monkeypatch) -> 
             ),
         ),
     )
-    monkeypatch.setattr(PreviewService, "generate", lambda self, merged: ("{}", "<xml/>", {"export_readiness": True}))
+    monkeypatch.setattr(PreviewService, "generate", lambda self, merged: ("{}", "<xml/>", {"export_readiness": True, "validation_status": "valid"}, None))
 
     app_state.import_state.replace(bundles=[xml_bundle, excel_bundle], provenance={}, issues=[])
     merge = MergeServiceAdapter()
@@ -130,7 +131,8 @@ def test_ui_flow_import_review_edit_and_stale_preview_lifecycle(monkeypatch) -> 
     app_state.validation_state.stale = False
     assert app_state.validation_state.stale is False
 
-    protocol, analytes, summary = PreviewService().generate(current)
+    protocol, analytes, summary, failure = PreviewService().generate(current)
+    assert failure is None
     app_state.preview_state.protocol_json = protocol
     app_state.preview_state.analytes_xml = analytes
     app_state.preview_state.summary = summary

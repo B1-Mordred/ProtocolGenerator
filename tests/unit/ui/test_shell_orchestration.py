@@ -58,7 +58,7 @@ class _ValidationService:
 
 class _PreviewService:
     def generate(self, merged):
-        return "{}", "<xml/>", {"export_readiness": True}
+        return "{}", "<xml/>", {"export_readiness": True, "validation_status": "valid"}, None
 
 
 class _ExportService:
@@ -82,7 +82,7 @@ class _DraftService:
             "import_state": {"bundles": [{"source_type": "excel", "method": {"key": "m", "method_id": "RM", "method_version": "1"}}], "provenance": {}},
             "editor_state": {"manual_overrides": {}, "effective_values": {}, "unresolved_conflicts": {}, "selected_entity": None, "selected_section_index": 8, "export_settings": {}},
             "validation_state": {"stale": True, "issues": []},
-            "preview_state": {"stale": True, "protocol_json": "", "analytes_xml": "", "summary": None},
+            "preview_state": {"stale": True, "protocol_json": "", "analytes_xml": "", "summary": None, "validation_state_snapshot": "unknown", "export_readiness_snapshot": False, "last_generated_at": None, "generation_error": None},
             "draft_state": {"path": path, "payload": {}},
         }
 
@@ -113,6 +113,8 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
     shell.app_state.validation_state.export_blocked = False
     shell.run_preview()
     assert shell.app_state.preview_state.protocol_json == "{}"
+    assert shell.preview_view.stale_banner.text() == "Preview status: current"
+    assert shell.preview_view.export_readiness.text() == "Export readiness: ready"
 
     shell.export_view.destination.setText(str(tmp_path))
     shell.run_export()

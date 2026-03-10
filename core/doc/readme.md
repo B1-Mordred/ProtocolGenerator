@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Preview pipeline now returns structured metadata (`method_id`, `method_version`, assay/analyte/sample-prep/dilution counts, validation status, preview timestamp, export-readiness), captures generation timestamps/errors in `PreviewState`, and renders stale/current + readiness/error context in the Preview screen with copyable monospaced tab content.
 - Validation service now classifies findings into Import/Domain/Cross-file/Schema/XSD/Export Blockers/Warnings/Info categories, emits severity/category counters plus export-blocked state, and stores grouped results with validation timestamps in UI `ValidationState` for shell badge/status refresh.
 - Validation view now uses a split issue browser/details panel with grouped category headers, severity/category/search filters, structured issue navigation targets to Method/Assays/Analytes/Sample Prep/Dilutions/Import Review, and state-driven export-readiness messaging sourced from `validation_state`.
 - GUI test coverage now includes dedicated unit flows for Sample Prep, Dilutions, Import Review, and sidebar-badge refresh behavior, plus an expanded authoring integration scenario for conflict resolution and stale-preview lifecycle verification.
