@@ -62,7 +62,17 @@ class ExcelWorkbookParser:
         vocab = self._extract_vocab(workbook[sheet_names["hidden_lists"]]) if "hidden_lists" in sheet_names else {}
 
         basics = parse_basics_sheet(workbook[sheet_names["basics"]], diagnostics=diagnostics) if "basics" in sheet_names else None
-        analytes = parse_analytes_sheet(workbook[sheet_names["analytes"]], vocab=vocab, diagnostics=diagnostics) if "analytes" in sheet_names else None
+        assay_lookup_by_parameter_set = self._build_assay_lookup_by_parameter_set(basics.assays) if basics is not None else {}
+        analytes = (
+            parse_analytes_sheet(
+                workbook[sheet_names["analytes"]],
+                vocab=vocab,
+                diagnostics=diagnostics,
+                assay_lookup_by_parameter_set=assay_lookup_by_parameter_set,
+            )
+            if "analytes" in sheet_names
+            else None
+        )
         sample_prep = parse_sampleprep_sheet(workbook[sheet_names["sampleprep"]], vocab=vocab, diagnostics=diagnostics) if "sampleprep" in sheet_names else []
         dilutions = parse_dilutions_sheet(workbook[sheet_names["dilutions"]], diagnostics=diagnostics) if "dilutions" in sheet_names else []
 
@@ -83,6 +93,22 @@ class ExcelWorkbookParser:
         bundle.hidden_vocab = {key: sorted(values) for key, values in vocab.items()}
 
         return WorkbookParseArtifacts(bundle=bundle, diagnostics=diagnostics)
+
+
+    def _build_assay_lookup_by_parameter_set(self, assays: list[Any]) -> dict[str, str]:
+        lookup: dict[str, str] = {}
+        for assay in assays:
+            assay_key = self._text(getattr(assay, "key", ""))
+            metadata = getattr(assay, "metadata", {}) or {}
+            parameter_set_number = self._text(metadata.get("parameter_set_number"))
+            parameter_set_name = self._text(metadata.get("parameter_set_name"))
+            for candidate in (parameter_set_name, parameter_set_number):
+                if not candidate:
+                    continue
+                normalized = candidate.casefold()
+                if normalized not in lookup:
+                    lookup[normalized] = assay_key
+        return lookup
 
     def _extract_vocab(self, sheet: Any) -> dict[str, set[str]]:
         header = next(sheet.iter_rows(min_row=1, max_row=1), None)
