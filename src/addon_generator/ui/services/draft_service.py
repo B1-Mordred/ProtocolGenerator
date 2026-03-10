@@ -4,6 +4,8 @@ import json
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
+
+from addon_generator.runtime.paths import get_runtime_paths
 from typing import Any
 
 from addon_generator.input_models.dtos import (
@@ -25,8 +27,8 @@ from addon_generator.ui.state.validation_state import ValidationState
 
 
 class DraftService:
-    def save(self, app_state: AppState, drafts_dir: str = "drafts") -> Path:
-        root = Path(drafts_dir)
+    def save(self, app_state: AppState, drafts_dir: str | Path | None = None) -> Path:
+        root = Path(drafts_dir) if drafts_dir is not None else get_runtime_paths().drafts_dir
         root.mkdir(parents=True, exist_ok=True)
         stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
         path = root / f"addon_draft_{stamp}.json"

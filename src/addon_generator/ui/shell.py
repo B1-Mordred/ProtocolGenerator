@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
 )
 
 from addon_generator.__about__ import __app_name__
+from addon_generator.runtime.paths import get_runtime_paths
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.export_service import ExportResult, ExportService
 from addon_generator.ui.services.import_service import ImportService
@@ -271,7 +272,7 @@ class MainShell(QMainWindow):
             self._refresh_status()
 
     def save_draft(self) -> None:
-        drafts_dir = self.app_state.editor_state.export_settings.get("drafts_dir", "drafts")
+        drafts_dir = self.app_state.editor_state.export_settings.get("drafts_dir") or str(get_runtime_paths().drafts_dir)
         path = self.draft_service.save(self.app_state, drafts_dir=drafts_dir)
         QMessageBox.information(self, "Draft Saved", f"Draft saved to:\n{path}")
         self._refresh_status()

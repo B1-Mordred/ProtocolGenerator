@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Runtime user data is now stored in OS-specific application locations: Windows `%APPDATA%\AddOnAuthoringStudio` (drafts/settings) + `%LOCALAPPDATA%\AddOnAuthoringStudio\logs`, macOS `~/Library/Application Support/AddOnAuthoringStudio` + `~/Library/Logs/AddOnAuthoringStudio`, Linux `~/.config/AddOnAuthoringStudio` + `~/.local/state/AddOnAuthoringStudio/logs`; draft save defaults and app logging initialization now use these computed directories.
 - Canonical app/build metadata now lives in `src/addon_generator/__about__.py` (`__app_name__`, `__version__`, `__company__`, `__draft_format_version__`, `__config_schema_version__`); UI shell title, package metadata payloads, and setuptools project version derive from this single source.
 - App status model now exposes computed readiness/staleness/dirty indicators (`validation`, `preview`, `export`, `draft`) plus badge contributions; shell status refresh uses these dimensions to drive Validation/Preview/Export badges and a four-part status banner that updates across edit→validate→preview→export→save/restore transitions.
 - Preview pipeline now returns structured metadata (`method_id`, `method_version`, assay/analyte/sample-prep/dilution counts, validation status, preview timestamp, export-readiness), captures generation timestamps/errors in `PreviewState`, and renders stale/current + readiness/error context in the Preview screen with copyable monospaced tab content.

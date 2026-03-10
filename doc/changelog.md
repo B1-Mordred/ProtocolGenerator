@@ -4,6 +4,8 @@
 
 ### Changed
 - Expanded UI shell status orchestration with computed app-state dimensions for validation staleness/currentness, preview staleness/currentness, export readiness/blocking, and draft dirty/saved state; updated status banner API/text and added focused transition tests for post-edit, post-validate, post-preview, post-export, and post-save/restore flows.
+- Moved draft/config/log path resolution to a centralized runtime path utility with OS-specific defaults (`%APPDATA%`/`%LOCALAPPDATA%` on Windows, `~/Library/...` on macOS, `~/.config` and `~/.local/state` on Linux) and updated UI draft save behavior to use these computed directories instead of relative `drafts/`.
+- Added centralized logging initialization in the UI startup path so application logs are written to the runtime log directory for the current platform.
 - Expanded GUI draft lifecycle handling to restore complete DTO bundles and provenance, persist export/preview payload metadata, track dirty/last-saved/restore state, and guard restore/close actions behind unsaved-change confirmation prompts; added roundtrip tests covering conflict-resolution and preview/validation stale-state reproduction after restore.
 - Enhanced GUI preview flow with richer `PreviewState` snapshots (generated timestamp, error state, validation/export snapshots), structured preview summaries, failure-safe preview responses, per-tab copy controls, and preview status banners that highlight stale/current readiness and user-friendly generation errors.
 - Refined GUI export orchestration to enforce validation gating before write attempts, keep Export actions disabled when blockers exist, and surface structured export outcomes (destination, written files, failure reasons, cleanup notes) directly in the Export screen.
@@ -11,6 +13,7 @@
 
 ### Added
 - Expanded GUI regression coverage with new unit tests for Sample Prep, Dilutions, and Import Review interaction flows (add/edit/reorder/duplicate/delete, filter switching, resolution actions, navigation callbacks) plus sidebar badge-refresh assertions in shell navigation tests.
+- Added runtime path and logging unit tests that mock platform/environment combinations and verify draft defaults + log file output target the new OS-specific user-data locations.
 - Expanded UI integration coverage in `tests/integration/test_ui_authoring_flow.py` to exercise import review conflict handling, Sample Prep editing, validation/preview stale-flag lifecycle transitions, and post-preview stale re-triggering after edits.
 - Added validation-service regression tests for issue-category assignment, severity/category counts, and export-blocking derivation; updated shell orchestration tests to assert the new validation summary/state wiring.
 - Added export-service and shell orchestration regression tests for validation-blocked export state, successful export result rendering with written file paths, and failed export rendering with clear reason/cleanup messaging.
