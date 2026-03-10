@@ -398,6 +398,34 @@ class MainShell(QMainWindow):
             )
         self.manual_entry_view.set_analytes_rows(analyte_rows)
 
+        sample_prep_rows = []
+        for step in bundle.sample_prep_steps:
+            metadata = dict(step.metadata or {})
+            sample_prep_rows.append(
+                {
+                    "action": str(metadata.get("action") or step.label or ""),
+                    "source": str(metadata.get("source") or ""),
+                    "destination": str(metadata.get("destination") or ""),
+                    "volume": str(metadata.get("volume") or ""),
+                    "duration": str(metadata.get("duration") or ""),
+                    "force": str(metadata.get("force") or ""),
+                }
+            )
+        self.manual_entry_view.set_sample_prep_rows(sample_prep_rows)
+
+        dilution_rows = []
+        for dilution in bundle.dilution_schemes:
+            metadata = dict(dilution.metadata or {})
+            dilution_rows.append(
+                {
+                    "key": str(dilution.key or dilution.label or ""),
+                    "buffer1_ratio": str(metadata.get("buffer1_ratio") or ""),
+                    "buffer2_ratio": str(metadata.get("buffer2_ratio") or ""),
+                    "buffer3_ratio": str(metadata.get("buffer3_ratio") or ""),
+                }
+            )
+        self.manual_entry_view.set_dilutions_rows(dilution_rows)
+
     def _on_manual_data_changed(self) -> None:
         payload = self._sync_manual_entry_to_state()
         if payload is None:
@@ -667,6 +695,8 @@ class MainShell(QMainWindow):
         self._apply_admin_dropdown_settings()
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state) if self.app_state.import_state.bundles else None
+        if self._last_merged_bundle is not None:
+            self._populate_manual_entry_from_bundle(self._last_merged_bundle)
         QMessageBox.information(self, "Draft Recovered", f"Status recovered from:\n{draft_path}")
         self._refresh_status()
 

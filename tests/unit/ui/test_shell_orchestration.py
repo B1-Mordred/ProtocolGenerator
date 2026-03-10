@@ -10,7 +10,14 @@ try:
 except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
-from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
+from addon_generator.input_models.dtos import (
+    AnalyteInputDTO,
+    AssayInputDTO,
+    DilutionSchemeInputDTO,
+    InputDTOBundle,
+    MethodInputDTO,
+    SamplePrepStepInputDTO,
+)
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
@@ -363,6 +370,64 @@ def test_shell_restore_draft_reapplies_admin_dropdown_values(qapp, monkeypatch):
     assert container_combo.findText("Pouch") >= 0
     assert analyte_unit_combo.findText("IU/L") >= 0
     assert action_combo.findText("Shake") >= 0
+
+
+def test_shell_restore_draft_populates_manual_tables_from_restored_bundle(qapp, monkeypatch):
+    class _DraftServiceWithBundle(_DraftService):
+        def restore(self, app_state, payload, *, source_path=None):
+            app_state.import_state.bundles = [
+                InputDTOBundle(
+                    source_type="draft",
+                    method=MethodInputDTO(
+                        key="method:1",
+                        display_name="Restored Kit",
+                        series_name="Series-R",
+                        order_number="KIT-R",
+                    ),
+                    assays=[
+                        AssayInputDTO(
+                            key="PS-R",
+                            protocol_display_name="Component A",
+                            xml_name="Basic Kit",
+                            metadata={"component_name": "Component A", "parameter_set_name": "Basic Kit"},
+                        )
+                    ],
+                    analytes=[AnalyteInputDTO(key="analyte:1", name="A", assay_key="Basic Kit")],
+                    sample_prep_steps=[
+                        SamplePrepStepInputDTO(
+                            key="sample-1",
+                            label="Mix",
+                            metadata={"source": "Component A", "destination": "Component A", "duration": "00:30"},
+                        )
+                    ],
+                    dilution_schemes=[
+                        DilutionSchemeInputDTO(
+                            key="1+4",
+                            label="1+4",
+                            metadata={"buffer1_ratio": "50", "buffer2_ratio": "50"},
+                        )
+                    ],
+                )
+            ]
+            app_state.editor_state.selected_section_index = payload["editor_state"]["selected_section_index"]
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftServiceWithBundle(),
+    )
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: ("drafts/sample.json", "")))
+    shell.restore_draft()
+
+    assert shell.manual_entry_view.sample_prep_table.cellWidget(0, 0).currentText() == "Mix"
+    assert shell.manual_entry_view.sample_prep_table.cellWidget(0, 1).currentText() == "Component A"
+    assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+4"
+    assert shell.manual_entry_view.dilutions_table.item(0, 1).text() == "50"
 
 
 

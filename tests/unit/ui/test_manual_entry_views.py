@@ -151,6 +151,41 @@ def test_manual_entry_set_rows_replaces_existing_combo_values_without_carryover(
     assert payload["analytes"][0] == {"name": "Analyte 2", "assay_key": "Assay B", "unit_names": "ng/mL"}
 
 
+def test_manual_entry_setters_restore_sample_prep_and_dilutions_rows(qapp) -> None:
+    view = ManualEntryView()
+
+    view.set_sample_prep_rows(
+        [
+            {
+                "action": "Mix",
+                "source": "Component A",
+                "destination": "Component B",
+                "volume": "50 uL",
+                "duration": "00:30",
+                "force": "Low",
+            }
+        ]
+    )
+    view.set_dilutions_rows(
+        [
+            {
+                "key": "1+4",
+                "buffer1_ratio": "50",
+                "buffer2_ratio": "50",
+                "buffer3_ratio": "",
+            }
+        ]
+    )
+
+    payload = view.payload()
+    assert payload["sample_prep"][0]["action"] == "Mix"
+    assert payload["sample_prep"][0]["source"] == "Component A"
+    assert payload["sample_prep"][0]["destination"] == "Component B"
+    assert payload["sample_prep"][0]["duration"] == "00:30"
+    assert payload["dilutions"][0]["key"] == "1+4"
+    assert payload["dilutions"][0]["buffer1_ratio"] == "50"
+
+
 def test_manual_entry_applies_content_width_hints(qapp) -> None:
     view = ManualEntryView()
 
