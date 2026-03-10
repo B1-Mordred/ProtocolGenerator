@@ -54,6 +54,44 @@ def test_field_mapping_target_column_auto_sizes_to_content(qapp) -> None:
     assert target_widget.sizeAdjustPolicy() == QComboBox.SizeAdjustPolicy.AdjustToContents
 
 
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_target_picker_keeps_legacy_serialized_value(qapp) -> None:
+    legacy_target = "ProtocolFile.json:method.id"
+    state = AppState()
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {"Default": [{"enabled": True, "target": legacy_target, "expression": "input:method.kit_name"}]},
+    }
+
+    view = FieldMappingView(app_state=state)
+    target_widget = view.mapping_table.cellWidget(0, 1)
+    assert isinstance(target_widget, QComboBox)
+    assert target_widget.currentText() == legacy_target
+
+    saved_rows = view._collect_rows()
+    assert saved_rows[0]["target"] == legacy_target
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_token_picker_keeps_legacy_serialized_value(qapp) -> None:
+    view = FieldMappingView(app_state=AppState())
+
+    view.token_selector.setCurrentText("input:method.kit_name")
+    assert view._combo_value(view.token_selector) == "input:method.kit_name"
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_target_picker_items_have_help_tooltips(qapp) -> None:
+    view = FieldMappingView(app_state=AppState())
+
+    view._add_row()
+    target_widget = view.mapping_table.cellWidget(0, 1)
+    assert isinstance(target_widget, QComboBox)
+    first_selectable = next(i for i in range(target_widget.count()) if target_widget.itemData(i) is not None)
+    tooltip = target_widget.itemData(first_selectable, Qt.ItemDataRole.ToolTipRole)
+    assert isinstance(tooltip, str) and tooltip
+
+
 @pytest.mark.parametrize(
     ("expression", "is_valid"),
     [
