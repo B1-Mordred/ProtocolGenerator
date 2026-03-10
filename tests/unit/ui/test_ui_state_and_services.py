@@ -12,6 +12,7 @@ from addon_generator.input_models.dtos import (
     UnitInputDTO,
 )
 from addon_generator.input_models.provenance import FieldProvenance
+from addon_generator.runtime.paths import RuntimePaths
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.import_service import ImportService
 from addon_generator.ui.services.merge_service_adapter import MergeServiceAdapter
@@ -72,6 +73,23 @@ def test_draft_service_save_and_load_roundtrip(tmp_path: Path) -> None:
     assert path.exists()
     assert restored["editor_state"]["manual_overrides"]["method.method_version"] == "2"
 
+
+
+
+def test_draft_service_save_uses_runtime_default_directory(monkeypatch, tmp_path: Path) -> None:
+    app_state = AppState()
+    runtime_paths = RuntimePaths(
+        runtime_support_dir=tmp_path / "support",
+        config_dir=tmp_path / "config",
+        drafts_dir=tmp_path / "config" / "drafts",
+        logs_dir=tmp_path / "logs",
+    )
+    monkeypatch.setattr("addon_generator.ui.services.draft_service.get_runtime_paths", lambda: runtime_paths)
+
+    path = DraftService().save(app_state)
+
+    assert path.parent == runtime_paths.drafts_dir
+    assert path.exists()
 
 def test_draft_service_restore_roundtrip(tmp_path: Path) -> None:
     app_state = AppState()
