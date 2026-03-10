@@ -2,6 +2,9 @@
 
 ## 2026-03-10
 
+### Fixed
+- Added deterministic resource resolution via `addon_generator.runtime.resources.get_resource_path()` and switched GUI schema loading to that helper so `protocol.schema.json` resolves correctly in both source mode and PyInstaller bundles (`sys._MEIPASS`); added focused runtime/schema resolution unit tests.
+
 ### Changed
 - Added a Help menu to the PySide6 shell (`Check for Updates`, `Open Logs`, `About`), wired About metadata rendering from `addon_generator.__about__`, connected update checks/staging prompts through the new UI update service, and opened runtime log locations via the centralized runtime path utility; added UI unit tests for menu actions and callback flows.
 - Expanded UI shell status orchestration with computed app-state dimensions for validation staleness/currentness, preview staleness/currentness, export readiness/blocking, and draft dirty/saved state; updated status banner API/text and added focused transition tests for post-edit, post-validate, post-preview, post-export, and post-save/restore flows.
