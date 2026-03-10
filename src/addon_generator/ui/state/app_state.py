@@ -85,3 +85,51 @@ class AppState:
     @property
     def validation_badge_count(self) -> int:
         return sum(self.validation_state.severity_counts.values())
+
+    @property
+    def validation_is_stale(self) -> bool:
+        return self.validation_state.stale
+
+    @property
+    def validation_is_current(self) -> bool:
+        return not self.validation_is_stale
+
+    @property
+    def preview_is_stale(self) -> bool:
+        return self.preview_state.stale
+
+    @property
+    def preview_is_current(self) -> bool:
+        return not self.preview_is_stale
+
+    @property
+    def export_is_ready(self) -> bool:
+        return self.validation_is_current and not self.validation_state.has_blockers
+
+    @property
+    def export_is_blocked(self) -> bool:
+        return not self.export_is_ready
+
+    @property
+    def draft_is_dirty(self) -> bool:
+        return self.draft_state.dirty
+
+    @property
+    def draft_is_saved(self) -> bool:
+        return not self.draft_is_dirty
+
+    @property
+    def validation_badge_contribution(self) -> int:
+        return self.validation_badge_count
+
+    @property
+    def preview_badge_contribution(self) -> int:
+        return int(self.preview_is_stale)
+
+    @property
+    def export_badge_contribution(self) -> int:
+        return int(self.export_is_blocked)
+
+    @property
+    def draft_badge_contribution(self) -> int:
+        return int(self.draft_is_dirty)

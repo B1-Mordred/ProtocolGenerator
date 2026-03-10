@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- App status model now exposes computed readiness/staleness/dirty indicators (`validation`, `preview`, `export`, `draft`) plus badge contributions; shell status refresh uses these dimensions to drive Validation/Preview/Export badges and a four-part status banner that updates across edit→validate→preview→export→save/restore transitions.
 - Preview pipeline now returns structured metadata (`method_id`, `method_version`, assay/analyte/sample-prep/dilution counts, validation status, preview timestamp, export-readiness), captures generation timestamps/errors in `PreviewState`, and renders stale/current + readiness/error context in the Preview screen with copyable monospaced tab content.
 - Validation service now classifies findings into Import/Domain/Cross-file/Schema/XSD/Export Blockers/Warnings/Info categories, emits severity/category counters plus export-blocked state, and stores grouped results with validation timestamps in UI `ValidationState` for shell badge/status refresh.
 - Export workflow now includes destination browsing, explicit validate-before-export action, validation-gated export attempts, and an in-screen result panel that reports success/failure status, destination, written file paths, and cleanup guidance on partial failures.

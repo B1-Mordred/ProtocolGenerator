@@ -258,6 +258,7 @@ class MainShell(QMainWindow):
         self.app_state.editor_state.export_settings["overwrite"] = overwrite
         result = self.export_service.export(merged, destination_folder=destination, overwrite=overwrite)
         self.export_view.set_export_result(result)
+        self._refresh_status()
 
     def choose_export_destination(self) -> None:
         current = self.export_view.destination.text().strip() or str(Path.cwd())
@@ -327,11 +328,15 @@ class MainShell(QMainWindow):
         self.sidebar.set_issue_count(4, self.app_state.dilutions_badge_count)
         self.sidebar.set_issue_count(5, self.app_state.import_review_badge_count)
         self.sidebar.set_issue_count(6, self.app_state.validation_badge_count)
+        self.sidebar.set_issue_count(7, self.app_state.preview_badge_contribution)
+        self.sidebar.set_issue_count(8, self.app_state.export_badge_contribution + self.app_state.draft_badge_contribution)
         self.status_banner.set_status(
-            preview_stale=self.app_state.preview_state.stale,
-            has_errors=self.app_state.validation_state.has_blockers,
+            validation_stale=self.app_state.validation_is_stale,
+            preview_stale=self.app_state.preview_is_stale,
+            export_ready=self.app_state.export_is_ready,
+            draft_dirty=self.app_state.draft_is_dirty,
         )
-        self.export_view.export_button.setEnabled(not self.app_state.validation_state.has_blockers)
+        self.export_view.export_button.setEnabled(self.app_state.export_is_ready)
         self.validation_view.set_validation_state(self.app_state.validation_state)
         self.preview_view.set_preview_meta(
             stale=self.app_state.preview_state.stale,
@@ -341,6 +346,8 @@ class MainShell(QMainWindow):
         )
 
     def _mark_dirty(self, *, reason: str) -> None:
+        self.app_state.validation_state.stale = True
+        self.app_state.preview_state.stale = True
         self.app_state.draft_state.dirty = True
         self.app_state.draft_state.restore_metadata["last_dirty_reason"] = reason
         self.app_state.draft_state.restore_metadata["last_dirty_at"] = datetime.now(tz=timezone.utc).isoformat()

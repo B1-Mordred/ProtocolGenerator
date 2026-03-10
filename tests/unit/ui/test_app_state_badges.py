@@ -49,3 +49,36 @@ def test_import_review_required_count_defaults_when_effective_method_missing() -
     state = AppState()
     state.editor_state.effective_values = {}
     assert state.import_review_unresolved_required_count == 2
+
+
+def test_app_state_status_dimensions_and_badge_contributions() -> None:
+    state = AppState()
+
+    assert state.validation_is_stale is True
+    assert state.validation_is_current is False
+    assert state.preview_is_stale is True
+    assert state.preview_is_current is False
+    assert state.export_is_ready is False
+    assert state.export_is_blocked is True
+    assert state.draft_is_dirty is False
+    assert state.draft_is_saved is True
+    assert state.preview_badge_contribution == 1
+    assert state.export_badge_contribution == 1
+    assert state.draft_badge_contribution == 0
+
+    state.validation_state.stale = False
+    state.validation_state.export_blocked = False
+    state.preview_state.stale = False
+    state.draft_state.dirty = True
+
+    assert state.validation_is_stale is False
+    assert state.validation_is_current is True
+    assert state.preview_is_stale is False
+    assert state.preview_is_current is True
+    assert state.export_is_ready is True
+    assert state.export_is_blocked is False
+    assert state.draft_is_dirty is True
+    assert state.draft_is_saved is False
+    assert state.preview_badge_contribution == 0
+    assert state.export_badge_contribution == 0
+    assert state.draft_badge_contribution == 1

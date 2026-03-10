@@ -110,6 +110,9 @@ class _DraftService:
 
     def restore(self, app_state, payload, *, source_path=None):
         app_state.editor_state.selected_section_index = payload["editor_state"]["selected_section_index"]
+        app_state.validation_state.stale = payload["validation_state"]["stale"]
+        app_state.preview_state.stale = payload["preview_state"]["stale"]
+        app_state.draft_state.dirty = False
 
 
 def test_shell_blocks_export_button_when_validation_has_blockers(qapp):
@@ -200,7 +203,7 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
     shell.import_excel()
 
     shell.run_validation()
-    assert shell.status_banner.text() == "Validation errors present"
+    assert shell.status_banner.text() == "Validation: current | Preview: stale | Export: blocked | Draft: dirty"
 
     shell.app_state.validation_state.issues = []
     shell.app_state.validation_state.severity_counts = {"error": 0, "warning": 0, "info": 0}
@@ -327,3 +330,54 @@ def test_shell_refresh_status_sets_section_badges(qapp):
     assert shell.sidebar.item(4).text() == "Dilutions (3)"
     assert shell.sidebar.item(5).text() == "Import Review (3)"
     assert shell.sidebar.item(6).text() == "Validation (1)"
+
+
+
+def test_shell_status_transitions_post_edit_validate_preview_export_and_save_restore(qapp, tmp_path, messagebox_spy):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+    shell.import_excel()
+
+    # post-edit/import transition
+    assert shell.app_state.validation_is_stale is True
+    assert shell.app_state.preview_is_stale is True
+    assert shell.app_state.draft_is_dirty is True
+    assert shell.sidebar.item(7).text() == "Output Preview (1)"
+    assert shell.sidebar.item(8).text() == "Export (2)"
+
+    # post-validate transition
+    shell.run_validation()
+    assert shell.app_state.validation_is_current is True
+    assert shell.app_state.export_is_ready is True
+    assert shell.sidebar.item(6).text() == "Validation"
+    assert shell.sidebar.item(8).text() == "Export (1)"
+
+    # post-preview transition
+    shell.run_preview()
+    assert shell.app_state.preview_is_current is True
+    assert shell.sidebar.item(7).text() == "Output Preview"
+    assert shell.sidebar.item(8).text() == "Export (1)"
+
+    # post-export transition
+    shell.export_view.destination.setText(str(tmp_path))
+    shell.run_export()
+    assert shell.status_banner.text() == "Validation: current | Preview: current | Export: ready | Draft: dirty"
+
+    # post-save transition
+    shell.save_draft()
+    assert shell.app_state.draft_is_saved is True
+    assert shell.sidebar.item(8).text() == "Export"
+
+    # post-restore transition
+    shell.app_state.editor_state.export_settings["draft_path"] = "drafts/sample.json"
+    shell.restore_draft()
+    assert shell.app_state.draft_is_saved is True
+    assert shell.status_banner.text() == "Validation: stale | Preview: stale | Export: blocked | Draft: saved"
