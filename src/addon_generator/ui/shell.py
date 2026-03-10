@@ -129,7 +129,7 @@ class MainShell(QMainWindow):
 
         self.preview_view.regenerate_button.clicked.connect(self.run_preview)
         self.export_view.export_button.clicked.connect(self.run_export)
-        self.validation_view.issues.issue_selected.connect(self._on_issue_selected)
+        self.validation_view.issues.issue_navigation_requested.connect(self._on_issue_selected)
 
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
         self._refresh_status()
@@ -168,6 +168,7 @@ class MainShell(QMainWindow):
         self.app_state.validation_state.issues = issues
         self.app_state.validation_state.stale = False
         self.validation_view.issues.set_issues(issues)
+        self.validation_view.set_validation_state(self.app_state.validation_state)
         self._refresh_status()
 
     def run_preview(self) -> None:
@@ -213,9 +214,10 @@ class MainShell(QMainWindow):
             self._last_merged_bundle = self.merge_service.recompute(self.app_state)
         return self._last_merged_bundle
 
-    def _on_issue_selected(self, issue) -> None:
-        section_map = {"Import": 5, "Validation": 6, "Preview": 7, "Export": 8}
-        self.sidebar.setCurrentRow(section_map.get(issue.section, 6))
+    def _on_issue_selected(self, jump_target: dict[str, object]) -> None:
+        section_index = int(jump_target.get("section_index", 6))
+        self.app_state.editor_state.selected_entity = str(jump_target.get("entity", ""))
+        self.sidebar.setCurrentRow(section_index)
 
     def _switch_section(self, index: int) -> None:
         self.app_state.editor_state.selected_section_index = index
@@ -241,3 +243,4 @@ class MainShell(QMainWindow):
             has_errors=self.app_state.validation_state.has_blockers,
         )
         self.export_view.export_button.setEnabled(not self.app_state.validation_state.has_blockers)
+        self.validation_view.set_validation_state(self.app_state.validation_state)

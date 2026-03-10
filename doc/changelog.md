@@ -23,6 +23,7 @@
 - Fixed UI Qt test collection on Linux runners missing system OpenGL/EGL libs by switching module guards from `importorskip("PySide6")` to runtime-safe `QApplication` import/skip handling.
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Added deterministic UI badge derivation for Sample Prep (issues + conflicts), Dilutions (issues + conflicts), Import Review (conflicts + unresolved required method fields), and Validation; `MainShell._refresh_status()` now updates section badges 3-6 after editor mutations and import-review resolutions, with regression tests covering count stability across state transitions.
 - Refactored the Sample Prep UI to a split-pane table/detail editor backed by a screen-level view model with stable step IDs, explicit mutation APIs, provenance/status metadata, and required/invalid-action highlighting; edits now flow through editor overrides and merge recompute to mark validation/preview stale.
 - Extended UI import/merge state and adapters to support structured sample-prep/dilution override caches, conflict/provenance lookup summaries, flattened import-review rows, and provenance source-label/location-text rendering for field-level sample-prep/dilution details.
@@ -35,6 +36,7 @@
 - Added workbook-template golden-output integration assertions for selected scenarios to verify stable `Analytes.xml` and `ProtocolFile.json` output under `tests/integration/test_addon_generation_pipeline.py`.
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Changed CI and coverage gates to make `src/addon_generator` workbook/import-generation paths the primary quality gate by adding a dedicated pipeline test step and raising addon coverage threshold from 70 to 75.
 - Changed developer test dependencies to include `openpyxl` so workbook fixture materialization and parser-path tests run in CI.
 
@@ -89,12 +91,14 @@
 - Added `services/input_merge_service.py` with deterministic precedence ordering and structured conflict capture across multi-source DTO bundles.
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Refactored `src/addon_generator/generators/protocol_json_generator.py` to consume registry-provided fragment contributions with centralized deterministic section merge/sort behavior while preserving legacy raw fragment definitions through the default resolver.
 - Refactored Excel/XML/GUI importers to emit DTO bundles with provenance while preserving domain import entry points via the canonical model builder.
 - Updated `GenerationService` import entry points to consume importer DTO bundles through the canonical builder/merge path.
 - Added unit coverage for merge precedence/conflict behavior and canonical DTO-to-domain conversion.
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Updated `doc/user-guide.md` to document the full 5-stage GUI workflow (import preview/conflicts, editing inputs, validation, output preview/export), align wording to current tab/button labels, and add blocker-focused troubleshooting and examples for validation/export failures.
 
 ### Added
@@ -111,6 +115,7 @@
 - Added import/output preview models surfacing imported vs current values, provenance hints, unresolved field blockers, and export target readiness messages.
 - Added deterministic merge provenance output for protocol generation with required-field conflict/unresolved reporting and explicit precedence (`GUI > imported > config default > built-in default`).
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Changed coverage configuration and test commands to target `src/addon_generator`, publish `term-missing` output in local/CI runs, and enforce a focused non-trivial coverage gate (`--cov-fail-under=70`) for ongoing addon-generator development.
 - Fixed protocol JSON assembly to preserve direct GUI workflow section payload arrays (`LoadingWorkflowSteps`, `ProcessingWorkflowSteps`) instead of treating each step as a fragment definition.
 - Changed fixture consumption to a shared loader helper (`tests/fixture_loader.py`) so unit/integration tests materialize workbook scenarios consistently, including malformed-workbook handling and expected domain-error assertions.
@@ -129,6 +134,7 @@
 - Added additive unit/integration coverage for deterministic field-path resolution, matching modes (`exact`, `normalized`, `alias_map`, `explicit_key`), stable ID assignment, domain/cross-file validators, and canonical generation golden fixtures for `Analytes.xml` and `ProtocolFile.json` outputs.
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 
 - Changed addon generation architecture to canonical `AddonModel` + mapping resolver; generation now produces XSD-shaped `Analytes.xml` and method-linked `ProtocolFile.json` with deterministic IDs.
 - Changed test fixtures to enforce deterministic ordering and stable output diffs for addon XML/JSON generation.
@@ -139,6 +145,7 @@
 - Introduced `src/addon_generator/importers/` with Excel, GUI, and XML importers that normalize inputs into `AddonModel`/`ProtocolContextModel` and optionally attach loading/processing/dilution/reagent/calibrator/control context fragments for downstream generation (PR pending).
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 
 - Changed addon generation architecture to canonical `AddonModel` + mapping resolver; generation now produces XSD-shaped `Analytes.xml` and method-linked `ProtocolFile.json` with deterministic IDs.
 - Refactored `GenerationService` import entrypoints to delegate domain mapping to the new importer layer (PR pending).
@@ -146,6 +153,7 @@
 ## Unreleased
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Refactored the Dilutions UI into a split table/detail workflow backed by a screen-level view model with dilution CRUD/duplicate/reset operations, provenance/effective metadata, reference-used indicators, and incomplete/invalid-ratio validation states that flow through merge recomputation and stale preview/validation flags.
 - Implemented an Import Review split layout with dedicated review-row modeling, filterable review states (All/Conflicts/Overrides/Missing Required/Imported Only), resolution actions, and owner-navigation callbacks that route through merge recomputation and stale validation/preview invalidation.
 
@@ -167,6 +175,7 @@
 - Hardened workflow fragment assembly by preserving deterministic processing-step ordering with explicit `StepIndex` precedence, enforcing default duration fields, and omitting empty `StepParameters` payloads to keep fragment-composed protocol JSON schema compliant.
 
 ### Changed
+- Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Reordered `GenerationService.generate_all` validation into explicit phases (domain/structural, linkage, then projection/schema/cross-file), added deterministic issue sorting, and updated validators/tests so domain linkage errors consistently surface ahead of downstream projection fallout with stable ordering.
 - Excel workbook-template sheet parsers now enforce deterministic duplicate detection per sheet with stable `duplicate-row` diagnostics and duplicate-key metadata: assay identity (`Basics`), analyte identity per assay (`Analytes`), dilution scheme name uniqueness (`Dilutions`), and sample-prep order/action uniqueness (`SamplePrep`); tests were expanded for workbook-template duplicate diagnostics.
 - Refactored assay projection/import normalization so `protocol_type`, `protocol_display_name`, and `xml_name` remain independent by default, with explicit opt-in fallback behavior via a shared normalizer used by import/projection paths.
