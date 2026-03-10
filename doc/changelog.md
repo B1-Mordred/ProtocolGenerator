@@ -5,6 +5,11 @@
 ### Added
 - Expanded GUI regression coverage with new unit tests for Sample Prep, Dilutions, and Import Review interaction flows (add/edit/reorder/duplicate/delete, filter switching, resolution actions, navigation callbacks) plus sidebar badge-refresh assertions in shell navigation tests.
 - Expanded UI integration coverage in `tests/integration/test_ui_authoring_flow.py` to exercise import review conflict handling, Sample Prep editing, validation/preview stale-flag lifecycle transitions, and post-preview stale re-triggering after edits.
+- Added validation-service regression tests for issue-category assignment, severity/category counts, and export-blocking derivation; updated shell orchestration tests to assert the new validation summary/state wiring.
+
+### Changed
+- Refactored UI validation orchestration to classify issues into Import Issues, Domain Validation, Cross-file Validation, Schema/XSD Validation, Export Blockers, Warnings, and Info, with per-issue navigation targets and optional recommended actions.
+- Expanded `ValidationState` with grouped issues, severity/category counters, `export_blocked`, and `last_validated_at`, and updated shell refresh logic/sidebar badges to consume the new state shape.
 
 ## 2026-03-09
 
