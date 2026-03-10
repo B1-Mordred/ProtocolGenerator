@@ -4,6 +4,8 @@ from dataclasses import asdict
 from pathlib import Path
 from typing import Any
 
+from addon_generator.runtime.resources import get_resource_path
+
 from addon_generator.config.models import (
     AddonIdConfig,
     AliasMapsConfig,
@@ -430,7 +432,12 @@ def parse_mapping_config_dict(raw: dict[str, Any]) -> MappingConfigModel:
 
 
 def load_mapping_config_model(path: str | Path) -> MappingConfigModel:
-    content = Path(path).read_text(encoding="utf-8")
+    requested_path = Path(path)
+    if not requested_path.exists() and not requested_path.is_absolute():
+        normalized_resource = str(path).replace("\\", "/")
+        requested_path = get_resource_path(normalized_resource, anchor_file=__file__)
+
+    content = requested_path.read_text(encoding="utf-8")
     try:
         import yaml  # type: ignore
 
