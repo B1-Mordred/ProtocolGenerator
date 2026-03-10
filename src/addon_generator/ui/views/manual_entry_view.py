@@ -27,9 +27,22 @@ class ManualEntryView(QWidget):
         root.addWidget(self.tabs)
 
         self.basics_fields: dict[str, QLineEdit] = {}
+        self._build_basics_tab()
         self.assays_table = self._build_table_tab(
-            ["Key", "Protocol Type", "Display Name", "XML Name"],
+            [
+                "Product Number",
+                "Component Name",
+                "Parameter Set Number",
+                "Assay Abbreviation",
+                'Parameter Set Name (or "BASIC Kit")',
+                "Type",
+                "Container Type (if liquid)",
+            ],
             tab_name="Kit Components",
+        )
+        self.dilutions_table = self._build_table_tab(
+            ["Dilution Key", "Buffer1 Ratio", "Buffer2 Ratio", "Buffer3 Ratio"],
+            tab_name="Dilutions",
         )
         self.analytes_table = self._build_table_tab(
             ["Analyte Key", "Analyte Name", "Assay Key", "Assay Information Type", "Unit Names"],
@@ -39,12 +52,6 @@ class ManualEntryView(QWidget):
             ["Step Key", "Action", "Source", "Destination", "Volume", "Duration", "Force"],
             tab_name="Sample Prep",
         )
-        self.dilutions_table = self._build_table_tab(
-            ["Dilution Key", "Buffer1 Ratio", "Buffer2 Ratio", "Buffer3 Ratio"],
-            tab_name="Dilutions",
-        )
-
-        self._build_basics_tab()
 
     def _build_basics_tab(self) -> None:
         widget = QWidget(self)
@@ -109,7 +116,18 @@ class ManualEntryView(QWidget):
         basics = {k: v.text().strip() for k, v in self.basics_fields.items()}
         return {
             "method": basics,
-            "assays": self._rows(self.assays_table, ["key", "protocol_type", "protocol_display_name", "xml_name"]),
+            "assays": self._rows(
+                self.assays_table,
+                [
+                    "product_number",
+                    "component_name",
+                    "parameter_set_number",
+                    "assay_abbreviation",
+                    "parameter_set_name",
+                    "type",
+                    "container_type",
+                ],
+            ),
             "analytes": self._rows(
                 self.analytes_table,
                 ["key", "name", "assay_key", "assay_information_type", "unit_names"],
@@ -123,3 +141,29 @@ class ManualEntryView(QWidget):
                 ["key", "buffer1_ratio", "buffer2_ratio", "buffer3_ratio"],
             ),
         }
+
+
+    def set_basics_values(self, values: dict[str, str]) -> None:
+        for key, field in self.basics_fields.items():
+            field.blockSignals(True)
+            field.setText(values.get(key, ""))
+            field.blockSignals(False)
+
+    def set_assays_rows(self, rows: list[dict[str, str]]) -> None:
+        self.assays_table.blockSignals(True)
+        self.assays_table.setRowCount(max(1, len(rows)))
+        keys = [
+            "product_number",
+            "component_name",
+            "parameter_set_number",
+            "assay_abbreviation",
+            "parameter_set_name",
+            "type",
+            "container_type",
+        ]
+        for row_idx, row in enumerate(rows):
+            for col_idx, key in enumerate(keys):
+                value = row.get(key, "")
+                if value:
+                    self.assays_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+        self.assays_table.blockSignals(False)

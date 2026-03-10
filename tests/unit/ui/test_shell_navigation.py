@@ -8,6 +8,7 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
 from addon_generator.__about__ import __app_name__
+from addon_generator.input_models.dtos import AssayInputDTO, InputDTOBundle, MethodInputDTO
 from addon_generator.ui.shell import MainShell
 
 
@@ -88,3 +89,36 @@ def test_shell_data_entry_and_review_views(qapp) -> None:
     assert shell.main_stack.currentIndex() == 2
     assert shell.stack.currentIndex() == 5
 
+
+
+def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> None:
+    shell = MainShell()
+
+    bundle = InputDTOBundle(
+        source_type="excel",
+        method=MethodInputDTO(key="method:M-1", method_id="M-1", method_version="1.0", display_name="Kit One"),
+        assays=[
+            AssayInputDTO(
+                key="PS-1",
+                protocol_type="CHEM",
+                protocol_display_name="Component A",
+                xml_name="Basic Kit",
+                metadata={
+                    "product_number": "PN-1",
+                    "component_name": "Component A",
+                    "parameter_set_number": "PS-1",
+                    "assay_abbreviation": "ABB",
+                    "parameter_set_name": "Basic Kit",
+                    "type": "CHEM",
+                    "container_type": "Tube",
+                },
+            )
+        ],
+    )
+
+    shell._populate_manual_entry_from_bundle(bundle)
+
+    assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-1"
+    assert shell.manual_entry_view.assays_table.item(0, 1).text() == "Component A"
+    assert shell.manual_entry_view.assays_table.item(0, 2).text() == "PS-1"
+    assert shell.manual_entry_view.assays_table.item(0, 6).text() == "Tube"

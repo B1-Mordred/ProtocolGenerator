@@ -40,18 +40,34 @@ def map_gui_payload_to_bundle(payload: dict[str, Any]) -> InputDTOBundle:
     unit_rows = payload.get("units") if isinstance(payload.get("units"), list) else []
 
     assays: list[AssayInputDTO] = []
-    for row in assay_rows:
+    for idx, row in enumerate(assay_rows):
+        parameter_set_number = str(row.get("parameter_set_number") or "").strip()
+        component_name = str(row.get("component_name") or "").strip()
+        assay_abbreviation = str(row.get("assay_abbreviation") or "").strip()
+        assay_type = str(row.get("type") or "").strip()
+
+        assay_key = str(row.get("key") or parameter_set_number or component_name or f"assay:{idx + 1}").strip()
         protocol_type, protocol_display_name, xml_name = normalize_assay_identity_fields(
-            protocol_type=row.get("protocol_type"),
-            protocol_display_name=row.get("protocol_display_name"),
-            xml_name=row.get("xml_name"),
+            protocol_type=row.get("protocol_type") or assay_type,
+            protocol_display_name=row.get("protocol_display_name") or component_name,
+            xml_name=row.get("xml_name") or row.get("parameter_set_name") or component_name,
         )
+        metadata = {
+            "product_number": str(row.get("product_number") or "").strip(),
+            "component_name": component_name,
+            "parameter_set_number": parameter_set_number,
+            "assay_abbreviation": assay_abbreviation,
+            "parameter_set_name": str(row.get("parameter_set_name") or "").strip(),
+            "type": assay_type,
+            "container_type": str(row.get("container_type") or "").strip(),
+        }
         assays.append(
             AssayInputDTO(
-                key=str(row["key"]),
+                key=assay_key,
                 protocol_type=protocol_type,
                 protocol_display_name=protocol_display_name,
                 xml_name=xml_name,
+                metadata=metadata,
             )
         )
     analytes = [AnalyteInputDTO(key=str(row["key"]), name=str(row.get("name") or ""), assay_key=str(row.get("assay_key") or ""), assay_information_type=row.get("assay_information_type")) for row in analyte_rows]

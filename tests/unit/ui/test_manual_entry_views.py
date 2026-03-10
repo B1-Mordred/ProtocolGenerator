@@ -42,8 +42,9 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
     view.basics_fields["kit_series"].setText("KIT")
     view.basics_fields["kit_name"].setText("KIT-NAME")
 
-    view.assays_table.setItem(0, 0, QTableWidgetItem("A1"))
-    view.assays_table.setItem(0, 1, QTableWidgetItem("P"))
+    view.assays_table.setItem(0, 0, QTableWidgetItem("PN-1"))
+    view.assays_table.setItem(0, 1, QTableWidgetItem("Component A"))
+    view.assays_table.setItem(0, 2, QTableWidgetItem("PS-1"))
 
     payload = view.payload()
     assert "method_id" not in payload["method"]
@@ -51,7 +52,9 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
     assert "display_name" not in payload["method"]
     assert payload["method"]["kit_series"] == "KIT"
     assert payload["method"]["kit_name"] == "KIT-NAME"
-    assert payload["assays"][0]["key"] == "A1"
+    assert payload["assays"][0]["product_number"] == "PN-1"
+    assert payload["assays"][0]["component_name"] == "Component A"
+    assert payload["assays"][0]["parameter_set_number"] == "PS-1"
     assert called["count"] >= 2
 
 
@@ -62,3 +65,21 @@ def test_manual_entry_basics_fields_hide_method_identity_and_add_kit_name(qapp) 
     assert "method_version" not in view.basics_fields
     assert "display_name" not in view.basics_fields
     assert "kit_name" in view.basics_fields
+
+
+def test_manual_entry_tab_order_and_kit_component_headers(qapp) -> None:
+    view = ManualEntryView()
+
+    tab_names = [view.tabs.tabText(i) for i in range(view.tabs.count())]
+    assert tab_names[:4] == ["Basics", "Kit Components", "Dilutions", "Analytes"]
+
+    headers = [view.assays_table.horizontalHeaderItem(i).text() for i in range(view.assays_table.columnCount())]
+    assert headers == [
+        "Product Number",
+        "Component Name",
+        "Parameter Set Number",
+        "Assay Abbreviation",
+        'Parameter Set Name (or "BASIC Kit")',
+        "Type",
+        "Container Type (if liquid)",
+    ]

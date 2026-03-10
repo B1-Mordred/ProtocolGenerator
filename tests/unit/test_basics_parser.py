@@ -40,3 +40,32 @@ def test_parse_basics_sheet_preserves_identity_mapping_after_duplicate_checks() 
     assert parsed.method.display_name == "Panel A"
     assert [assay.key for assay in parsed.assays] == ["assay:chem"]
     assert any(d.rule_id == "duplicate-row" for d in diagnostics)
+
+
+def test_parse_basics_sheet_maps_kit_component_table_columns() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100"],
+            ["Method Version", "1.0"],
+            [],
+            [
+                "Product Number",
+                "Component Name",
+                "Parameter Set Number",
+                "Assay Abbreviation",
+                'Parameter Set Name (or "BASIC Kit")',
+                "Type",
+                "Container Type (if liquid)",
+            ],
+            ["PN-1", "Component A", "PS-1", "ABB", "Basic Kit", "CHEM", "Tube"],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert [assay.key for assay in parsed.assays] == ["PS-1"]
+    assert parsed.assays[0].protocol_type == "CHEM"
+    assert parsed.assays[0].metadata["product_number"] == "PN-1"
+    assert parsed.assays[0].metadata["container_type"] == "Tube"
+    assert not diagnostics
