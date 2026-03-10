@@ -36,3 +36,16 @@ def test_dilutions_view_selection_and_validation_sync(qapp):
 
     view.reset_buttons["buffer1_ratio"].click()
     assert "required" in view.provenance_labels["buffer1_ratio"].text()
+
+
+def test_dilutions_view_emits_state_changed_on_mutations(qapp):
+    state = AppState()
+    state.import_state.bundles = [InputDTOBundle(source_type="excel")]
+    calls = []
+    view = DilutionsView(app_state=state, on_state_changed=lambda: calls.append("changed"))
+
+    view.add_btn.click()
+    view.inputs["name"].setText("D1")
+    view.inputs["name"].editingFinished.emit()
+
+    assert len(calls) >= 2

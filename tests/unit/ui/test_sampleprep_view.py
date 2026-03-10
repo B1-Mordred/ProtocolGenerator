@@ -34,3 +34,16 @@ def test_sampleprep_view_selection_and_form_sync(qapp):
     assert "invalid-action" in view.provenance_labels["action"].text()
     view.reset_buttons["action"].click()
     assert "required" in view.provenance_labels["action"].text()
+
+
+def test_sampleprep_view_emits_state_changed_on_mutations(qapp):
+    state = AppState()
+    state.import_state.bundles = [InputDTOBundle(source_type="excel")]
+    calls = []
+    view = SamplePrepView(app_state=state, on_state_changed=lambda: calls.append("changed"))
+
+    view.add_btn.click()
+    view.detail.inputs["Order"].setText("1")
+    view.detail.inputs["Order"].editingFinished.emit()
+
+    assert len(calls) >= 2
