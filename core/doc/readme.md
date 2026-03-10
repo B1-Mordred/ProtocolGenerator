@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Validation service now classifies findings into Import/Domain/Cross-file/Schema/XSD/Export Blockers/Warnings/Info categories, emits severity/category counters plus export-blocked state, and stores grouped results with validation timestamps in UI `ValidationState` for shell badge/status refresh.
 - Validation view now uses a split issue browser/details panel with grouped category headers, severity/category/search filters, structured issue navigation targets to Method/Assays/Analytes/Sample Prep/Dilutions/Import Review, and state-driven export-readiness messaging sourced from `validation_state`.
 - GUI test coverage now includes dedicated unit flows for Sample Prep, Dilutions, Import Review, and sidebar-badge refresh behavior, plus an expanded authoring integration scenario for conflict resolution and stale-preview lifecycle verification.
 - New business-oriented PySide6 UI foundation under `src/addon_generator/ui/` with a `QMainWindow` shell, section navigation, stacked domain editors (Method/Assays/Analytes/Sample Prep/Dilutions/Import Review/Validation/Preview/Export), reusable widgets, UI state containers, and thin service adapters that orchestrate import→merge→validate→preview→export through backend services.

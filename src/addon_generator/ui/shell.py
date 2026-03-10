@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime
 from pathlib import Path
 from typing import Callable
 
@@ -164,10 +165,15 @@ class MainShell(QMainWindow):
         merged = self._current_merged_bundle()
         if merged is None:
             return
-        _addon, issues = self.validation_service.validate(merged)
-        self.app_state.validation_state.issues = issues
+        _addon, summary = self.validation_service.validate(merged)
+        self.app_state.validation_state.issues = summary.issues
+        self.app_state.validation_state.grouped_issues = summary.grouped_issues
+        self.app_state.validation_state.severity_counts = summary.severity_counts
+        self.app_state.validation_state.category_counts = summary.category_counts
+        self.app_state.validation_state.export_blocked = summary.export_blocked
+        self.app_state.validation_state.last_validated_at = datetime.now()
         self.app_state.validation_state.stale = False
-        self.validation_view.issues.set_issues(issues)
+        self.validation_view.issues.set_issues(summary.issues)
         self.validation_view.set_validation_state(self.app_state.validation_state)
         self._refresh_status()
 

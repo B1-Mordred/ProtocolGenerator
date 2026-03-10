@@ -11,5 +11,5 @@ class IssueViewModel:
     category: str = "General"
     entity_context: str = ""
     provenance: str = ""
-    recommended_action: str = ""
+    recommended_action: str | None = None
     navigation_target: dict[str, Any] | None = None

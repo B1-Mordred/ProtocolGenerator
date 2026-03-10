@@ -84,4 +84,4 @@ class AppState:
 
     @property
     def validation_badge_count(self) -> int:
-        return len(self.validation_state.issues)
+        return sum(self.validation_state.severity_counts.values())

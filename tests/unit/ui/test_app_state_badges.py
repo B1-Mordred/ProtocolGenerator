@@ -30,6 +30,7 @@ def test_app_state_badges_aggregate_editor_issues_and_conflicts() -> None:
         "method.method_id": [{}],
     }
     state.validation_state.issues = [IssueViewModel(code="E", severity="error", summary="bad")]
+    state.validation_state.severity_counts = {"error": 1, "warning": 0, "info": 0}
 
     assert state.sample_prep_issue_count == 3
     assert state.sample_prep_conflict_count == 1

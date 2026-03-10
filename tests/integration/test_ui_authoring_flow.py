@@ -7,7 +7,7 @@ from addon_generator.ui.services.export_service import ExportService
 from addon_generator.ui.services.import_service import ImportService
 from addon_generator.ui.services.merge_service_adapter import MergeServiceAdapter
 from addon_generator.ui.services.preview_service import PreviewService
-from addon_generator.ui.services.validation_service import ValidationService
+from addon_generator.ui.services.validation_service import ValidationSummary, ValidationService
 from addon_generator.ui.state.app_state import AppState
 
 
@@ -16,7 +16,20 @@ def test_ui_flow_import_edit_validate_preview_export(monkeypatch, tmp_path) -> N
 
     bundle = InputDTOBundle(source_type="excel", method=MethodInputDTO(key="m", method_id="M-100", method_version="1"))
     monkeypatch.setattr(ImportService, "load_excel", lambda self, path: (bundle, {}, []))
-    monkeypatch.setattr(ValidationService, "validate", lambda self, merged: (object(), []))
+    monkeypatch.setattr(
+        ValidationService,
+        "validate",
+        lambda self, merged: (
+            object(),
+            ValidationSummary(
+                issues=[],
+                grouped_issues={},
+                severity_counts={"error": 0, "warning": 0, "info": 0},
+                category_counts={},
+                export_blocked=False,
+            ),
+        ),
+    )
     monkeypatch.setattr(PreviewService, "generate", lambda self, merged: ("{}", "<xml/>", {"export_readiness": True}))
     monkeypatch.setattr(ExportService, "export", lambda self, merged_bundle, *, destination_folder, overwrite=False: {"ProtocolFile.json": str(tmp_path / "ProtocolFile.json")})
 
@@ -26,13 +39,13 @@ def test_ui_flow_import_edit_validate_preview_export(monkeypatch, tmp_path) -> N
     app_state.editor_state.set_override("method.method_id", "M-101")
     merged = MergeServiceAdapter().recompute(app_state)
 
-    _, validation_issues = ValidationService().validate(merged)
+    _, validation_summary = ValidationService().validate(merged)
     protocol, analytes, summary = PreviewService().generate(merged)
     exported = ExportService().export(merged, destination_folder=str(tmp_path))
 
     assert merged.method is not None
     assert merged.method.method_id == "M-101"
-    assert validation_issues == []
+    assert validation_summary.issues == []
     assert protocol == "{}"
     assert analytes == "<xml/>"
     assert summary["export_readiness"] is True
@@ -72,7 +85,20 @@ def test_ui_flow_import_review_edit_and_stale_preview_lifecycle(monkeypatch) -> 
         hidden_vocab={"SamplePrepAction": ["Mix", "Incubate"]},
     )
 
-    monkeypatch.setattr(ValidationService, "validate", lambda self, merged: (object(), []))
+    monkeypatch.setattr(
+        ValidationService,
+        "validate",
+        lambda self, merged: (
+            object(),
+            ValidationSummary(
+                issues=[],
+                grouped_issues={},
+                severity_counts={"error": 0, "warning": 0, "info": 0},
+                category_counts={},
+                export_blocked=False,
+            ),
+        ),
+    )
     monkeypatch.setattr(PreviewService, "generate", lambda self, merged: ("{}", "<xml/>", {"export_readiness": True}))
 
     app_state.import_state.replace(bundles=[xml_bundle, excel_bundle], provenance={}, issues=[])
@@ -97,8 +123,10 @@ def test_ui_flow_import_review_edit_and_stale_preview_lifecycle(monkeypatch) -> 
     assert app_state.validation_state.stale is True
 
     current = merge.recompute(app_state)
-    _addon, validation_issues = ValidationService().validate(current)
-    app_state.validation_state.issues = validation_issues
+    _addon, validation_summary = ValidationService().validate(current)
+    app_state.validation_state.issues = validation_summary.issues
+    app_state.validation_state.severity_counts = validation_summary.severity_counts
+    app_state.validation_state.export_blocked = validation_summary.export_blocked
     app_state.validation_state.stale = False
     assert app_state.validation_state.stale is False
 

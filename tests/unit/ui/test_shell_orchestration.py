@@ -10,6 +10,7 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
 from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
 from addon_generator.ui.models.issue_view_model import IssueViewModel
 from addon_generator.ui.shell import MainShell
+from addon_generator.ui.services.validation_service import ValidationSummary
 from addon_generator.ui.state.app_state import AppState
 
 
@@ -39,7 +40,20 @@ class _ValidationService:
         self._issues = issues
 
     def validate(self, merged):
-        return object(), self._issues
+        grouped = {}
+        category_counts = {}
+        severity_counts = {"error": 0, "warning": 0, "info": 0}
+        for issue in self._issues:
+            grouped.setdefault(issue.category, []).append(issue)
+            category_counts[issue.category] = category_counts.get(issue.category, 0) + 1
+            severity_counts[issue.severity] = severity_counts.get(issue.severity, 0) + 1
+        return object(), ValidationSummary(
+            issues=self._issues,
+            grouped_issues=grouped,
+            severity_counts=severity_counts,
+            category_counts=category_counts,
+            export_blocked=severity_counts.get("error", 0) > 0,
+        )
 
 
 class _PreviewService:
@@ -82,7 +96,7 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
         app_state=AppState(),
         import_service=_ImportService(),
         merge_service=_MergeService(),
-        validation_service=_ValidationService([IssueViewModel(code="E1", severity="error", summary="bad")]),
+        validation_service=_ValidationService([IssueViewModel(code="E1", severity="error", summary="bad", category="Export Blockers")]),
         preview_service=_PreviewService(),
         export_service=export_service,
         draft_service=_DraftService(),
@@ -95,6 +109,8 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
     assert shell.export_view.export_button.isEnabled() is False
 
     shell.app_state.validation_state.issues = []
+    shell.app_state.validation_state.severity_counts = {"error": 0, "warning": 0, "info": 0}
+    shell.app_state.validation_state.export_blocked = False
     shell.run_preview()
     assert shell.app_state.preview_state.protocol_json == "{}"
 
@@ -146,7 +162,8 @@ def test_shell_refresh_status_sets_section_badges(qapp):
         "sample_prep.steps.0.action": [{}],
         "dilution_schemes.0.buffer2_ratio": [{}],
     }
-    shell.app_state.validation_state.issues = [IssueViewModel(code="W1", severity="warning", summary="warn")]
+    shell.app_state.validation_state.issues = [IssueViewModel(code="W1", severity="warning", summary="warn", category="Warnings")]
+    shell.app_state.validation_state.severity_counts = {"error": 0, "warning": 1, "info": 0}
 
     shell._refresh_status()
 
