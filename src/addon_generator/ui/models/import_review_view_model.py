@@ -43,30 +43,22 @@ class ImportReviewScreenViewModel:
         return [row for row in rows if self._matches_filter(row, filter_value)]
 
     def accept_imported(self, path: str) -> None:
-        imported_value = self._imported_lookup().get(path)
-        self._app_state.editor_state.set_override(path, imported_value)
-        self._set_resolution(path, "accepted_imported")
+        self._merge_service.accept_imported_value(self._app_state, path)
 
     def keep_override(self, path: str) -> None:
-        if path not in self._app_state.editor_state.manual_overrides:
-            self._app_state.editor_state.set_override(path, self._effective_lookup().get(path))
-        self._set_resolution(path, "kept_override")
+        self._merge_service.keep_override_value(self._app_state, path)
 
     def revert_default(self, path: str) -> None:
-        self._app_state.editor_state.clear_override(path)
-        self._set_resolution(path, "reverted_default")
+        self._merge_service.revert_default_value(self._app_state, path)
 
     def clear_override(self, path: str) -> None:
-        self._app_state.editor_state.clear_override(path)
-        self._set_resolution(path, "cleared_override")
-
-    def _set_resolution(self, path: str, resolution: str) -> None:
-        self._app_state.import_state.review_resolutions[path] = resolution
-        self._merge_service.recompute(self._app_state)
+        self._merge_service.revert_default_value(self._app_state, path)
+        self._app_state.import_state.review_resolutions[path] = "cleared_override"
 
     def _build_row(self, path: str) -> ImportReviewRowViewModel:
-        imported_value = self._imported_lookup().get(path)
-        effective_value = self._effective_lookup().get(path)
+        flattened = {row["path"]: row for row in self._merge_service.flatten_import_review_rows(self._app_state)}
+        imported_value = flattened.get(path, {}).get("imported")
+        effective_value = flattened.get(path, {}).get("effective")
         provenance_items = self._app_state.import_state.provenance.get(path, [])
         raw_provenance = "\n".join(
             f"{item.get('source', 'unknown')} @ {item.get('location', '')} ({item.get('note', '')})" for item in provenance_items

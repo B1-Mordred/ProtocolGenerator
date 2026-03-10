@@ -18,6 +18,7 @@
 
 ### Changed
 - Refactored the Sample Prep UI to a split-pane table/detail editor backed by a screen-level view model with stable step IDs, explicit mutation APIs, provenance/status metadata, and required/invalid-action highlighting; edits now flow through editor overrides and merge recompute to mark validation/preview stale.
+- Extended UI import/merge state and adapters to support structured sample-prep/dilution override caches, conflict/provenance lookup summaries, flattened import-review rows, and provenance source-label/location-text rendering for field-level sample-prep/dilution details.
 - Changed addon protocol JSON generation to pass resolver output through a dedicated workflow assembler stage (`src/addon_generator/fragments/assembler.py`) that normalizes processing/loading schema shape, applies deterministic ordering, and enforces sequential group/step index and duration defaults.
 - Stabilized canonical importer parity by adding shared DTO/domain normalization (trimmed text, optional `""` → `None`, empty-container cleanup) and canonical addon comparison helpers that exclude source-only metadata such as `source_metadata.provenance`; parity tests now compare normalized canonical forms and include explicit None/empty-string, assay-label normalization, and metadata-exclusion coverage.
 
