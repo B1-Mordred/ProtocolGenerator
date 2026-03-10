@@ -1,0 +1,32 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://protocol-generator.local/schemas/update-manifest.schema.json",
+  "title": "Protocol Generator Update Manifest",
+  "type": "object",
+  "required": ["channel", "version", "published_at", "artifacts"],
+  "properties": {
+    "channel": {"type": "string", "minLength": 1},
+    "version": {
+      "type": "string",
+      "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$"
+    },
+    "published_at": {"type": "string", "format": "date-time"},
+    "release_notes": {"type": "string"},
+    "artifacts": {
+      "type": "object",
+      "minProperties": 1,
+      "additionalProperties": {
+        "type": "object",
+        "required": ["platform", "url", "sha256"],
+        "properties": {
+          "platform": {"type": "string", "minLength": 1},
+          "installer_type": {"type": "string", "default": "binary"},
+          "url": {"type": "string", "format": "uri", "pattern": "^https://"},
+          "sha256": {"type": "string", "pattern": "^[A-Fa-f0-9]{64}$"}
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false
+}

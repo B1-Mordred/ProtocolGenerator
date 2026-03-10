@@ -1,0 +1,26 @@
+{
+  "channel": "stable",
+  "version": "0.2.0",
+  "published_at": "2026-03-10T00:00:00Z",
+  "release_notes": "https://example.invalid/releases/0.2.0",
+  "artifacts": {
+    "windows-x86_64": {
+      "platform": "windows-x86_64",
+      "installer_type": "exe",
+      "url": "https://example.invalid/downloads/protocol-generator-0.2.0-windows-x86_64.exe",
+      "sha256": "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
+    },
+    "linux-x86_64": {
+      "platform": "linux-x86_64",
+      "installer_type": "appimage",
+      "url": "https://example.invalid/downloads/protocol-generator-0.2.0-linux-x86_64.AppImage",
+      "sha256": "abcdef0123456789abcdef0123456789abcdef0123456789abcdef0123456789"
+    },
+    "darwin-aarch64": {
+      "platform": "darwin-aarch64",
+      "installer_type": "dmg",
+      "url": "https://example.invalid/downloads/protocol-generator-0.2.0-darwin-aarch64.dmg",
+      "sha256": "00112233445566778899aabbccddeeff00112233445566778899aabbccddeeff"
+    }
+  }
+}
