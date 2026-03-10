@@ -4,6 +4,7 @@
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 
 ### Changed
+- Fixed Admin → Field Mapping `Target Field` rendering to auto-size with content (column + combo sizing), and fixed manual-entry row rehydration so repeated row edits/reloads no longer carry stale combo values that could shift Product/Component/Parameter Set/Assay field assignments.
 - Changed draft actions to `Save Status` and `Recover from Draft`, both using user-selected file names/locations, and improved table column auto-sizing behavior across Import Review/Sample Prep/Dilutions/entity tables to better fit field content.
 
 - Fixed manual AddOn entry persistence for `Kit Series` and `Kit Product Number`; updated manual tables so `Kit Components` headers auto-size (no truncation), introduced Admin-configurable drop-down lists for `Type`, `Container Type (if Liquid)`, and analyte `Unit of Measurement`, renamed analytes column `Assay Key` to `Assay` with values sourced from Kit Components `Parameter Set Name`, and removed manual analyte entry fields `Analyte Key`/`Assay Information Type`.
