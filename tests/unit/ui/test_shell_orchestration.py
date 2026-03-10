@@ -8,6 +8,8 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
 from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
+from PySide6.QtWidgets import QMessageBox
+
 from addon_generator.ui.models.issue_view_model import IssueViewModel
 from addon_generator.ui.services.export_service import ExportResult
 from addon_generator.ui.shell import MainShell
@@ -19,6 +21,23 @@ from addon_generator.ui.state.app_state import AppState
 def qapp():
     app = QApplication.instance() or QApplication([])
     yield app
+
+
+@pytest.fixture
+def messagebox_spy(monkeypatch):
+    calls = {"info": [], "question": []}
+
+    def _info(parent, title, text):
+        calls["info"].append((title, text))
+        return QMessageBox.StandardButton.Ok
+
+    def _question(parent, title, text, buttons, default):
+        calls["question"].append((title, text))
+        return QMessageBox.StandardButton.Yes
+
+    monkeypatch.setattr(QMessageBox, "information", staticmethod(_info))
+    monkeypatch.setattr(QMessageBox, "question", staticmethod(_question))
+    return calls
 
 
 class _ImportService:
@@ -197,7 +216,7 @@ def test_shell_validate_preview_and_export_flow(qapp, tmp_path):
     assert export_service.called is True
 
 
-def test_shell_restore_draft_applies_section_selection(qapp):
+def test_shell_restore_draft_applies_section_selection(qapp, messagebox_spy):
     draft_service = _DraftService()
     shell = MainShell(
         app_state=AppState(),
@@ -214,7 +233,66 @@ def test_shell_restore_draft_applies_section_selection(qapp):
 
     assert shell.app_state.editor_state.selected_section_index == 8
     assert shell.stack.currentIndex() == 8
+    assert messagebox_spy["info"]
 
+
+
+def test_shell_prompts_before_restore_when_dirty(qapp, messagebox_spy):
+    draft_service = _DraftService()
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=draft_service,
+    )
+    shell.app_state.editor_state.export_settings["draft_path"] = "drafts/sample.json"
+    shell.app_state.draft_state.dirty = True
+
+    shell.restore_draft()
+
+    assert messagebox_spy["question"]
+
+
+def test_shell_marks_dirty_after_import_and_review_recompute(qapp):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+
+    shell.import_excel()
+
+    assert shell.app_state.draft_state.dirty is True
+    assert shell.app_state.draft_state.restore_metadata["last_dirty_reason"] == "excel_import"
+
+
+def test_shell_preview_persists_last_preview_payload_metadata(qapp):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+    shell.import_excel()
+
+    shell.run_preview()
+
+    payload = shell.app_state.editor_state.export_settings["last_preview_payload"]
+    assert payload["protocol_json"] == "{}"
+    assert payload["analytes_xml"] == "<xml/>"
+    assert shell.app_state.editor_state.export_settings["preview_staleness"]["stale"] is False
 
 def test_shell_refresh_status_sets_section_badges(qapp):
     shell = MainShell(

@@ -6,13 +6,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from addon_generator.input_models.dtos import (
+    AnalyteInputDTO,
+    AssayInputDTO,
+    DilutionSchemeInputDTO,
+    InputDTOBundle,
+    MethodInputDTO,
+    SamplePrepStepInputDTO,
+    UnitInputDTO,
+)
+from addon_generator.input_models.provenance import FieldProvenance
 from addon_generator.ui.state.app_state import AppState
 from addon_generator.ui.state.draft_state import DraftState
 from addon_generator.ui.state.editor_state import EditorState
 from addon_generator.ui.state.import_state import ImportState
 from addon_generator.ui.state.preview_state import PreviewState
 from addon_generator.ui.state.validation_state import ValidationState
-from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
 
 
 class DraftService:
@@ -31,6 +40,8 @@ class DraftService:
         path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
         app_state.draft_state.path = str(path)
         app_state.draft_state.payload = payload
+        app_state.draft_state.dirty = False
+        app_state.draft_state.last_saved_at = datetime.now(tz=timezone.utc)
         return path
 
     def load(self, path: str | Path) -> dict[str, Any]:
@@ -57,9 +68,17 @@ class DraftService:
         app_state.editor_state = EditorState(**editor_payload)
         app_state.validation_state = ValidationState(**validation_payload)
         app_state.preview_state = PreviewState(**preview_payload)
+        restored_path = source_path or draft_payload.get("path")
         app_state.draft_state = DraftState(
-            path=source_path or draft_payload.get("path"),
+            path=restored_path,
             payload=payload,
+            dirty=False,
+            last_saved_at=self._coerce_datetime(draft_payload.get("last_saved_at")),
+            restore_metadata={
+                "restored_at": datetime.now(tz=timezone.utc).isoformat(),
+                "source_path": restored_path,
+                "previous_path": draft_payload.get("path"),
+            },
         )
 
     @staticmethod
@@ -70,4 +89,71 @@ class DraftService:
             source_type=raw.get("source_type", "default"),
             source_name=raw.get("source_name"),
             method=method_dto,
+            assays=DraftService._dto_list(raw.get("assays", []), AssayInputDTO),
+            analytes=DraftService._dto_list(raw.get("analytes", []), AnalyteInputDTO),
+            units=DraftService._dto_list(raw.get("units", []), UnitInputDTO),
+            sample_prep_steps=DraftService._dto_list(raw.get("sample_prep_steps", []), SamplePrepStepInputDTO),
+            dilution_schemes=DraftService._dto_list(raw.get("dilution_schemes", []), DilutionSchemeInputDTO),
+            method_information_overrides=DraftService._dict_copy(raw.get("method_information_overrides", {})),
+            assay_fragments=DraftService._list_of_dicts(raw.get("assay_fragments", [])),
+            loading_fragments=DraftService._list_of_dicts(raw.get("loading_fragments", [])),
+            processing_fragments=DraftService._list_of_dicts(raw.get("processing_fragments", [])),
+            hidden_vocab=DraftService._hidden_vocab(raw.get("hidden_vocab", {})),
+            provenance=DraftService._provenance(raw.get("provenance", {})),
         )
+
+    @staticmethod
+    def _dto_list(items: Any, dto_type: type[Any]) -> list[Any]:
+        if not isinstance(items, list):
+            return []
+        output: list[Any] = []
+        for item in items:
+            if isinstance(item, dict):
+                output.append(dto_type(**item))
+        return output
+
+    @staticmethod
+    def _list_of_dicts(items: Any) -> list[dict[str, Any]]:
+        if not isinstance(items, list):
+            return []
+        return [dict(item) for item in items if isinstance(item, dict)]
+
+    @staticmethod
+    def _dict_copy(raw: Any) -> dict[str, Any]:
+        return dict(raw) if isinstance(raw, dict) else {}
+
+    @staticmethod
+    def _hidden_vocab(raw: Any) -> dict[str, list[str]]:
+        if not isinstance(raw, dict):
+            return {}
+        out: dict[str, list[str]] = {}
+        for key, values in raw.items():
+            if isinstance(values, list):
+                out[str(key)] = [str(v) for v in values]
+        return out
+
+    @staticmethod
+    def _provenance(raw: Any) -> dict[str, list[FieldProvenance]]:
+        if not isinstance(raw, dict):
+            return {}
+        out: dict[str, list[FieldProvenance]] = {}
+        for key, values in raw.items():
+            if not isinstance(values, list):
+                continue
+            entries: list[FieldProvenance] = []
+            for value in values:
+                if isinstance(value, dict):
+                    entries.append(FieldProvenance(**value))
+            out[str(key)] = entries
+        return out
+
+    @staticmethod
+    def _coerce_datetime(value: Any) -> datetime | None:
+        if isinstance(value, datetime):
+            return value
+        if isinstance(value, str):
+            try:
+                return datetime.fromisoformat(value)
+            except ValueError:
+                return None
+        return None

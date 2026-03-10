@@ -1,12 +1,22 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from typing import Callable
 
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDockWidget, QFileDialog, QMainWindow, QPushButton, QStackedWidget, QStatusBar, QToolBar
+from PySide6.QtGui import QCloseEvent
+from PySide6.QtWidgets import (
+    QDockWidget,
+    QFileDialog,
+    QMainWindow,
+    QMessageBox,
+    QPushButton,
+    QStackedWidget,
+    QStatusBar,
+    QToolBar,
+)
 
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.export_service import ExportResult, ExportService
@@ -82,7 +92,7 @@ class MainShell(QMainWindow):
                 self,
                 app_state=self.app_state,
                 merge_service=self.merge_service,
-                on_state_changed=self._refresh_status,
+                on_state_changed=self._on_edit_state_changed,
             )
         )
         self.stack.addWidget(
@@ -90,7 +100,7 @@ class MainShell(QMainWindow):
                 self,
                 app_state=self.app_state,
                 merge_service=self.merge_service,
-                on_state_changed=self._refresh_status,
+                on_state_changed=self._on_edit_state_changed,
             )
         )
         self.import_review_view = ImportReviewView(
@@ -151,6 +161,7 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_excel(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self._mark_dirty(reason="excel_import")
         self.import_review_view.refresh_table()
         self._refresh_status()
 
@@ -161,6 +172,7 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_xml(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+        self._mark_dirty(reason="xml_import")
         self.import_review_view.refresh_table()
         self._refresh_status()
 
@@ -199,6 +211,18 @@ class MainShell(QMainWindow):
         self.app_state.preview_state.validation_state_snapshot = str(summary.get("validation_status", "unknown")) if summary else "unknown"
         self.app_state.preview_state.export_readiness_snapshot = bool(summary.get("export_readiness", False)) if summary else False
         self.app_state.preview_state.stale = False
+        self.app_state.editor_state.export_settings["last_preview_payload"] = {
+            "protocol_json": protocol,
+            "analytes_xml": analytes,
+            "summary": summary,
+            "failure": failure,
+        }
+        self.app_state.editor_state.export_settings["preview_staleness"] = {
+            "stale": False,
+            "generated_at": self.app_state.preview_state.last_generated_at.isoformat(),
+            "validation_snapshot": self.app_state.preview_state.validation_state_snapshot,
+            "export_ready": self.app_state.preview_state.export_readiness_snapshot,
+        }
         summary_text = json.dumps(summary, indent=2, sort_keys=True) if summary else json.dumps(failure or {}, indent=2, sort_keys=True)
         self.preview_view.tabs.set_preview(protocol, analytes, summary_text)
         self._refresh_status()
@@ -240,20 +264,34 @@ class MainShell(QMainWindow):
         selected = QFileDialog.getExistingDirectory(self, "Select Export Destination", current)
         if selected:
             self.export_view.destination.setText(selected)
+            self.app_state.editor_state.export_settings["destination_folder"] = selected
+            self._mark_dirty(reason="destination_changed")
+            self._refresh_status()
 
     def save_draft(self) -> None:
         drafts_dir = self.app_state.editor_state.export_settings.get("drafts_dir", "drafts")
-        self.draft_service.save(self.app_state, drafts_dir=drafts_dir)
+        path = self.draft_service.save(self.app_state, drafts_dir=drafts_dir)
+        QMessageBox.information(self, "Draft Saved", f"Draft saved to:\n{path}")
+        self._refresh_status()
 
     def restore_draft(self) -> None:
         draft_path = self.app_state.editor_state.export_settings.get("draft_path") or self.app_state.draft_state.path
         if not draft_path:
             return
+        if self.app_state.draft_state.dirty and not self._confirm_unsaved("restore this draft"):
+            return
         payload = self.draft_service.load(draft_path)
         self.draft_service.restore(self.app_state, payload, source_path=draft_path)
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state) if self.app_state.import_state.bundles else None
+        QMessageBox.information(self, "Draft Restored", f"Draft restored from:\n{draft_path}")
         self._refresh_status()
+
+    def closeEvent(self, event: QCloseEvent) -> None:  # noqa: N802
+        if self.app_state.draft_state.dirty and not self._confirm_unsaved("close the window"):
+            event.ignore()
+            return
+        super().closeEvent(event)
 
     def _current_merged_bundle(self):
         if self._last_merged_bundle is None and self.app_state.import_state.bundles:
@@ -272,6 +310,11 @@ class MainShell(QMainWindow):
     def _on_import_review_state_changed(self) -> None:
         if self.app_state.import_state.bundles:
             self._last_merged_bundle = self.merge_service.recompute(self.app_state)
+            self._mark_dirty(reason="import_review")
+        self._refresh_status()
+
+    def _on_edit_state_changed(self) -> None:
+        self._mark_dirty(reason="editor")
         self._refresh_status()
 
     def _navigate_to_owner(self, jump_target: dict[str, object]) -> None:
@@ -296,3 +339,23 @@ class MainShell(QMainWindow):
             export_ready=self.app_state.preview_state.export_readiness_snapshot,
             generation_error=self.app_state.preview_state.generation_error,
         )
+
+    def _mark_dirty(self, *, reason: str) -> None:
+        self.app_state.draft_state.dirty = True
+        self.app_state.draft_state.restore_metadata["last_dirty_reason"] = reason
+        self.app_state.draft_state.restore_metadata["last_dirty_at"] = datetime.now(tz=timezone.utc).isoformat()
+        self.app_state.editor_state.export_settings["preview_staleness"] = {
+            "stale": self.app_state.preview_state.stale,
+            "validation_stale": self.app_state.validation_state.stale,
+            "dirty": self.app_state.draft_state.dirty,
+        }
+
+    def _confirm_unsaved(self, action: str) -> bool:
+        response = QMessageBox.question(
+            self,
+            "Unsaved changes",
+            f"You have unsaved draft changes. Do you want to {action}?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.No,
+        )
+        return response == QMessageBox.StandardButton.Yes
