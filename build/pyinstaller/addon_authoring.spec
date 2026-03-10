@@ -2,16 +2,20 @@
 
 from pathlib import Path
 
-PROJECT_ROOT = Path.cwd()
+REPO_ROOT = Path(__file__).resolve().parent.parent.parent
 
 
 def _data(path: str, target: str) -> tuple[str, str]:
-    return (str(PROJECT_ROOT / path), target)
+    return (str(REPO_ROOT / path), target)
+
+
+SRC_ROOT = REPO_ROOT / 'src'
+APP_ENTRYPOINT = SRC_ROOT / 'addon_generator' / 'ui' / 'app.py'
 
 
 a = Analysis(
-    ['src/addon_generator/ui/app.py'],
-    pathex=['src'],
+    [str(APP_ENTRYPOINT)],
+    pathex=[str(SRC_ROOT)],
     binaries=[],
     datas=[
         _data('protocol.schema.json', '.'),
