@@ -191,3 +191,64 @@ def test_workbook_parser_supports_case_and_spacing_variants_in_sheet_names(tmp_p
 
 def test_supports_workbook_template_normalizes_sheet_names() -> None:
     assert ExcelWorkbookParser.supports_workbook_template([" Basics ", "ANALYTES", "hidden_lists", "AddOn CheckList"]) is True
+
+
+def test_sampleprep_imports_extended_columns_with_header_aliases(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = _build_template_workbook(openpyxl)
+
+    wb["SamplePrep"].delete_rows(1, wb["SamplePrep"].max_row)
+    wb["SamplePrep"].append(["Order", "Action", "Source", "Destination", "Volume [uL]", "Duration [sec]", "Force [rpm]"])
+    wb["SamplePrep"].append(["1", "Mix", "Tube A", "Tube B", "10", "5", "1200"])
+
+    path = tmp_path / "sampleprep-extended.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert bundle.sample_prep_steps[0].metadata == {
+        "order": "1",
+        "action": "Mix",
+        "source": "Tube A",
+        "destination": "Tube B",
+        "volume": "10",
+        "duration": "5",
+        "force": "1200",
+    }
+
+
+def test_sampleprep_assigns_row_order_when_order_header_absent(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = _build_template_workbook(openpyxl)
+
+    wb["SamplePrep"].delete_rows(1, wb["SamplePrep"].max_row)
+    wb["SamplePrep"].append(["Action", "Source", "Destination"])
+    wb["SamplePrep"].append(["Mix", "A", "B"])
+    wb["SamplePrep"].append(["Incubate", "B", "C"])
+
+    path = tmp_path / "sampleprep-row-order-fallback.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert [step.metadata["order"] for step in bundle.sample_prep_steps] == ["1", "2"]
+    assert [step.key for step in bundle.sample_prep_steps] == ["sampleprep:1", "sampleprep:2"]
+
+
+def test_sampleprep_action_validation_falls_back_to_actions_vocab(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = _build_template_workbook(openpyxl)
+
+    wb["Hidden_Lists"].delete_rows(1, wb["Hidden_Lists"].max_row)
+    wb["Hidden_Lists"].append(["Units", "Actions"])
+    wb["Hidden_Lists"].append(["mg/dL", "Mix"])
+    wb["SamplePrep"].cell(row=2, column=2, value="Unknown Action")
+
+    path = tmp_path / "sampleprep-actions-fallback-vocab.xlsx"
+    wb.save(path)
+
+    with pytest.raises(ExcelImportValidationError) as exc:
+        ExcelImporter().import_workbook_bundle(path)
+
+    diagnostics = {(d.rule_id, d.sheet, d.column) for d in exc.value.diagnostics}
+    assert ("invalid-vocabulary", "SamplePrep", "Action") in diagnostics
