@@ -104,6 +104,7 @@
 - Added `services/input_merge_service.py` with deterministic precedence ordering and structured conflict capture across multi-source DTO bundles.
 
 ### Changed
+- Changed metadata/version management to use `src/addon_generator/__about__.py` as the canonical source; shell window title, package `package-metadata.json` app block, `pyproject.toml` dynamic version, and Windows build artifact naming now consume this shared metadata. (PR pending)
 - Enhanced GUI Validation screen with grouped/filterable issue navigation, detailed issue inspector, and validation-state-driven export-blocked/current messaging; added Qt unit tests for grouping/filtering/navigation callback behavior.
 - Refactored `src/addon_generator/generators/protocol_json_generator.py` to consume registry-provided fragment contributions with centralized deterministic section merge/sort behavior while preserving legacy raw fragment definitions through the default resolver.
 - Refactored Excel/XML/GUI importers to emit DTO bundles with provenance while preserving domain import entry points via the canonical model builder.

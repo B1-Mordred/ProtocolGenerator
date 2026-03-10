@@ -7,6 +7,7 @@ try:
 except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
+from addon_generator.__about__ import __app_name__
 from addon_generator.ui.shell import MainShell
 
 
@@ -66,3 +67,9 @@ def test_shell_sidebar_badges_refresh_when_counts_change(qapp) -> None:
     assert shell.sidebar.item(3).text() == "Sample Prep"
     assert shell.sidebar.item(4).text() == "Dilutions"
     assert shell.sidebar.item(5).text().endswith("(2)")
+
+
+def test_shell_window_title_uses_about_metadata(qapp) -> None:
+    shell = MainShell()
+
+    assert shell.windowTitle() == __app_name__

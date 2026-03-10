@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Canonical app/build metadata now lives in `src/addon_generator/__about__.py` (`__app_name__`, `__version__`, `__company__`, `__draft_format_version__`, `__config_schema_version__`); UI shell title, package metadata payloads, and setuptools project version derive from this single source.
 - App status model now exposes computed readiness/staleness/dirty indicators (`validation`, `preview`, `export`, `draft`) plus badge contributions; shell status refresh uses these dimensions to drive Validation/Preview/Export badges and a four-part status banner that updates across edit→validate→preview→export→save/restore transitions.
 - Preview pipeline now returns structured metadata (`method_id`, `method_version`, assay/analyte/sample-prep/dilution counts, validation status, preview timestamp, export-readiness), captures generation timestamps/errors in `PreviewState`, and renders stale/current + readiness/error context in the Preview screen with copyable monospaced tab content.
 - Validation service now classifies findings into Import/Domain/Cross-file/Schema/XSD/Export Blockers/Warnings/Info categories, emits severity/category counters plus export-blocked state, and stores grouped results with validation timestamps in UI `ValidationState` for shell badge/status refresh.
