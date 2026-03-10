@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+import json
 from pathlib import Path
 from typing import Callable
 
@@ -175,18 +176,29 @@ class MainShell(QMainWindow):
         self.app_state.validation_state.stale = False
         self.validation_view.issues.set_issues(summary.issues)
         self.validation_view.set_validation_state(self.app_state.validation_state)
+        self.preview_view.set_preview_meta(
+            stale=self.app_state.preview_state.stale,
+            validation_state=self.app_state.preview_state.validation_state_snapshot,
+            export_ready=self.app_state.preview_state.export_readiness_snapshot,
+            generation_error=self.app_state.preview_state.generation_error,
+        )
         self._refresh_status()
 
     def run_preview(self) -> None:
         merged = self._current_merged_bundle()
         if merged is None:
             return
-        protocol, analytes, summary = self.preview_service.generate(merged)
+        protocol, analytes, summary, failure = self.preview_service.generate(merged)
         self.app_state.preview_state.protocol_json = protocol
         self.app_state.preview_state.analytes_xml = analytes
-        self.app_state.preview_state.summary = summary
+        self.app_state.preview_state.summary = summary or None
+        self.app_state.preview_state.generation_error = failure.get("message") if failure else None
+        self.app_state.preview_state.last_generated_at = datetime.now()
+        self.app_state.preview_state.validation_state_snapshot = str(summary.get("validation_status", "unknown")) if summary else "unknown"
+        self.app_state.preview_state.export_readiness_snapshot = bool(summary.get("export_readiness", False)) if summary else False
         self.app_state.preview_state.stale = False
-        self.preview_view.tabs.set_preview(protocol, analytes, str(summary))
+        summary_text = json.dumps(summary, indent=2, sort_keys=True) if summary else json.dumps(failure or {}, indent=2, sort_keys=True)
+        self.preview_view.tabs.set_preview(protocol, analytes, summary_text)
         self._refresh_status()
 
     def run_export(self) -> None:
@@ -250,3 +262,9 @@ class MainShell(QMainWindow):
         )
         self.export_view.export_button.setEnabled(not self.app_state.validation_state.has_blockers)
         self.validation_view.set_validation_state(self.app_state.validation_state)
+        self.preview_view.set_preview_meta(
+            stale=self.app_state.preview_state.stale,
+            validation_state=self.app_state.preview_state.validation_state_snapshot,
+            export_ready=self.app_state.preview_state.export_readiness_snapshot,
+            generation_error=self.app_state.preview_state.generation_error,
+        )

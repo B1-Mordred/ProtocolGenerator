@@ -108,3 +108,52 @@ def test_import_service_coerces_provenance() -> None:
     assert provenance["method.method_id"][0]["location"] == "book.xlsx:Basics:2:B"
     assert provenance["method.method_id"][0]["source_label"] == "Excel"
     assert provenance["method.method_id"][0]["location_text"] == "book.xlsx:Basics:2:B"
+
+
+def test_preview_service_returns_structured_summary(monkeypatch) -> None:
+    from addon_generator.ui.services.preview_service import PreviewService
+
+    class _Addon:
+        def __init__(self):
+            self.method = type("M", (), {"method_id": "MID", "method_version": "9"})()
+            self.assays = [object(), object()]
+            self.analytes = [object()]
+            self.sample_prep_steps = [object()]
+            self.dilution_schemes = [object(), object(), object()]
+
+    class _Result:
+        protocol_json = {"x": 1}
+        analytes_xml_string = "<xml/>"
+        issues = []
+
+    svc = PreviewService()
+    monkeypatch.setattr(svc._builder, "build", lambda bundle: _Addon())
+    monkeypatch.setattr(svc._service, "generate_all", lambda addon, dto_bundle: _Result())
+
+    protocol, analytes, summary, failure = svc.generate(InputDTOBundle(source_type="excel"))
+
+    assert failure is None
+    assert '"x": 1' in protocol
+    assert analytes == "<xml/>"
+    assert summary["method_id"] == "MID"
+    assert summary["method_version"] == "9"
+    assert summary["assay_count"] == 2
+    assert summary["dilution_count"] == 3
+    assert summary["validation_status"] == "valid"
+    assert summary["export_readiness"] is True
+
+
+def test_preview_service_returns_clean_failure(monkeypatch) -> None:
+    from addon_generator.ui.services.preview_service import PreviewService
+
+    svc = PreviewService()
+    monkeypatch.setattr(svc._builder, "build", lambda bundle: (_ for _ in ()).throw(RuntimeError("boom")))
+
+    protocol, analytes, summary, failure = svc.generate(InputDTOBundle(source_type="excel"))
+
+    assert protocol == ""
+    assert analytes == ""
+    assert summary == {}
+    assert failure is not None
+    assert failure["code"] == "preview-generation-failed"
+    assert "Preview generation failed" in failure["message"]
