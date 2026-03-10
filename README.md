@@ -112,6 +112,8 @@ When all steps show `✓` and status is `Valid`, use **Export ProtocolFile.json*
   - Verify file permissions and destination path availability. Re-run **Save As** if needed.
 - **Draft recovery prompt appears on launch**
   - Choose **Yes** to restore in-progress data from the temporary draft file.
+- **`ModuleNotFoundError: No module named 'PySide6'` on startup**
+  - Install desktop dependencies with `python -m pip install -e .` (or `python -m pip install -e .[dev]` for contributor tooling), then relaunch the app.
 
 ## Windows EXE build
 
