@@ -1,3 +1,8 @@
+## Unreleased
+
+### Fixed
+- Fixed GUI toolbar `Import Excel`/`Import XML` buttons doing nothing when no import path was preconfigured by opening a file-picker fallback and saving the selected path before executing import.
+
 # Changelog
 
 ## 2026-03-10

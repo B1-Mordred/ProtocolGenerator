@@ -244,7 +244,11 @@ class MainShell(QMainWindow):
         self.actions[label] = button
 
     def import_excel(self) -> None:
-        source_path = self.app_state.editor_state.export_settings.get("excel_path")
+        source_path = self._resolve_import_source_path(
+            setting_key="excel_path",
+            title="Select Excel Workbook",
+            file_filter="Excel Files (*.xlsx *.xlsm *.xls)",
+        )
         if not source_path:
             return
         bundle, provenance, issues = self.import_service.load_excel(source_path)
@@ -255,7 +259,11 @@ class MainShell(QMainWindow):
         self._refresh_status()
 
     def import_xml(self) -> None:
-        source_path = self.app_state.editor_state.export_settings.get("xml_path")
+        source_path = self._resolve_import_source_path(
+            setting_key="xml_path",
+            title="Select AddOn XML",
+            file_filter="XML Files (*.xml)",
+        )
         if not source_path:
             return
         bundle, provenance, issues = self.import_service.load_xml(source_path)
@@ -357,6 +365,20 @@ class MainShell(QMainWindow):
             self.app_state.editor_state.export_settings["destination_folder"] = selected
             self._mark_dirty(reason="destination_changed")
             self._refresh_status()
+
+    def _resolve_import_source_path(self, *, setting_key: str, title: str, file_filter: str) -> str:
+        source_path = self.app_state.editor_state.export_settings.get(setting_key)
+        if source_path:
+            return source_path
+
+        selected, _ = QFileDialog.getOpenFileName(self, title, str(Path.cwd()), file_filter)
+        if not selected:
+            return ""
+
+        self.app_state.editor_state.export_settings[setting_key] = selected
+        self._mark_dirty(reason=f"{setting_key}_changed")
+        self._refresh_status()
+        return selected
 
     def save_draft(self) -> None:
         drafts_dir = self.app_state.editor_state.export_settings.get("drafts_dir") or str(get_runtime_paths().drafts_dir)

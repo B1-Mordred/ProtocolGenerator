@@ -9,7 +9,7 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
 
 from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QMessageBox
+from PySide6.QtWidgets import QFileDialog, QMessageBox
 
 from addon_generator.ui.models.issue_view_model import IssueViewModel
 from addon_generator.ui.services.export_service import ExportResult
@@ -469,3 +469,51 @@ def test_shell_open_logs_uses_runtime_log_directory(qapp, monkeypatch, tmp_path)
 
     assert opened == [str(tmp_path / "logs")]
     assert (tmp_path / "logs").exists()
+
+
+def test_shell_import_excel_prompts_for_file_when_setting_missing(qapp, monkeypatch):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+
+    chosen = "/tmp/from-dialog.xlsx"
+
+    def _open_file_name(*_args, **_kwargs):
+        return chosen, "Excel Files (*.xlsx *.xlsm *.xls)"
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(_open_file_name))
+
+    shell.import_excel()
+
+    assert shell.app_state.editor_state.export_settings["excel_path"] == chosen
+    assert shell.app_state.import_state.bundles[0].source_type == "excel"
+
+
+def test_shell_import_xml_prompts_for_file_when_setting_missing(qapp, monkeypatch):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+
+    chosen = "/tmp/from-dialog.xml"
+
+    def _open_file_name(*_args, **_kwargs):
+        return chosen, "XML Files (*.xml)"
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(_open_file_name))
+
+    shell.import_xml()
+
+    assert shell.app_state.editor_state.export_settings["xml_path"] == chosen
+    assert shell.app_state.import_state.bundles[0].source_type == "xml"
