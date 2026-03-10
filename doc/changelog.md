@@ -1,5 +1,11 @@
 # Changelog
 
+## 2026-03-10
+
+### Added
+- Expanded GUI regression coverage with new unit tests for Sample Prep, Dilutions, and Import Review interaction flows (add/edit/reorder/duplicate/delete, filter switching, resolution actions, navigation callbacks) plus sidebar badge-refresh assertions in shell navigation tests.
+- Expanded UI integration coverage in `tests/integration/test_ui_authoring_flow.py` to exercise import review conflict handling, Sample Prep editing, validation/preview stale-flag lifecycle transitions, and post-preview stale re-triggering after edits.
+
 ## 2026-03-09
 
 ### Added
