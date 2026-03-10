@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Workbook-template Dilutions parsing now accepts header aliases (`Dilution Name`, `Dilution Buffer 1 Ratio`, `Dilution Buffer 2 Ratio`, `Dilution Buffer 3 Ratio`) and emits both per-buffer ratio metadata plus synthesized legacy `ratio` values for compatibility with existing flows.
 - Added deterministic runtime resource resolution via `addon_generator.runtime.resources.get_resource_path()`, and updated schema loading to use that helper so `protocol.schema.json` is resolved consistently in both source runs and PyInstaller bundles (`sys._MEIPASS`).
 - Runtime user data is now stored in OS-specific application locations: Windows `%APPDATA%\AddOnAuthoringStudio` (drafts/settings) + `%LOCALAPPDATA%\AddOnAuthoringStudio\logs`, macOS `~/Library/Application Support/AddOnAuthoringStudio` + `~/Library/Logs/AddOnAuthoringStudio`, Linux `~/.config/AddOnAuthoringStudio` + `~/.local/state/AddOnAuthoringStudio/logs`; draft save defaults and app logging initialization now use these computed directories.
 - The main shell now exposes a **Help** menu with `Check for Updates`, `Open Logs`, and `About`; update checks prompt users before staging installers, Open Logs opens the runtime log directory, and About displays app/build + draft/config schema versions from `addon_generator.__about__`.

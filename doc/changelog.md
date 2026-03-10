@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- Added workbook-template Dilutions parser support for alias headers (`Dilution Name`, `Dilution Buffer 1 Ratio`, `Dilution Buffer 2 Ratio`, `Dilution Buffer 3 Ratio`) and metadata export of `buffer1_ratio`/`buffer2_ratio`/`buffer3_ratio` with synthesized legacy `ratio` compatibility.
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 - Added workbook-template Sample Prep parser enhancements for header aliases (`Volume [uL]/[ul]`, `Duration [sec]`, `Force [rpm]`), row-order fallback when `Order` is absent, standardized downstream metadata keys (`order`, `action`, `source`, `destination`, `volume`, `duration`, `force`), and `Hidden_Lists.Actions` vocabulary fallback when `SamplePrepAction` is not provided; expanded unit tests accordingly.
 
