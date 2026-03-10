@@ -4,6 +4,7 @@
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 
 ### Changed
+- Added Field Mapping expression validation for supported tokens (`input:`, `default:`, `custom:`), balanced `concat(...)`, and quoted `delimiter=...` syntax; the mapping table now shows a per-row inline `Status` column and save/activate are blocked when enabled rows are invalid.
 - Fixed Admin → Field Mapping `Target Field` rendering to auto-size with content (column + combo sizing), and fixed manual-entry row rehydration so repeated row edits/reloads no longer carry stale combo values that could shift Product/Component/Parameter Set/Assay field assignments.
 - Changed draft actions to `Save Status` and `Recover from Draft`, both using user-selected file names/locations, and improved table column auto-sizing behavior across Import Review/Sample Prep/Dilutions/entity tables to better fit field content.
 - Fixed `Recover from Draft` so restored Admin dropdown lists are reapplied to manual-entry editor combos (`Type`, `Container Type`, analyte units, sample prep actions) immediately after restore.
