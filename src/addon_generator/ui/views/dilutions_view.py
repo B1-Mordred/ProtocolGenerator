@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -59,9 +61,17 @@ class _DilutionTableModel(QAbstractTableModel):
 
 
 class DilutionsView(QWidget):
-    def __init__(self, parent=None, *, app_state: AppState | None = None, merge_service: MergeServiceAdapter | None = None) -> None:
+    def __init__(
+        self,
+        parent=None,
+        *,
+        app_state: AppState | None = None,
+        merge_service: MergeServiceAdapter | None = None,
+        on_state_changed: Callable[[], None] | None = None,
+    ) -> None:
         super().__init__(parent)
         self._vm = DilutionScreenViewModel(app_state or AppState(), merge_service or MergeServiceAdapter())
+        self._on_state_changed = on_state_changed
 
         layout = QVBoxLayout(self)
         actions = QHBoxLayout()
@@ -134,30 +144,35 @@ class DilutionsView(QWidget):
     def _add_dilution(self) -> None:
         dilution_id = self._vm.add_dilution()
         self._refresh_all(select_dilution=dilution_id)
+        self._notify_state_changed()
 
     def _delete_dilution(self) -> None:
         dilution_id = self._current_dilution_id()
         if dilution_id:
             self._vm.delete_dilution(dilution_id)
             self._refresh_all(select_dilution=self._vm.selected_dilution_id)
+            self._notify_state_changed()
 
     def _duplicate_dilution(self) -> None:
         dilution_id = self._current_dilution_id()
         if dilution_id:
             new_id = self._vm.duplicate_dilution(dilution_id)
             self._refresh_all(select_dilution=new_id)
+            self._notify_state_changed()
 
     def _update_field(self, field: str) -> None:
         dilution_id = self._current_dilution_id()
         if dilution_id:
             self._vm.update_field(dilution_id, field, self.inputs[field].text())
             self._refresh_all(select_dilution=dilution_id)
+            self._notify_state_changed()
 
     def _reset_field(self, field: str) -> None:
         dilution_id = self._current_dilution_id()
         if dilution_id:
             self._vm.reset_field(dilution_id, field)
             self._refresh_all(select_dilution=dilution_id)
+            self._notify_state_changed()
 
     def _refresh_all(self, *, select_dilution: str | None = None) -> None:
         self.table_model.refresh()
@@ -200,3 +215,7 @@ class DilutionsView(QWidget):
             self.status_label.setText("incomplete")
         else:
             self.status_label.setText("invalid ratio")
+
+    def _notify_state_changed(self) -> None:
+        if self._on_state_changed:
+            self._on_state_changed()

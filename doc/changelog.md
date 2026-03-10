@@ -17,6 +17,7 @@
 - Fixed UI Qt test collection on Linux runners missing system OpenGL/EGL libs by switching module guards from `importorskip("PySide6")` to runtime-safe `QApplication` import/skip handling.
 
 ### Changed
+- Added deterministic UI badge derivation for Sample Prep (issues + conflicts), Dilutions (issues + conflicts), Import Review (conflicts + unresolved required method fields), and Validation; `MainShell._refresh_status()` now updates section badges 3-6 after editor mutations and import-review resolutions, with regression tests covering count stability across state transitions.
 - Refactored the Sample Prep UI to a split-pane table/detail editor backed by a screen-level view model with stable step IDs, explicit mutation APIs, provenance/status metadata, and required/invalid-action highlighting; edits now flow through editor overrides and merge recompute to mark validation/preview stale.
 - Extended UI import/merge state and adapters to support structured sample-prep/dilution override caches, conflict/provenance lookup summaries, flattened import-review rows, and provenance source-label/location-text rendering for field-level sample-prep/dilution details.
 - Changed addon protocol JSON generation to pass resolver output through a dedicated workflow assembler stage (`src/addon_generator/fragments/assembler.py`) that normalizes processing/loading schema shape, applies deterministic ordering, and enforces sequential group/step index and duration defaults.

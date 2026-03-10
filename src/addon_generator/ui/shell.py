@@ -75,8 +75,22 @@ class MainShell(QMainWindow):
         self.stack.addWidget(MethodView(self))
         self.stack.addWidget(AssaysView(self))
         self.stack.addWidget(AnalytesView(self))
-        self.stack.addWidget(SamplePrepView(self, app_state=self.app_state, merge_service=self.merge_service))
-        self.stack.addWidget(DilutionsView(self, app_state=self.app_state, merge_service=self.merge_service))
+        self.stack.addWidget(
+            SamplePrepView(
+                self,
+                app_state=self.app_state,
+                merge_service=self.merge_service,
+                on_state_changed=self._refresh_status,
+            )
+        )
+        self.stack.addWidget(
+            DilutionsView(
+                self,
+                app_state=self.app_state,
+                merge_service=self.merge_service,
+                on_state_changed=self._refresh_status,
+            )
+        )
         self.import_review_view = ImportReviewView(
             self,
             app_state=self.app_state,
@@ -154,7 +168,6 @@ class MainShell(QMainWindow):
         self.app_state.validation_state.issues = issues
         self.app_state.validation_state.stale = False
         self.validation_view.issues.set_issues(issues)
-        self.sidebar.set_issue_count(6, len(issues))
         self._refresh_status()
 
     def run_preview(self) -> None:
@@ -219,8 +232,10 @@ class MainShell(QMainWindow):
         self.sidebar.setCurrentRow(section_index)
 
     def _refresh_status(self) -> None:
-        self.sidebar.set_issue_count(5, len(self.app_state.import_state.issues))
-        self.sidebar.set_issue_count(6, len(self.app_state.validation_state.issues))
+        self.sidebar.set_issue_count(3, self.app_state.sample_prep_badge_count)
+        self.sidebar.set_issue_count(4, self.app_state.dilutions_badge_count)
+        self.sidebar.set_issue_count(5, self.app_state.import_review_badge_count)
+        self.sidebar.set_issue_count(6, self.app_state.validation_badge_count)
         self.status_banner.set_status(
             preview_stale=self.app_state.preview_state.stale,
             has_errors=self.app_state.validation_state.has_blockers,

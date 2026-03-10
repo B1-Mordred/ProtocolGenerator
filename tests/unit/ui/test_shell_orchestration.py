@@ -120,3 +120,37 @@ def test_shell_restore_draft_applies_section_selection(qapp):
 
     assert shell.app_state.editor_state.selected_section_index == 8
     assert shell.stack.currentIndex() == 8
+
+
+def test_shell_refresh_status_sets_section_badges(qapp):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.effective_values = {
+        "hidden_vocab": {"SamplePrepAction": ["Mix"]},
+        "method": {"method_id": "", "method_version": "1"},
+    }
+    shell.app_state.editor_state.sample_prep_overrides = [
+        {"order": "", "action": "Nope", "source": "S", "destination": "", "volume": "", "duration": "", "force": ""}
+    ]
+    shell.app_state.editor_state.dilution_overrides = [
+        {"name": "D1", "buffer1_ratio": "x", "buffer2_ratio": "", "buffer3_ratio": "3"}
+    ]
+    shell.app_state.editor_state.unresolved_conflicts = {
+        "sample_prep.steps.0.action": [{}],
+        "dilution_schemes.0.buffer2_ratio": [{}],
+    }
+    shell.app_state.validation_state.issues = [IssueViewModel(code="W1", severity="warning", summary="warn")]
+
+    shell._refresh_status()
+
+    assert shell.sidebar.item(3).text() == "Sample Prep (4)"
+    assert shell.sidebar.item(4).text() == "Dilutions (3)"
+    assert shell.sidebar.item(5).text() == "Import Review (3)"
+    assert shell.sidebar.item(6).text() == "Validation (1)"

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Callable
+
 from PySide6.QtCore import QAbstractTableModel, QModelIndex, Qt
 from PySide6.QtWidgets import (
     QFormLayout,
@@ -63,9 +65,17 @@ class _SamplePrepTableModel(QAbstractTableModel):
 
 
 class SamplePrepView(QWidget):
-    def __init__(self, parent=None, *, app_state: AppState | None = None, merge_service: MergeServiceAdapter | None = None) -> None:
+    def __init__(
+        self,
+        parent=None,
+        *,
+        app_state: AppState | None = None,
+        merge_service: MergeServiceAdapter | None = None,
+        on_state_changed: Callable[[], None] | None = None,
+    ) -> None:
         super().__init__(parent)
         self._vm = SamplePrepScreenViewModel(app_state or AppState(), merge_service or MergeServiceAdapter())
+        self._on_state_changed = on_state_changed
 
         layout = QVBoxLayout(self)
         actions = QHBoxLayout()
@@ -133,30 +143,35 @@ class SamplePrepView(QWidget):
     def _add_step(self) -> None:
         step_id = self._vm.add_step()
         self._refresh_all(select_step=step_id)
+        self._notify_state_changed()
 
     def _delete_step(self) -> None:
         step_id = self._current_step_id()
         if step_id:
             self._vm.delete_step(step_id)
             self._refresh_all(select_step=self._vm.selected_step_id)
+            self._notify_state_changed()
 
     def _move_up(self) -> None:
         step_id = self._current_step_id()
         if step_id:
             self._vm.move_up(step_id)
             self._refresh_all(select_step=step_id)
+            self._notify_state_changed()
 
     def _move_down(self) -> None:
         step_id = self._current_step_id()
         if step_id:
             self._vm.move_down(step_id)
             self._refresh_all(select_step=step_id)
+            self._notify_state_changed()
 
     def _duplicate_step(self) -> None:
         step_id = self._current_step_id()
         if step_id:
             new_id = self._vm.duplicate_step(step_id)
             self._refresh_all(select_step=new_id)
+            self._notify_state_changed()
 
     def _update_field(self, field: str) -> None:
         step_id = self._current_step_id()
@@ -164,6 +179,7 @@ class SamplePrepView(QWidget):
             return
         self._vm.update_field(step_id, field, self.detail.inputs[FORM_LABELS[field]].text())
         self._refresh_all(select_step=step_id)
+        self._notify_state_changed()
 
     def _reset_field(self, field: str) -> None:
         step_id = self._current_step_id()
@@ -171,6 +187,7 @@ class SamplePrepView(QWidget):
             return
         self._vm.reset_field(step_id, field)
         self._refresh_all(select_step=step_id)
+        self._notify_state_changed()
 
     def _refresh_all(self, *, select_step: str | None = None) -> None:
         self.table_model.refresh()
@@ -196,3 +213,7 @@ class SamplePrepView(QWidget):
             edit.setText(field.value)
             edit.setStyleSheet("border: 1px solid #cc0000;" if not field.is_valid else "")
             self.provenance_labels[name].setText(f"[{field.provenance or 'manual'} | {field.status}]")
+
+    def _notify_state_changed(self) -> None:
+        if self._on_state_changed:
+            self._on_state_changed()
