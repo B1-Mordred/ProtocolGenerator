@@ -66,16 +66,22 @@ protocol-generator-gui
 - Protocol generation now applies conditional multi-assay behavior by generating per-assay processing groups and using a schema-valid `SamplesLayoutType` (`SAMPLES_LAYOUT_SPLIT` fallback or configured default) when multiple assays are present.
 - Generation service package builder now exports deterministic addon bundles under `<method-id>-<method-version>/` containing `ProtocolFile.json`, `Analytes.xml`, and `package-metadata.json`, with configurable collision policies (`error`/`increment`), overwrite enforcement, and temp-write then atomic-move semantics for robust destination handling.
 
-## Build Windows executable
+## Build desktop bundles (spec-driven)
 
 ```powershell
-./build_windows_exe.ps1
+./scripts/build_windows.ps1
 ```
 
-The script creates a one-file desktop executable using PyInstaller.
+```bash
+./scripts/build_macos.sh
+./scripts/build_linux.sh
+```
 
-The Windows build uses `python -m PyInstaller`, embeds `protocol.schema.json` via `--add-data`, and resolves schema resources from bundled runtime paths so the EXE has no external schema-file dependency.
-Module-safe imports in `src/protocol_generator_gui/main.py` prevent packaged startup failures from relative-import errors.
+All platform scripts call `python -m PyInstaller` against `build/pyinstaller/addon_authoring.spec` and produce one-folder (`COLLECT`) bundles.
+
+The shared spec uses `src/addon_generator/ui/app.py` as the entry point and bundles runtime resources required by authoring/generation, including `protocol.schema.json`, `AddOn.xsd`, `config/mapping.v1.yaml`, fragment resources, canonical UI resources under `src/addon_generator/resources`, and deploy metadata/icon folders under `deploy/`.
+
+`build_windows_exe.ps1` remains as a compatibility wrapper that forwards to `scripts/build_windows.ps1`.
 
 ## Testing
 
