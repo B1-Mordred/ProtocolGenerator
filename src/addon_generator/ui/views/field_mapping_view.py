@@ -19,6 +19,7 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QTableWidget,
     QTableWidgetItem,
+    QTabWidget,
     QTextEdit,
     QVBoxLayout,
     QWidget,
@@ -129,6 +130,26 @@ class FieldMappingView(QWidget):
         map_actions.addStretch(1)
         root.addLayout(map_actions)
 
+        preview_group = QGroupBox("Preview", self)
+        preview_layout = QVBoxLayout(preview_group)
+        preview_header = QHBoxLayout()
+        self.preview_status_label = QLabel("", preview_group)
+        self.refresh_preview_btn = QPushButton("Refresh Preview", preview_group)
+        preview_header.addWidget(self.preview_status_label)
+        preview_header.addStretch(1)
+        preview_header.addWidget(self.refresh_preview_btn)
+        preview_layout.addLayout(preview_header)
+
+        self.preview_tabs = QTabWidget(preview_group)
+        self._preview_text_by_artifact: dict[str, QTextEdit] = {}
+        for artifact_name in ("Analytes.xml", "AddOn.xml", "ProtocolFile.json"):
+            artifact_text = QTextEdit(self.preview_tabs)
+            artifact_text.setReadOnly(True)
+            self._preview_text_by_artifact[artifact_name] = artifact_text
+            self.preview_tabs.addTab(artifact_text, artifact_name)
+        preview_layout.addWidget(self.preview_tabs)
+        root.addWidget(preview_group)
+
         helper = QGroupBox("Expression Builder", self)
         helper_layout = QFormLayout(helper)
         self.token_selector = self._create_picker_combo(SOURCE_TOKEN_OPTIONS, SOURCE_OPTION_GROUPS)
@@ -167,6 +188,7 @@ class FieldMappingView(QWidget):
         self.template_selector.currentTextChanged.connect(self._load_template)
         self.append_token_btn.clicked.connect(self._append_token)
         self.wrap_concat_btn.clicked.connect(self._wrap_concat)
+        self.refresh_preview_btn.clicked.connect(self._refresh_preview)
 
         self._ensure_mapping_settings()
         self._refresh_templates()
@@ -205,7 +227,7 @@ class FieldMappingView(QWidget):
 
             target_box = self._create_picker_combo(TARGET_OPTIONS, TARGET_OPTION_GROUPS)
             target_box.setCurrentText(str(row.get("target", "")))
-            target_box.currentTextChanged.connect(lambda _value, row_idx=idx: self._validate_row(row_idx))
+            target_box.currentTextChanged.connect(lambda _value, row_idx=idx: self._on_target_changed(row_idx))
             self.mapping_table.setCellWidget(idx, 1, target_box)
 
             expr_item = QTableWidgetItem(str(row.get("expression", "")))
@@ -213,6 +235,7 @@ class FieldMappingView(QWidget):
             self._set_status_item(idx, "")
             self._validate_row(idx)
         self.mapping_table.resizeColumnsToContents()
+        self._refresh_preview()
 
     def _collect_rows(self) -> list[dict[str, object]]:
         output: list[dict[str, object]] = []
@@ -237,6 +260,7 @@ class FieldMappingView(QWidget):
         self._templates()[name] = self._collect_rows()
         self._app_state.editor_state.export_settings["field_mapping"]["active_template"] = name
         self._notify_change()
+        self._refresh_preview()
 
     def _new_template(self) -> None:
         name = self._next_available_template_name("Template")
@@ -341,16 +365,18 @@ class FieldMappingView(QWidget):
         enabled_item.setCheckState(Qt.CheckState.Checked)
         self.mapping_table.setItem(row, 0, enabled_item)
         target_box = self._create_picker_combo(TARGET_OPTIONS, TARGET_OPTION_GROUPS)
-        target_box.currentTextChanged.connect(lambda _value, row_idx=row: self._validate_row(row_idx))
+        target_box.currentTextChanged.connect(lambda _value, row_idx=row: self._on_target_changed(row_idx))
         self.mapping_table.setCellWidget(row, 1, target_box)
         self.mapping_table.setItem(row, 2, QTableWidgetItem(""))
         self._set_status_item(row, "⚠️ Error: Expression is required")
+        self._refresh_preview()
 
     def _remove_row(self) -> None:
         selected = self.mapping_table.selectionModel().selectedRows()
         if not selected:
             return
         self.mapping_table.removeRow(selected[0].row())
+        self._refresh_preview()
 
     def _append_token(self) -> None:
         selected = self.mapping_table.selectionModel().selectedRows()
@@ -367,6 +393,7 @@ class FieldMappingView(QWidget):
         prefix = expr_item.text().strip()
         expr_item.setText(f"{prefix}, {token}" if prefix else token)
         self._validate_row(row)
+        self._refresh_preview()
 
     def _wrap_concat(self) -> None:
         selected = self.mapping_table.selectionModel().selectedRows()
@@ -385,10 +412,16 @@ class FieldMappingView(QWidget):
         else:
             expr_item.setText(f"concat({expr})")
         self._validate_row(row)
+        self._refresh_preview()
+
+    def _on_target_changed(self, row: int) -> None:
+        self._validate_row(row)
+        self._refresh_preview()
 
     def _on_item_changed(self, item: QTableWidgetItem) -> None:
         if item.column() in (0, 2):
             self._validate_row(item.row())
+            self._refresh_preview()
 
     def _set_status_item(self, row: int, text: str) -> None:
         current = self.mapping_table.item(row, 3)
@@ -430,6 +463,140 @@ class FieldMappingView(QWidget):
     def _notify_change(self) -> None:
         if self._on_state_changed:
             self._on_state_changed()
+
+    def _refresh_preview(self) -> None:
+        artifact_lines = {"Analytes.xml": [], "AddOn.xml": [], "ProtocolFile.json": []}
+        warnings: list[str] = []
+        for row in self._collect_rows():
+            if not bool(row.get("enabled", True)):
+                continue
+            target = str(row.get("target", "")).strip()
+            expression = str(row.get("expression", "")).strip()
+            if not target or not expression:
+                continue
+            artifact, _, target_path = target.partition(":")
+            if artifact not in artifact_lines:
+                continue
+            values, row_warnings = self._resolve_expression_values(expression)
+            warnings.extend(row_warnings)
+            for value in values:
+                artifact_lines[artifact].append(f"{target_path} = {value}")
+
+        for artifact, widget in self._preview_text_by_artifact.items():
+            widget.setPlainText("\n".join(artifact_lines[artifact] or ["(no enabled mappings for this artifact)"]))
+
+        if warnings:
+            self.preview_status_label.setText(f"⚠️ {len(warnings)} warning(s) while resolving source values")
+            self.preview_status_label.setToolTip("\n".join(warnings))
+        else:
+            self.preview_status_label.setText("✅ Preview current")
+            self.preview_status_label.setToolTip("")
+
+    def _resolve_expression_values(self, expression: str) -> tuple[list[str], list[str]]:
+        if expression.startswith("concat(") and expression.endswith(")"):
+            return self._resolve_concat_values(expression)
+        return self._resolve_token_values(expression)
+
+    def _resolve_concat_values(self, expression: str) -> tuple[list[str], list[str]]:
+        content = expression[len("concat(") : -1].strip()
+        parts = self._split_arguments(content)
+        delimiter = ""
+        token_parts = parts
+        if parts and parts[0].startswith("delimiter"):
+            _, _, raw = parts[0].partition("=")
+            cleaned = raw.strip()
+            if len(cleaned) >= 2 and cleaned[0] in ("'", '"') and cleaned[-1] == cleaned[0]:
+                delimiter = cleaned[1:-1]
+            token_parts = parts[1:]
+
+        resolved_values: list[list[str]] = []
+        warnings: list[str] = []
+        for token in token_parts:
+            values, token_warnings = self._resolve_token_values(token)
+            if values:
+                resolved_values.append(values)
+            warnings.extend(token_warnings)
+
+        row_count = max((len(values) for values in resolved_values), default=1)
+        lines: list[str] = []
+        for idx in range(row_count):
+            pieces = [values[idx] if idx < len(values) else values[-1] for values in resolved_values]
+            lines.append(delimiter.join(pieces))
+        return lines, warnings
+
+    def _resolve_token_values(self, token: str) -> tuple[list[str], list[str]]:
+        value = token.strip()
+        if value.startswith("default:"):
+            return [value[len("default:") :]], []
+        if value.startswith("custom:"):
+            return [value[len("custom:") :]], []
+        if value.startswith("input:"):
+            return self._resolve_input_values(value)
+        return [f"<invalid:{value}>"] if value else ["<invalid>"], []
+
+    def _resolve_input_values(self, token: str) -> tuple[list[str], list[str]]:
+        path = token[len("input:") :].strip()
+        segments = [segment for segment in path.split(".") if segment]
+        cursor: list[object] = [self._app_state.editor_state.effective_values]
+        for segment in segments:
+            is_list = segment.endswith("[]")
+            key = segment[:-2] if is_list else segment
+            next_cursor: list[object] = []
+            for current in cursor:
+                if not isinstance(current, dict):
+                    continue
+                raw = current.get(key)
+                if raw is None:
+                    continue
+                if is_list and isinstance(raw, list):
+                    next_cursor.extend(raw)
+                else:
+                    next_cursor.append(raw)
+            cursor = next_cursor
+            if not cursor:
+                warning = f"No source value for input:{path}"
+                return [f"<missing:{path}>"], [warning]
+
+        normalized = [str(item).strip() for item in cursor if str(item).strip()]
+        if not normalized:
+            warning = f"No source value for input:{path}"
+            return [f"<missing:{path}>"], [warning]
+        return normalized, []
+
+    def _split_arguments(self, value: str) -> list[str]:
+        parts: list[str] = []
+        current: list[str] = []
+        quote: str | None = None
+        depth = 0
+        for char in value:
+            if quote:
+                current.append(char)
+                if char == quote:
+                    quote = None
+                continue
+            if char in ("'", '"'):
+                quote = char
+                current.append(char)
+                continue
+            if char == "(":
+                depth += 1
+                current.append(char)
+                continue
+            if char == ")":
+                depth = max(0, depth - 1)
+                current.append(char)
+                continue
+            if char == "," and depth == 0:
+                part = "".join(current).strip()
+                if part:
+                    parts.append(part)
+                current = []
+                continue
+            current.append(char)
+        tail = "".join(current).strip()
+        if tail:
+            parts.append(tail)
+        return parts
 
     def _create_picker_combo(self, options: list[PickerOption], groups: dict[str, tuple[str, ...]]) -> QComboBox:
         combo = QComboBox(self.mapping_table)
