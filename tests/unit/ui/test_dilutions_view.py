@@ -49,3 +49,37 @@ def test_dilutions_view_emits_state_changed_on_mutations(qapp):
     view.inputs["name"].editingFinished.emit()
 
     assert len(calls) >= 2
+
+
+def test_dilutions_view_duplicate_delete_invalid_status_and_stale_flags(qapp):
+    state = AppState()
+    state.import_state.bundles = [InputDTOBundle(source_type="excel")]
+    view = DilutionsView(app_state=state)
+
+    view.add_btn.click()
+    first_id = view._vm.selected_dilution_id
+    assert first_id is not None
+    view.inputs["name"].setText("Base")
+    view.inputs["name"].editingFinished.emit()
+    view.inputs["buffer1_ratio"].setText("1")
+    view.inputs["buffer1_ratio"].editingFinished.emit()
+    view.inputs["buffer2_ratio"].setText("2")
+    view.inputs["buffer2_ratio"].editingFinished.emit()
+    view.inputs["buffer3_ratio"].setText("3")
+    view.inputs["buffer3_ratio"].editingFinished.emit()
+
+    view.duplicate_btn.click()
+    second_id = view._vm.selected_dilution_id
+    assert second_id is not None and second_id != first_id
+
+    view.inputs["buffer1_ratio"].setText("0")
+    view.inputs["buffer1_ratio"].editingFinished.emit()
+    assert view.status_label.text() in {"incomplete and invalid ratio", "invalid ratio"}
+    assert "invalid-ratio" in view.provenance_labels["buffer1_ratio"].text()
+
+    view.delete_btn.click()
+    assert len(view._vm.dilutions) == 1
+    assert view._vm.dilutions[0].dilution_id == first_id
+    assert state.editor_state.manual_overrides["dilution_schemes"][0]["name"] == "Base"
+    assert state.preview_state.stale is True
+    assert state.validation_state.stale is True

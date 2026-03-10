@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- GUI test coverage now includes dedicated unit flows for Sample Prep, Dilutions, Import Review, and sidebar-badge refresh behavior, plus an expanded authoring integration scenario for conflict resolution and stale-preview lifecycle verification.
 - New business-oriented PySide6 UI foundation under `src/addon_generator/ui/` with a `QMainWindow` shell, section navigation, stacked domain editors (Method/Assays/Analytes/Sample Prep/Dilutions/Import Review/Validation/Preview/Export), reusable widgets, UI state containers, and thin service adapters that orchestrate import→merge→validate→preview→export through backend services.
 - Draft persistence now supports save/load/restore of editor selection, preview/validation state, and imported method identity metadata to continue unresolved work across sessions.
 - MainShell now wires toolbar actions and screen controls through injected UI service adapters (import/merge/validate/preview/export/draft), updates status/issue badges, disables export on validation blockers, and restores section selection from draft state.
