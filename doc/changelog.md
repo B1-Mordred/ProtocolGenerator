@@ -3,6 +3,7 @@
 ## 2026-03-10
 
 ### Changed
+- Added a Help menu to the PySide6 shell (`Check for Updates`, `Open Logs`, `About`), wired About metadata rendering from `addon_generator.__about__`, connected update checks/staging prompts through the new UI update service, and opened runtime log locations via the centralized runtime path utility; added UI unit tests for menu actions and callback flows.
 - Expanded UI shell status orchestration with computed app-state dimensions for validation staleness/currentness, preview staleness/currentness, export readiness/blocking, and draft dirty/saved state; updated status banner API/text and added focused transition tests for post-edit, post-validate, post-preview, post-export, and post-save/restore flows.
 - Introduced an updater foundation (`src/addon_generator/update/` + `src/addon_generator/ui/services/update_service.py`) covering local version lookup, HTTPS manifest retrieval, semantic version comparison, per-platform artifact download, SHA256 verification, installer launch, and restart handoff persistence; update failures now log via runtime logging and return structured UI-friendly error payloads.
 - Moved draft/config/log path resolution to a centralized runtime path utility with OS-specific defaults (`%APPDATA%`/`%LOCALAPPDATA%` on Windows, `~/Library/...` on macOS, `~/.config` and `~/.local/state` on Linux) and updated UI draft save behavior to use these computed directories instead of relative `drafts/`.

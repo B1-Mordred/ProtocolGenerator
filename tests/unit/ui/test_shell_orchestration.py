@@ -8,6 +8,7 @@ except Exception as exc:  # pragma: no cover - environment/runtime dependent
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
 from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QMessageBox
 
 from addon_generator.ui.models.issue_view_model import IssueViewModel
@@ -25,7 +26,7 @@ def qapp():
 
 @pytest.fixture
 def messagebox_spy(monkeypatch):
-    calls = {"info": [], "question": []}
+    calls = {"info": [], "question": [], "warning": [], "about": []}
 
     def _info(parent, title, text):
         calls["info"].append((title, text))
@@ -35,8 +36,18 @@ def messagebox_spy(monkeypatch):
         calls["question"].append((title, text))
         return QMessageBox.StandardButton.Yes
 
+    def _warning(parent, title, text):
+        calls["warning"].append((title, text))
+        return QMessageBox.StandardButton.Ok
+
+    def _about(parent, title, text):
+        calls["about"].append((title, text))
+        return QMessageBox.StandardButton.Ok
+
     monkeypatch.setattr(QMessageBox, "information", staticmethod(_info))
     monkeypatch.setattr(QMessageBox, "question", staticmethod(_question))
+    monkeypatch.setattr(QMessageBox, "warning", staticmethod(_warning))
+    monkeypatch.setattr(QMessageBox, "about", staticmethod(_about))
     return calls
 
 
@@ -91,6 +102,23 @@ class _ExportService:
         self.result.destination = destination_folder
         return self.result
 
+
+
+
+class _UpdateService:
+    def __init__(self, *, check_result=(None, None), stage_result=(None, None)):
+        self.check_result = check_result
+        self.stage_result = stage_result
+        self.check_calls = []
+        self.stage_calls = []
+
+    def check(self, *, manifest_url):
+        self.check_calls.append(manifest_url)
+        return self.check_result
+
+    def stage_update(self, *, manifest_url, download_dir, restart_command):
+        self.stage_calls.append((manifest_url, download_dir, restart_command))
+        return self.stage_result
 
 class _DraftService:
     def __init__(self):
@@ -381,3 +409,63 @@ def test_shell_status_transitions_post_edit_validate_preview_export_and_save_res
     shell.restore_draft()
     assert shell.app_state.draft_is_saved is True
     assert shell.status_banner.text() == "Validation: stale | Preview: stale | Export: blocked | Draft: saved"
+
+
+def test_shell_help_menu_actions_present(qapp):
+    shell = MainShell()
+    labels = [action.text() for action in shell.help_menu.actions()]
+
+    assert labels == ["Check for Updates", "Open Logs", "About"]
+
+
+def test_shell_about_dialog_uses_about_metadata(qapp, messagebox_spy):
+    shell = MainShell()
+
+    shell.show_about_dialog()
+
+    assert messagebox_spy["about"]
+    _title, message = messagebox_spy["about"][0]
+    assert "App Version:" in message
+    assert "Build Version:" in message
+    assert "Draft Format Version:" in message
+    assert "Config Schema Version:" in message
+
+
+def test_shell_check_for_updates_prompts_and_stages(qapp, messagebox_spy):
+    update_service = _UpdateService(
+        check_result=(type("R", (), {"status": "available", "available_version": "9.9.9", "current_version": "0.1.0"})(), None),
+        stage_result=(type("R", (), {"details": "Installer launched."})(), None),
+    )
+    shell = MainShell(update_service=update_service)
+
+    shell.check_for_updates()
+
+    assert update_service.check_calls
+    assert messagebox_spy["question"]
+    assert update_service.stage_calls
+    assert messagebox_spy["info"]
+
+
+def test_shell_check_for_updates_handles_error(qapp, messagebox_spy):
+    update_service = _UpdateService(check_result=(None, {"message": "offline"}))
+    shell = MainShell(update_service=update_service)
+
+    shell.check_for_updates()
+
+    assert messagebox_spy["warning"] == [("Update Check Failed", "offline")]
+
+
+def test_shell_open_logs_uses_runtime_log_directory(qapp, monkeypatch, tmp_path):
+    shell = MainShell()
+    opened = []
+
+    class _Paths:
+        logs_dir = tmp_path / "logs"
+
+    monkeypatch.setattr("addon_generator.ui.shell.get_runtime_paths", lambda: _Paths())
+    monkeypatch.setattr(QDesktopServices, "openUrl", staticmethod(lambda url: opened.append(url.toLocalFile()) or True))
+
+    shell.open_logs_directory()
+
+    assert opened == [str(tmp_path / "logs")]
+    assert (tmp_path / "logs").exists()

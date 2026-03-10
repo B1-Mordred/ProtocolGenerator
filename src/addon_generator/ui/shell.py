@@ -5,12 +5,13 @@ import json
 from pathlib import Path
 from typing import Callable
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QCloseEvent
+from PySide6.QtCore import Qt, QUrl
+from PySide6.QtGui import QAction, QCloseEvent, QDesktopServices
 from PySide6.QtWidgets import (
     QDockWidget,
     QFileDialog,
     QMainWindow,
+    QMenu,
     QMessageBox,
     QPushButton,
     QStackedWidget,
@@ -18,13 +19,19 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
-from addon_generator.__about__ import __app_name__
+from addon_generator.__about__ import (
+    __app_name__,
+    __config_schema_version__,
+    __draft_format_version__,
+    __version__,
+)
 from addon_generator.runtime.paths import get_runtime_paths
 from addon_generator.ui.services.draft_service import DraftService
 from addon_generator.ui.services.export_service import ExportResult, ExportService
 from addon_generator.ui.services.import_service import ImportService
 from addon_generator.ui.services.merge_service_adapter import MergeServiceAdapter
 from addon_generator.ui.services.preview_service import PreviewService
+from addon_generator.ui.services.update_service import UpdateService
 from addon_generator.ui.services.validation_service import ValidationService
 from addon_generator.ui.state.app_state import AppState
 from addon_generator.ui.views.analytes_view import AnalytesView
@@ -40,6 +47,10 @@ from addon_generator.ui.widgets.field_help_panel import FieldHelpPanel
 from addon_generator.ui.widgets.navigation_sidebar import NavigationSidebar
 from addon_generator.ui.widgets.status_banner import StatusBanner
 
+
+
+
+DEFAULT_UPDATE_MANIFEST_URL = "https://example.invalid/addon-generator/update.json"
 
 SECTIONS = [
     "Method",
@@ -65,6 +76,7 @@ class MainShell(QMainWindow):
         preview_service: PreviewService | None = None,
         export_service: ExportService | None = None,
         draft_service: DraftService | None = None,
+        update_service: UpdateService | None = None,
     ) -> None:
         super().__init__()
         self.app_state = app_state or AppState()
@@ -74,6 +86,7 @@ class MainShell(QMainWindow):
         self.preview_service = preview_service or PreviewService()
         self.export_service = export_service or ExportService()
         self.draft_service = draft_service or DraftService()
+        self.update_service = update_service or UpdateService()
 
         self.setWindowTitle(__app_name__)
         self._last_merged_bundle = None
@@ -136,6 +149,8 @@ class MainShell(QMainWindow):
         self._add_toolbar_action("Export", self.run_export)
         self.addToolBar(self.toolbar)
 
+        self.help_menu = self._build_help_menu()
+
         self.status_banner = StatusBanner(self)
         status_bar = QStatusBar(self)
         status_bar.addWidget(self.status_banner)
@@ -149,6 +164,78 @@ class MainShell(QMainWindow):
 
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
         self._refresh_status()
+
+    def _build_help_menu(self) -> QMenu:
+        help_menu = self.menuBar().addMenu("Help")
+
+        check_updates_action = QAction("Check for Updates", self)
+        check_updates_action.triggered.connect(self.check_for_updates)
+        help_menu.addAction(check_updates_action)
+
+        open_logs_action = QAction("Open Logs", self)
+        open_logs_action.triggered.connect(self.open_logs_directory)
+        help_menu.addAction(open_logs_action)
+
+        about_action = QAction("About", self)
+        about_action.triggered.connect(self.show_about_dialog)
+        help_menu.addAction(about_action)
+        return help_menu
+
+    def check_for_updates(self) -> None:
+        manifest_url = self.app_state.editor_state.export_settings.get("update_manifest_url") or DEFAULT_UPDATE_MANIFEST_URL
+        check_result, check_error = self.update_service.check(manifest_url=manifest_url)
+        if check_error:
+            QMessageBox.warning(self, "Update Check Failed", check_error["message"])
+            return
+        if check_result.status != "available":
+            QMessageBox.information(self, "Updates", "You are already up to date.")
+            return
+
+        response = QMessageBox.question(
+            self,
+            "Update Available",
+            f"Version {check_result.available_version} is available (current: {check_result.current_version}).\n"
+            "Would you like to download and install it now?",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
+            QMessageBox.StandardButton.Yes,
+        )
+        if response != QMessageBox.StandardButton.Yes:
+            return
+
+        stage_result, stage_error = self.update_service.stage_update(
+            manifest_url=manifest_url,
+            download_dir=get_runtime_paths().runtime_support_dir / "updates",
+            restart_command=[str(Path(__file__).resolve())],
+        )
+        if stage_error:
+            QMessageBox.warning(self, "Update Failed", stage_error["message"])
+            return
+        QMessageBox.information(
+            self,
+            "Update Ready",
+            stage_result.details or "Update installer launched. Follow installer instructions to complete the update.",
+        )
+
+    def open_logs_directory(self) -> None:
+        logs_dir = get_runtime_paths().logs_dir
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        QDesktopServices.openUrl(QUrl.fromLocalFile(str(logs_dir)))
+
+    def show_about_dialog(self) -> None:
+        build_version = __version__.split("+", maxsplit=1)[1] if "+" in __version__ else "n/a"
+        QMessageBox.about(
+            self,
+            "About",
+            "\n".join(
+                [
+                    __app_name__,
+                    f"App Version: {__version__}",
+                    f"Build Version: {build_version}",
+                    f"Draft Format Version: {__draft_format_version__}",
+                    f"Config Schema Version: {__config_schema_version__}",
+                ]
+            ),
+        )
 
     def _add_toolbar_action(self, label: str, callback: Callable[[], None]) -> None:
         button = QPushButton(label, self)
