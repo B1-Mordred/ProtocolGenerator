@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from addon_generator.input_models.dtos import (
@@ -210,6 +211,98 @@ def test_draft_roundtrip_recompute_reproduces_preview_and_validation_state(tmp_p
     assert restored_state.import_state.conflict_summary["total"] >= 1
     assert restored_state.validation_state.stale is True
     assert restored_state.preview_state.stale is True
+
+
+def test_draft_service_load_combined_recovery_file_merges_manual_snapshot(tmp_path: Path) -> None:
+    path = tmp_path / "combined-recovery.json"
+    path.write_text(
+        json.dumps(
+            {
+                "draft": {
+                    "draft_state": {"dirty": True, "last_saved_at": None, "path": None, "payload": {}, "restore_metadata": {}},
+                    "editor_state": {
+                        "manual_overrides": {},
+                        "sample_prep_overrides": [],
+                        "dilution_overrides": [],
+                        "selected_sample_prep_step_id": None,
+                        "selected_dilution_id": None,
+                        "manual_edit_markers": {},
+                        "effective_values": {},
+                        "unresolved_conflicts": {},
+                        "selected_entity": None,
+                        "selected_section_index": 0,
+                        "export_settings": {"admin_kit_types": ["Sample", "Reagent"]},
+                    },
+                    "import_state": {
+                        "bundles": [],
+                        "provenance": {},
+                        "imported_sample_prep_dtos": [],
+                        "imported_dilution_dtos": [],
+                        "conflict_summary": {"total": 0, "unresolved": 0},
+                        "provenance_lookup": {},
+                        "issues": [],
+                        "review_resolutions": {},
+                    },
+                    "preview_state": {
+                        "stale": True,
+                        "protocol_json": "",
+                        "analytes_xml": "",
+                        "summary": None,
+                        "validation_state_snapshot": "unknown",
+                        "export_readiness_snapshot": False,
+                        "last_generated_at": None,
+                        "generation_error": None,
+                    },
+                    "validation_state": {
+                        "stale": True,
+                        "issues": [],
+                        "grouped_issues": {},
+                        "severity_counts": {"error": 0, "warning": 0, "info": 0},
+                        "category_counts": {},
+                        "export_blocked": False,
+                        "last_validated_at": None,
+                    },
+                },
+                "manual_entry_snapshot": {
+                    "method": {
+                        "addon_product_name": "TDM Series A",
+                        "addon_product_number": "42952",
+                        "addon_series": "MassPrep®",
+                        "kit_name": "TDM Series A",
+                        "kit_product_number": "92711",
+                        "kit_series": "MassTox®",
+                    },
+                    "assays": [
+                        {
+                            "assay_abbreviation": "",
+                            "component_name": "Urine",
+                            "container_type": "Sample Tube",
+                            "parameter_set_name": "",
+                            "parameter_set_number": "",
+                            "product_number": "",
+                            "type": "Sample",
+                        }
+                    ],
+                    "analytes": [],
+                    "dilutions": [{"buffer1_ratio": "100", "buffer2_ratio": "", "buffer3_ratio": "", "key": "1+2"}],
+                    "sample_prep": [],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    service = DraftService()
+    payload = service.load(path)
+    restored_state = AppState()
+    service.restore(restored_state, payload, source_path=str(path))
+
+    bundle = restored_state.import_state.bundles[0]
+    assert bundle.method is not None
+    assert bundle.method.series_name == "MassTox®"
+    assert bundle.assays[0].metadata["component_name"] == "Urine"
+    assert bundle.dilution_schemes[0].key == "1+2"
+    assert restored_state.editor_state.export_settings["admin_kit_types"] == ["Sample", "Reagent"]
 
 def test_import_service_coerces_provenance() -> None:
     bundle = InputDTOBundle(
