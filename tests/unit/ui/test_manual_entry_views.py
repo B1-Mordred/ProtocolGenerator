@@ -39,14 +39,26 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
     assert view.sample_prep_table.rowCount() == 1
     assert view.dilutions_table.rowCount() == 1
 
-    view.basics_fields["method_id"].setText("M-1")
     view.basics_fields["kit_series"].setText("KIT")
+    view.basics_fields["kit_name"].setText("KIT-NAME")
 
     view.assays_table.setItem(0, 0, QTableWidgetItem("A1"))
     view.assays_table.setItem(0, 1, QTableWidgetItem("P"))
 
     payload = view.payload()
-    assert payload["method"]["method_id"] == "M-1"
+    assert "method_id" not in payload["method"]
+    assert "method_version" not in payload["method"]
+    assert "display_name" not in payload["method"]
     assert payload["method"]["kit_series"] == "KIT"
+    assert payload["method"]["kit_name"] == "KIT-NAME"
     assert payload["assays"][0]["key"] == "A1"
     assert called["count"] >= 2
+
+
+def test_manual_entry_basics_fields_hide_method_identity_and_add_kit_name(qapp) -> None:
+    view = ManualEntryView()
+
+    assert "method_id" not in view.basics_fields
+    assert "method_version" not in view.basics_fields
+    assert "display_name" not in view.basics_fields
+    assert "kit_name" in view.basics_fields

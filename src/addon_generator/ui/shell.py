@@ -322,12 +322,13 @@ class MainShell(QMainWindow):
     def _on_manual_data_changed(self) -> None:
         payload = self.manual_entry_view.payload()
         method = payload["method"]
+        current_method = self._current_merged_bundle().method if self._current_merged_bundle() else None
         bundle = map_gui_payload_to_bundle(
             {
-                "method_id": method.get("method_id", ""),
-                "method_version": method.get("method_version", ""),
+                "method_id": method.get("method_id", "") or (current_method.method_id if current_method else ""),
+                "method_version": method.get("method_version", "") or (current_method.method_version if current_method else ""),
                 "MethodInformation": {
-                    "DisplayName": method.get("display_name", ""),
+                    "DisplayName": method.get("display_name", "") or method.get("kit_name", ""),
                     "SeriesName": method.get("kit_series", ""),
                     "OrderNumber": method.get("kit_product_number", ""),
                     "MainTitle": method.get("addon_series", ""),

@@ -155,3 +155,39 @@ def test_workbook_parser_reports_sheet_specific_duplicate_row_diagnostics(tmp_pa
         "name": "Std1",
         "duplicate_key": "Std1",
     }
+
+
+def test_workbook_parser_supports_case_and_spacing_variants_in_sheet_names(tmp_path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    basics = wb.create_sheet(" Basics ")
+    basics.append(["Method Id", "M-200"])
+    basics.append(["Method Version", "1.0"])
+    basics.append(["Method Display Name", "Panel B"])
+    basics.append([])
+    basics.append(["Assay Key", "Protocol Type", "Protocol Display Name", "Xml Assay Name"])
+    basics.append(["assay:chem", "CHEM", "Chemistry", "Chemistry"])
+
+    analytes = wb.create_sheet("Analytes ")
+    analytes.append(["Analyte", "Unit", "Parameter Set", "Assay Key"])
+    analytes.append(["GLU", "mg/dL", "CHEM", "assay:chem"])
+
+    hidden = wb.create_sheet(" hidden_lists ")
+    hidden.append(["Units"])
+    hidden.append(["mg/dL"])
+
+    path = tmp_path / "variant-sheet-names.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert bundle.method is not None
+    assert bundle.method.method_id == "M-200"
+    assert [a.key for a in bundle.assays] == ["assay:chem"]
+    assert [a.name for a in bundle.analytes] == ["GLU"]
+
+
+def test_supports_workbook_template_normalizes_sheet_names() -> None:
+    assert ExcelWorkbookParser.supports_workbook_template([" Basics ", "ANALYTES", "hidden_lists", "AddOn CheckList"]) is True

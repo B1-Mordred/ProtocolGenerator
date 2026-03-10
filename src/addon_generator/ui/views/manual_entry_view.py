@@ -50,10 +50,8 @@ class ManualEntryView(QWidget):
         widget = QWidget(self)
         layout = QFormLayout(widget)
         fields = [
-            ("method_id", "Method ID"),
-            ("method_version", "Method Version"),
-            ("display_name", "Display Name"),
             ("kit_series", "Kit Series"),
+            ("kit_name", "Kit Name"),
             ("kit_product_number", "Kit Product Number"),
             ("addon_series", "AddOn Series"),
             ("addon_product_name", "AddOn Product Name"),
