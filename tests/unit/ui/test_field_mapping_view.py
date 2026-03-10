@@ -266,3 +266,51 @@ def test_field_mapping_allows_save_for_invalid_disabled_rows(qapp) -> None:
     saved = state.editor_state.export_settings["field_mapping"]["templates"][active]
     assert saved and saved[0]["enabled"] is False
     assert view.mapping_table.item(row, 3).text().startswith("⚠️ Disabled row:")
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_preview_updates_after_row_edits(qapp) -> None:
+    state = AppState()
+    state.editor_state.effective_values = {
+        "method": {"kit_name": "Kit-A"},
+        "analytes": [{"name": "Na"}, {"name": "K"}],
+    }
+    view = FieldMappingView(app_state=state)
+
+    view._add_row()
+    target_widget = view.mapping_table.cellWidget(0, 1)
+    assert isinstance(target_widget, QComboBox)
+    target_widget.setCurrentText("ProtocolFile.json:method.id")
+    view.mapping_table.item(0, 2).setText("input:method.kit_name")
+
+    protocol_preview = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
+    assert "method.id = Kit-A" in protocol_preview
+
+    view.mapping_table.item(0, 2).setText("input:method.missing_value")
+    protocol_preview = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
+    assert "method.id = <missing:method.missing_value>" in protocol_preview
+    assert "No source value for input:method.missing_value" in view.preview_status_label.toolTip()
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_preview_updates_when_switching_templates(qapp) -> None:
+    state = AppState()
+    state.editor_state.effective_values = {
+        "method": {"kit_name": "Kit-A", "kit_series": "Series-1"},
+    }
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {
+            "Default": [{"enabled": True, "target": "ProtocolFile.json:method.id", "expression": "input:method.kit_name"}],
+            "Alt": [{"enabled": True, "target": "ProtocolFile.json:method.version", "expression": "input:method.kit_series"}],
+        },
+    }
+    view = FieldMappingView(app_state=state)
+
+    assert "method.id = Kit-A" in view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
+
+    view.template_selector.setCurrentText("Alt")
+
+    updated = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
+    assert "method.version = Series-1" in updated
+    assert "method.id = Kit-A" not in updated
