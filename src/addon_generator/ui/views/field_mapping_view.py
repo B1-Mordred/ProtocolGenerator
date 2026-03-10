@@ -13,6 +13,7 @@ from PySide6.QtWidgets import (
     QLineEdit,
     QMessageBox,
     QPushButton,
+    QHeaderView,
     QTableWidget,
     QTableWidgetItem,
     QTextEdit,
@@ -76,6 +77,7 @@ class FieldMappingView(QWidget):
         self.mapping_table = QTableWidget(self)
         self.mapping_table.setColumnCount(3)
         self.mapping_table.setHorizontalHeaderLabels(["Enabled", "Target Field", "Source Expression"])
+        self.mapping_table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
         self.mapping_table.horizontalHeader().setStretchLastSection(True)
         root.addWidget(self.mapping_table)
 
@@ -164,6 +166,7 @@ class FieldMappingView(QWidget):
             target_box = QComboBox(self.mapping_table)
             target_box.addItems(TARGET_OPTIONS)
             target_box.setEditable(True)
+            target_box.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
             target_box.setCurrentText(str(row.get("target", "")))
             self.mapping_table.setCellWidget(idx, 1, target_box)
 
@@ -235,6 +238,7 @@ class FieldMappingView(QWidget):
         self.mapping_table.setItem(row, 0, enabled_item)
         target_box = QComboBox(self.mapping_table)
         target_box.setEditable(True)
+        target_box.setSizeAdjustPolicy(QComboBox.SizeAdjustPolicy.AdjustToContents)
         target_box.addItems(TARGET_OPTIONS)
         self.mapping_table.setCellWidget(row, 1, target_box)
         self.mapping_table.setItem(row, 2, QTableWidgetItem(""))

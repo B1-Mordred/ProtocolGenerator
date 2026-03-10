@@ -132,3 +132,20 @@ def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
     assert payload["sample_prep"][0]["action"] == "Mix"
     assert payload["sample_prep"][0]["source"] == "Component A"
     assert payload["sample_prep"][0]["destination"] == "Component A"
+
+
+def test_manual_entry_set_rows_replaces_existing_combo_values_without_carryover(qapp) -> None:
+    view = ManualEntryView()
+
+    view.set_assays_rows([{"component_name": "Component A", "parameter_set_name": "Assay A", "type": "Liquid", "container_type": "Bottle"}])
+    view.set_analytes_rows([{"name": "Analyte 1", "assay_key": "Assay A", "unit_names": "mg/dL"}])
+
+    view.set_assays_rows([{"component_name": "Component B", "parameter_set_name": "Assay B", "type": "Solid", "container_type": "Tube"}])
+    view.set_analytes_rows([{"name": "Analyte 2", "assay_key": "Assay B", "unit_names": "ng/mL"}])
+
+    payload = view.payload()
+    assert payload["assays"][0]["component_name"] == "Component B"
+    assert payload["assays"][0]["parameter_set_name"] == "Assay B"
+    assert payload["assays"][0]["type"] == "Solid"
+    assert payload["assays"][0]["container_type"] == "Tube"
+    assert payload["analytes"][0] == {"name": "Analyte 2", "assay_key": "Assay B", "unit_names": "ng/mL"}

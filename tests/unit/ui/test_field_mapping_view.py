@@ -3,7 +3,7 @@ from __future__ import annotations
 import pytest
 
 try:
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QComboBox, QHeaderView
 except Exception as exc:  # pragma: no cover
     pytest.skip(f"PySide6 Qt runtime unavailable: {exc}", allow_module_level=True)
 
@@ -34,3 +34,14 @@ def test_field_mapping_view_persists_template_rows(qapp) -> None:
     assert settings["active_template"] == view.template_selector.currentText()
     assert settings["templates"][settings["active_template"]][0]["target"] == "ProtocolFile.json:method.id"
     assert changed
+
+
+def test_field_mapping_target_column_auto_sizes_to_content(qapp) -> None:
+    view = FieldMappingView(app_state=AppState())
+
+    assert view.mapping_table.horizontalHeader().sectionResizeMode(1) == QHeaderView.ResizeMode.ResizeToContents
+
+    view._add_row()
+    target_widget = view.mapping_table.cellWidget(0, 1)
+    assert isinstance(target_widget, QComboBox)
+    assert target_widget.sizeAdjustPolicy() == QComboBox.SizeAdjustPolicy.AdjustToContents

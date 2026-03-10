@@ -225,6 +225,14 @@ class ManualEntryView(QWidget):
         }
 
 
+    def _reset_table_cells(self, table: QTableWidget) -> None:
+        for row in range(table.rowCount()):
+            for col in range(table.columnCount()):
+                table.setCellWidget(row, col, None)
+                table.setItem(row, col, None)
+
+
+
     def set_basics_values(self, values: dict[str, str]) -> None:
         for key, field in self.basics_fields.items():
             field.blockSignals(True)
@@ -234,6 +242,7 @@ class ManualEntryView(QWidget):
     def set_assays_rows(self, rows: list[dict[str, str]]) -> None:
         self.assays_table.blockSignals(True)
         self.assays_table.setRowCount(max(1, len(rows)))
+        self._reset_table_cells(self.assays_table)
         keys = [
             "product_number",
             "component_name",
@@ -245,20 +254,19 @@ class ManualEntryView(QWidget):
         ]
         for row_idx, row in enumerate(rows):
             for col_idx, key in enumerate(keys):
-                value = row.get(key, "")
-                if value:
-                    self.assays_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+                value = str(row.get(key, ""))
+                self.assays_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
         self.assays_table.blockSignals(False)
         self._apply_table_dropdowns()
 
     def set_analytes_rows(self, rows: list[dict[str, str]]) -> None:
         self.analytes_table.blockSignals(True)
         self.analytes_table.setRowCount(max(1, len(rows)))
+        self._reset_table_cells(self.analytes_table)
         keys = ["name", "assay_key", "unit_names"]
         for row_idx, row in enumerate(rows):
             for col_idx, key in enumerate(keys):
-                value = row.get(key, "")
-                if value:
-                    self.analytes_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+                value = str(row.get(key, ""))
+                self.analytes_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
         self.analytes_table.blockSignals(False)
         self._apply_table_dropdowns()
