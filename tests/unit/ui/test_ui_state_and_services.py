@@ -432,11 +432,17 @@ def test_preview_service_returns_structured_summary(monkeypatch) -> None:
     assert summary["export_readiness"] is True
 
 
-def test_preview_service_returns_clean_failure(monkeypatch) -> None:
+def test_preview_service_returns_clean_failure_when_builder_and_fallback_generation_fail(monkeypatch) -> None:
     from addon_generator.ui.services.preview_service import PreviewService
 
     svc = PreviewService()
     monkeypatch.setattr(svc._builder, "build", lambda bundle: (_ for _ in ()).throw(RuntimeError("boom")))
+
+    class _GenService:
+        def generate_analytes_xml(self, addon):
+            raise RuntimeError("fallback boom")
+
+    monkeypatch.setattr(svc, "_service_for_settings", lambda export_settings: _GenService())
 
     protocol, analytes, summary, failure = svc.generate(InputDTOBundle(source_type="excel"))
 
@@ -445,8 +451,39 @@ def test_preview_service_returns_clean_failure(monkeypatch) -> None:
     assert summary == {}
     assert failure is not None
     assert failure["code"] == "preview-generation-failed"
-    assert "Preview generation failed" in failure["message"]
+    assert "fallback boom" in failure["message"]
 
+
+
+
+def test_preview_service_generates_analytes_fallback_from_bundle_when_builder_fails(monkeypatch) -> None:
+    from addon_generator.input_models.dtos import AnalyteInputDTO, InputDTOBundle, MethodInputDTO
+    from addon_generator.ui.services.preview_service import PreviewService
+
+    svc = PreviewService()
+    monkeypatch.setattr(svc._builder, "build", lambda bundle: (_ for _ in ()).throw(RuntimeError("builder boom")))
+
+    class _GenService:
+        def generate_analytes_xml(self, addon):
+            names = ",".join(item.name for item in addon.analytes)
+            return f"<AddOn><Analytes>{names}</Analytes></AddOn>"
+
+    monkeypatch.setattr(svc, "_service_for_settings", lambda export_settings: _GenService())
+
+    bundle = InputDTOBundle(
+        source_type="excel",
+        method=MethodInputDTO(key="method:1", method_id="MID-1", method_version="2"),
+        analytes=[AnalyteInputDTO(key="analyte:1", name="Glucose", assay_key="CHEM")],
+    )
+
+    protocol, analytes, summary, failure = svc.generate(bundle)
+
+    assert failure is None
+    assert protocol == ""
+    assert "Glucose" in analytes
+    assert summary["method_id"] == "MID-1"
+    assert summary["analyte_count"] == 1
+    assert summary["validation_status"] == "invalid"
 
 def test_preview_service_falls_back_to_analytes_xml_when_protocol_projection_fails(monkeypatch) -> None:
     from addon_generator.ui.services.preview_service import PreviewService
