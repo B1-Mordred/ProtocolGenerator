@@ -50,6 +50,9 @@
 ## 2026-03-10
 
 ### Fixed
+- Fixed workbook-template `Basics` identity parsing to read label/value pairs in two-column strides across each row (including G/H AddOn fields), preserving overwrite precedence for repeated labels and ensuring `MethodInputDTO` AddOn fields (`main_title`, `sub_title`, `product_number`) map from `AddOn Series`, `AddOn Product Name`, and `AddOn Product Number`.
+
+### Fixed
 - Updated `scripts/build_windows.ps1` to install project dependencies (`pip install -e .`) before invoking PyInstaller so Qt (`PySide6`) is available for analysis/bundling and the packaged desktop app launches instead of exiting immediately.
 - Fixed PyInstaller Windows spec execution when `__file__` is unavailable by adding resilient spec-directory resolution (`__file__` → `SPECPATH` → cwd fallback), preventing `NameError` during `scripts/build_windows.ps1` builds.
 - Hardened the PySide6 desktop entrypoint to detect missing Qt dependencies before importing UI modules, returning a clear install hint instead of crashing with `ModuleNotFoundError: No module named 'PySide6'`.

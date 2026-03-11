@@ -69,3 +69,44 @@ def test_parse_basics_sheet_maps_kit_component_table_columns() -> None:
     assert parsed.assays[0].metadata["product_number"] == "PN-1"
     assert parsed.assays[0].metadata["container_type"] == "Tube"
     assert not diagnostics
+
+
+def test_parse_basics_sheet_reads_identity_pairs_across_columns() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100", "Method Version", "1.0", "Method Display Name", "Legacy Name", "AddOn Series", "Series X"],
+            ["AddOn Product Name", "Product Y", "AddOn Product Number", "PN-900"],
+            [],
+            ["Assay Key", "Protocol Type", "Protocol Display Name", "Xml Assay Name"],
+            ["assay:chem", "CHEM", "Chemistry", "Chemistry"],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert parsed.method.main_title == "Series X"
+    assert parsed.method.sub_title == "Product Y"
+    assert parsed.method.product_number == "PN-900"
+    assert parsed.method.display_name == "Legacy Name"
+    assert not diagnostics
+
+
+def test_parse_basics_sheet_prefers_latest_identity_match_when_label_repeats() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100", "Method Version", "1.0", "AddOn Series", "Old Series", "AddOn Series", "New Series"],
+            ["AddOn Product Name", "Old Product", "AddOn Product Name", "New Product", "AddOn Product Number", "P-001", "AddOn Product Number", "P-002"],
+            [],
+            ["Assay Key", "Protocol Type", "Protocol Display Name", "Xml Assay Name"],
+            ["assay:chem", "CHEM", "Chemistry", "Chemistry"],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert parsed.method.main_title == "New Series"
+    assert parsed.method.sub_title == "New Product"
+    assert parsed.method.product_number == "P-002"
+    assert not diagnostics
