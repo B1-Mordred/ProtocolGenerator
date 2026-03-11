@@ -161,3 +161,40 @@ def test_merge_service_reports_assay_conflicts_only_for_same_composite_identity(
     assert len(assay_conflicts) == 1
     assert assay_conflicts[0]["winner_source"] == "gui"
     assert assay_conflicts[0]["loser_source"] == "xml"
+
+
+def test_merge_service_preserves_excel_sample_prep_order_instead_of_key_sorting() -> None:
+    bundle = InputDTOBundle(
+        source_type="excel",
+        sample_prep_steps=[
+            SamplePrepStepInputDTO(key="sample-prep-1", label="First", metadata={"order": "1"}),
+            SamplePrepStepInputDTO(key="sample-prep-10", label="Tenth", metadata={"order": "10"}),
+            SamplePrepStepInputDTO(key="sample-prep-2", label="Second", metadata={"order": "2"}),
+        ],
+    )
+
+    merged, _report = InputMergeService().merge([bundle])
+
+    assert [step.key for step in merged.sample_prep_steps] == ["sample-prep-1", "sample-prep-10", "sample-prep-2"]
+
+
+def test_merge_service_keeps_sample_prep_in_first_seen_order_when_higher_precedence_overrides() -> None:
+    xml_bundle = InputDTOBundle(
+        source_type="xml",
+        sample_prep_steps=[
+            SamplePrepStepInputDTO(key="sample-prep-1", label="Legacy Mix", metadata={"order": "1"}),
+            SamplePrepStepInputDTO(key="sample-prep-10", label="Legacy Heat", metadata={"order": "10"}),
+        ],
+    )
+    excel_bundle = InputDTOBundle(
+        source_type="excel",
+        sample_prep_steps=[
+            SamplePrepStepInputDTO(key="sample-prep-1", label="Mix", metadata={"order": "1"}),
+            SamplePrepStepInputDTO(key="sample-prep-10", label="Heat", metadata={"order": "10"}),
+        ],
+    )
+
+    merged, _report = InputMergeService().merge([xml_bundle, excel_bundle])
+
+    assert [step.key for step in merged.sample_prep_steps] == ["sample-prep-1", "sample-prep-10"]
+    assert [step.label for step in merged.sample_prep_steps] == ["Mix", "Heat"]

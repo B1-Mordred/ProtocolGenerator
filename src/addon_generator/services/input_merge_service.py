@@ -150,13 +150,19 @@ class InputMergeService:
 
         merged: dict[str, Any] = {}
         owners: dict[str, str] = {}
+        order: list[str] = []
         for bundle in bundles:
             for item in getattr(bundle, attr):
                 key = item.key
                 if key in merged and merged[key] != item:
                     conflicts.append({"path": f"{attr}.{key}", "winner": asdict(item), "loser": asdict(merged[key]), "winner_source": bundle.source_type, "loser_source": owners[key]})
+                if key not in merged:
+                    order.append(key)
                 merged[key] = item
                 owners[key] = bundle.source_type
+
+        if attr == "sample_prep_steps":
+            return [merged[key] for key in order]
         return [merged[key] for key in sorted(merged)]
 
     def _merge_assays(self, bundles: list[InputDTOBundle], conflicts: list[dict[str, Any]]) -> list[AssayInputDTO]:

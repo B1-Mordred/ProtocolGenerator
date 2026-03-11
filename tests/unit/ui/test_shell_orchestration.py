@@ -801,6 +801,53 @@ def test_shell_import_excel_shows_manual_entry_with_imported_values(qapp):
     assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-42"
 
 
+
+
+def test_shell_import_excel_preserves_blank_kit_component_fields_from_workbook(qapp):
+    class _ImportServiceWithSparseWorkbookFields(_ImportService):
+        def load_excel(self, path):
+            bundle = InputDTOBundle(
+                source_type="excel",
+                method=MethodInputDTO(key="m", method_id="M-1", method_version="1"),
+                assays=[
+                    AssayInputDTO(
+                        key="assay:1",
+                        protocol_type="CHEM",
+                        protocol_display_name="Should Not Backfill Component",
+                        xml_name="Should Not Backfill Parameter Set",
+                        metadata={
+                            "product_number": "PN-42",
+                            "component_name": "",
+                            "parameter_set_number": "",
+                            "assay_abbreviation": "",
+                            "parameter_set_name": "",
+                            "type": "",
+                            "container_type": "",
+                        },
+                    )
+                ],
+            )
+            return bundle, {}, []
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportServiceWithSparseWorkbookFields(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+
+    shell.import_excel()
+
+    assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-42"
+    assert shell.manual_entry_view.assays_table.item(0, 1).text() == ""
+    assert shell.manual_entry_view.assays_table.item(0, 4).text() == ""
+    assert shell.manual_entry_view.assays_table.cellWidget(0, 5).currentText() == ""
+    assert shell.manual_entry_view.assays_table.cellWidget(0, 6).currentText() == ""
+
 def test_shell_import_excel_manual_entry_uses_raw_bundle_assays_when_merge_collapses_duplicates(qapp):
     class _ImportServiceWithRepeatedRows(_ImportService):
         def load_excel(self, path):
