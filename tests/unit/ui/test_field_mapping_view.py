@@ -31,14 +31,14 @@ def test_field_mapping_view_persists_template_rows(qapp) -> None:
     view._add_row()
     row = view.mapping_table.rowCount() - 1
     target = view.mapping_table.cellWidget(row, 1)
-    target.setCurrentText("ProtocolFile.json:method.id")
+    target.setCurrentText("ProtocolFile.json:MethodInformation.Id")
     view.mapping_table.item(row, 2).setText("concat(input:method.kit_name, default:-, custom:v1)")
 
     view._save_current_template()
 
     settings = state.editor_state.export_settings["field_mapping"]
     assert settings["active_template"] == view.template_selector.currentText()
-    assert settings["templates"][settings["active_template"]][0]["target"] == "ProtocolFile.json:method.id"
+    assert settings["templates"][settings["active_template"]][0]["target"] == "ProtocolFile.json:MethodInformation.Id"
     assert changed
 
 
@@ -70,6 +70,24 @@ def test_field_mapping_target_picker_keeps_legacy_serialized_value(qapp) -> None
 
     saved_rows = view._collect_rows()
     assert saved_rows[0]["target"] == legacy_target
+
+
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_preview_normalizes_legacy_target_paths(qapp) -> None:
+    state = AppState()
+    state.editor_state.effective_values = {"method": {"kit_name": "Kit-A"}}
+    state.editor_state.export_settings["field_mapping"] = {
+        "active_template": "Default",
+        "templates": {
+            "Default": [
+                {"enabled": True, "target": "ProtocolFile.json:method.id", "expression": "input:method.kit_name"},
+            ]
+        },
+    }
+
+    view = FieldMappingView(app_state=state)
+    protocol_preview = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
+    assert "MethodInformation.Id = Kit-A" in protocol_preview
 
 
 @pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
@@ -237,7 +255,7 @@ def test_field_mapping_save_blocked_for_invalid_enabled_rows(qapp, monkeypatch) 
     view._add_row()
     row = view.mapping_table.rowCount() - 1
     target_widget = view.mapping_table.cellWidget(row, 1)
-    target_widget.setCurrentText("ProtocolFile.json:method.id")
+    target_widget.setCurrentText("ProtocolFile.json:MethodInformation.Id")
     view.mapping_table.item(row, 2).setText("unsupported:value")
 
     view._save_current_template()
@@ -257,7 +275,7 @@ def test_field_mapping_allows_save_for_invalid_disabled_rows(qapp) -> None:
     row = view.mapping_table.rowCount() - 1
     view.mapping_table.item(row, 0).setCheckState(Qt.CheckState.Unchecked)
     target_widget = view.mapping_table.cellWidget(row, 1)
-    target_widget.setCurrentText("ProtocolFile.json:method.id")
+    target_widget.setCurrentText("ProtocolFile.json:MethodInformation.Id")
     view.mapping_table.item(row, 2).setText("unsupported:value")
 
     view._save_current_template()
@@ -280,15 +298,15 @@ def test_field_mapping_preview_updates_after_row_edits(qapp) -> None:
     view._add_row()
     target_widget = view.mapping_table.cellWidget(0, 1)
     assert isinstance(target_widget, QComboBox)
-    target_widget.setCurrentText("ProtocolFile.json:method.id")
+    target_widget.setCurrentText("ProtocolFile.json:MethodInformation.Id")
     view.mapping_table.item(0, 2).setText("input:method.kit_name")
 
     protocol_preview = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
-    assert "method.id = Kit-A" in protocol_preview
+    assert "MethodInformation.Id = Kit-A" in protocol_preview
 
     view.mapping_table.item(0, 2).setText("input:method.missing_value")
     protocol_preview = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
-    assert "method.id = <missing:method.missing_value>" in protocol_preview
+    assert "MethodInformation.Id = <missing:method.missing_value>" in protocol_preview
     assert "No source value for input:method.missing_value" in view.preview_status_label.toolTip()
 
 
@@ -301,19 +319,19 @@ def test_field_mapping_preview_updates_when_switching_templates(qapp) -> None:
     state.editor_state.export_settings["field_mapping"] = {
         "active_template": "Default",
         "templates": {
-            "Default": [{"enabled": True, "target": "ProtocolFile.json:method.id", "expression": "input:method.kit_name"}],
-            "Alt": [{"enabled": True, "target": "ProtocolFile.json:method.version", "expression": "input:method.kit_series"}],
+            "Default": [{"enabled": True, "target": "ProtocolFile.json:MethodInformation.Id", "expression": "input:method.kit_name"}],
+            "Alt": [{"enabled": True, "target": "ProtocolFile.json:MethodInformation.Version", "expression": "input:method.kit_series"}],
         },
     }
     view = FieldMappingView(app_state=state)
 
-    assert "method.id = Kit-A" in view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
+    assert "MethodInformation.Id = Kit-A" in view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
 
     view.template_selector.setCurrentText("Alt")
 
     updated = view._preview_text_by_artifact["ProtocolFile.json"].toPlainText()
-    assert "method.version = Series-1" in updated
-    assert "method.id = Kit-A" not in updated
+    assert "MethodInformation.Version = Series-1" in updated
+    assert "MethodInformation.Id = Kit-A" not in updated
 
 
 @pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
@@ -341,11 +359,11 @@ def test_field_mapping_row_reorder_persists_after_save_and_reload(qapp) -> None:
     view._add_row()
 
     first_target = view.mapping_table.cellWidget(0, 1)
-    first_target.setCurrentText("ProtocolFile.json:method.id")
+    first_target.setCurrentText("ProtocolFile.json:MethodInformation.Id")
     view.mapping_table.item(0, 2).setText("input:method.kit_name")
 
     second_target = view.mapping_table.cellWidget(1, 1)
-    second_target.setCurrentText("ProtocolFile.json:method.version")
+    second_target.setCurrentText("ProtocolFile.json:MethodInformation.Version")
     view.mapping_table.item(1, 2).setText("default:v2")
 
     view.mapping_table.selectRow(1)
@@ -355,7 +373,7 @@ def test_field_mapping_row_reorder_persists_after_save_and_reload(qapp) -> None:
     view._load_template(view.template_selector.currentText())
     saved_rows = view._collect_rows()
 
-    assert saved_rows[0]["target"] == "ProtocolFile.json:method.version"
+    assert saved_rows[0]["target"] == "ProtocolFile.json:MethodInformation.Version"
     assert saved_rows[0]["expression"] == "default:v2"
-    assert saved_rows[1]["target"] == "ProtocolFile.json:method.id"
+    assert saved_rows[1]["target"] == "ProtocolFile.json:MethodInformation.Id"
     assert saved_rows[1]["expression"] == "input:method.kit_name"

@@ -92,6 +92,7 @@
 - Added export-service and shell orchestration regression tests for validation-blocked export state, successful export result rendering with written file paths, and failed export rendering with clear reason/cleanup messaging.
 
 ### Changed
+- Changed Admin → Field Mapping target vocabulary to align with generated artifact schemas (for example `ProtocolFile.json:MethodInformation.Id`, `ProtocolFile.json:MethodInformation.Version`, `Analytes.xml:Assays[].Analytes[].Analyte.Name`, and `Analytes.xml:Assays[].Analytes[].Analyte.AnalyteUnits[].AnalyteUnit.Name`), and updated preview rendering to normalize legacy saved targets to the new path format.
 - Refactored UI validation orchestration to classify issues into Import Issues, Domain Validation, Cross-file Validation, Schema/XSD Validation, Export Blockers, Warnings, and Info, with per-issue navigation targets and optional recommended actions.
 - Expanded `ValidationState` with grouped issues, severity/category counters, `export_blocked`, and `last_validated_at`, and updated shell refresh logic/sidebar badges to consume the new state shape.
 

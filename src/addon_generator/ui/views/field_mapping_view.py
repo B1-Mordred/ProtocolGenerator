@@ -39,14 +39,28 @@ class PickerOption:
 
 
 TARGET_OPTIONS = [
-    PickerOption("Analyte Name", "Analytes.xml:Analyte@name", "Writes into each analyte's @name attribute in Analytes.xml."),
-    PickerOption("Analyte Unit", "Analytes.xml:Analyte@unit", "Writes into each analyte's @unit attribute in Analytes.xml."),
-    PickerOption("Method Name", "AddOn.xml:MethodInformation/MethodName", "Writes to AddOn.xml MethodInformation/MethodName."),
-    PickerOption("Method ID", "AddOn.xml:MethodInformation/MethodId", "Writes to AddOn.xml MethodInformation/MethodId."),
-    PickerOption("Method ID", "ProtocolFile.json:method.id", "Writes to ProtocolFile.json method.id."),
-    PickerOption("Method Version", "ProtocolFile.json:method.version", "Writes to ProtocolFile.json method.version."),
-    PickerOption("Analyte Names", "ProtocolFile.json:analytes[].name", "Writes each analyte name entry into ProtocolFile.json analytes[].name."),
+    PickerOption("Analyte Name", "Analytes.xml:Assays[].Analytes[].Analyte.Name", "Writes each analyte name into AddOn/Assays/Assay/Analytes/Analyte/Name."),
+    PickerOption(
+        "Analyte Unit",
+        "Analytes.xml:Assays[].Analytes[].Analyte.AnalyteUnits[].AnalyteUnit.Name",
+        "Writes each analyte-unit name into AddOn/Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/Name.",
+    ),
+    PickerOption("Method Name", "AddOn.xml:MethodInformation.MethodName", "Writes to AddOn.xml MethodInformation.MethodName."),
+    PickerOption("Method ID", "AddOn.xml:MethodInformation.MethodId", "Writes to AddOn.xml MethodInformation.MethodId."),
+    PickerOption("Method ID", "ProtocolFile.json:MethodInformation.Id", "Writes to ProtocolFile.json MethodInformation.Id."),
+    PickerOption("Method Version", "ProtocolFile.json:MethodInformation.Version", "Writes to ProtocolFile.json MethodInformation.Version."),
+    PickerOption("Analyte Names", "ProtocolFile.json:AssayInformation[].Analytes[].Name", "Writes each analyte name entry into ProtocolFile.json AssayInformation[].Analytes[].Name."),
 ]
+
+LEGACY_TARGET_ALIASES = {
+    "Analytes.xml:Analyte@name": "Analytes.xml:Assays[].Analytes[].Analyte.Name",
+    "Analytes.xml:Analyte@unit": "Analytes.xml:Assays[].Analytes[].Analyte.AnalyteUnits[].AnalyteUnit.Name",
+    "AddOn.xml:MethodInformation/MethodName": "AddOn.xml:MethodInformation.MethodName",
+    "AddOn.xml:MethodInformation/MethodId": "AddOn.xml:MethodInformation.MethodId",
+    "ProtocolFile.json:method.id": "ProtocolFile.json:MethodInformation.Id",
+    "ProtocolFile.json:method.version": "ProtocolFile.json:MethodInformation.Version",
+    "ProtocolFile.json:analytes[].name": "ProtocolFile.json:AssayInformation[].Analytes[].Name",
+}
 
 SOURCE_TOKEN_OPTIONS = [
     PickerOption("Kit Series", "input:method.kit_series", "Reads the imported/manual method.kit_series input field."),
@@ -62,9 +76,16 @@ SOURCE_TOKEN_OPTIONS = [
 ]
 
 TARGET_OPTION_GROUPS = {
-    "Analytes.xml": ("Analytes.xml:Analyte@name", "Analytes.xml:Analyte@unit"),
-    "AddOn.xml": ("AddOn.xml:MethodInformation/MethodName", "AddOn.xml:MethodInformation/MethodId"),
-    "ProtocolFile.json": ("ProtocolFile.json:method.id", "ProtocolFile.json:method.version", "ProtocolFile.json:analytes[].name"),
+    "Analytes.xml": (
+        "Analytes.xml:Assays[].Analytes[].Analyte.Name",
+        "Analytes.xml:Assays[].Analytes[].Analyte.AnalyteUnits[].AnalyteUnit.Name",
+    ),
+    "AddOn.xml": ("AddOn.xml:MethodInformation.MethodName", "AddOn.xml:MethodInformation.MethodId"),
+    "ProtocolFile.json": (
+        "ProtocolFile.json:MethodInformation.Id",
+        "ProtocolFile.json:MethodInformation.Version",
+        "ProtocolFile.json:AssayInformation[].Analytes[].Name",
+    ),
 }
 
 SOURCE_OPTION_GROUPS = {
@@ -607,7 +628,7 @@ class FieldMappingView(QWidget):
             expression = str(row.get("expression", "")).strip()
             if not target or not expression:
                 continue
-            artifact, _, target_path = target.partition(":")
+            artifact, _, target_path = self._normalize_target(target).partition(":")
             if artifact not in artifact_lines:
                 continue
             values, row_warnings = self._resolve_expression_values(expression)
@@ -624,6 +645,9 @@ class FieldMappingView(QWidget):
         else:
             self.preview_status_label.setText("✅ Preview current")
             self.preview_status_label.setToolTip("")
+
+    def _normalize_target(self, target: str) -> str:
+        return LEGACY_TARGET_ALIASES.get(target, target)
 
     def _resolve_expression_values(self, expression: str) -> tuple[list[str], list[str]]:
         if expression.startswith("concat(") and expression.endswith(")"):
