@@ -222,3 +222,59 @@ def test_sort_issues_preserves_insertion_order_within_phase_and_severity() -> No
     sorted_issues = service._sort_issues(staged)
 
     assert [issue.code for issue in sorted_issues] == ["b", "a", "z"]
+
+
+def test_generate_all_synthesizes_missing_assay_groups_for_analytes() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:missing"}],
+            "units": [],
+        }
+    )
+
+    result = service.generate_all(addon)
+
+    assert any(assay.key == "assay:missing" for assay in addon.assays)
+    assert "<Name>assay:missing</Name>" in result.analytes_xml_string
+    assert "<Name>GLU</Name>" in result.analytes_xml_string
+    assert "assay-group-synthesized-from-analytes" in {issue.code for issue in result.warnings}
+
+
+def test_generate_all_resolves_analyte_assay_key_via_assay_alias() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [{"key": "assay:chem", "protocol_type": "Chem", "xml_name": "Chem"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "chem"}],
+            "units": [],
+        }
+    )
+
+    result = service.generate_all(addon)
+
+    assert addon.analytes[0].assay_key == "assay:chem"
+    assert "assay-group-synthesized-from-analytes" not in {issue.code for issue in result.warnings}
+
+
+def test_generate_analytes_xml_applies_assay_group_normalization() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:auto"}],
+            "units": [],
+        }
+    )
+
+    analytes_xml = service.generate_analytes_xml(addon)
+
+    assert "<Name>assay:auto</Name>" in analytes_xml
+    assert "<Name>GLU</Name>" in analytes_xml
