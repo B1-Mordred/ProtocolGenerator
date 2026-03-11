@@ -367,9 +367,9 @@ def test_real_world_workbook_populates_manual_entry_identity_fields() -> None:
     assert bundle.method.series_name == "MassTox®"
     assert bundle.method.display_name == "TDM Series A"
     assert bundle.method.order_number == "92711"
-    assert bundle.method.main_title is None
-    assert bundle.method.sub_title is None
-    assert bundle.method.product_number is None
+    assert bundle.method.main_title == "MassPrep®"
+    assert bundle.method.sub_title == "TDM Series A"
+    assert bundle.method.product_number == "42952"
 
     assert bundle.sample_prep_steps
     assert bundle.sample_prep_steps[0].metadata["source"] == "Urine"

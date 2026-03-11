@@ -75,8 +75,26 @@ def test_parse_basics_sheet_reads_identity_pairs_across_columns() -> None:
     diagnostics = []
     sheet = _Sheet(
         [
-            ["Method Id", "M-100", "Method Version", "1.0", "Method Display Name", "Legacy Name", "AddOn Series", "Series X"],
-            ["AddOn Product Name", "Product Y", "AddOn Product Number", "PN-900"],
+            [
+                "Method Id",
+                "M-100",
+                "Method Version",
+                "1.0",
+                "Method Display Name",
+                "Legacy Name",
+                "AddOn Series",
+                "Series X",
+            ],
+            [
+                "ignored",
+                "value",
+                "AddOn Product Name",
+                "Product Y",
+                "AddOn Product Number",
+                "PN-900",
+                "trailing",
+                "data",
+            ],
             [],
             ["Assay Key", "Protocol Type", "Protocol Display Name", "Xml Assay Name"],
             ["assay:chem", "CHEM", "Chemistry", "Chemistry"],
