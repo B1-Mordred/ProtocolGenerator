@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
+from addon_generator.runtime.resources import get_resource_path
+
 
 @dataclass(slots=True, frozen=True)
 class RulePack:
@@ -21,7 +23,16 @@ RULE_PACKS_DIR = Path("config/rule_packs")
 DEFAULT_PACK_NAME = "default"
 
 
+def _resolve_rule_packs_dir(rule_packs_dir: Path) -> Path:
+    if rule_packs_dir.exists() or rule_packs_dir.is_absolute():
+        return rule_packs_dir
+
+    normalized_resource = str(rule_packs_dir).replace("\\", "/")
+    return get_resource_path(normalized_resource, anchor_file=__file__)
+
+
 def list_rule_packs(rule_packs_dir: Path = RULE_PACKS_DIR) -> list[str]:
+    rule_packs_dir = _resolve_rule_packs_dir(rule_packs_dir)
     if not rule_packs_dir.exists():
         return []
     names: list[str] = []
@@ -33,6 +44,7 @@ def list_rule_packs(rule_packs_dir: Path = RULE_PACKS_DIR) -> list[str]:
 
 
 def load_rule_pack(name: str | None = None, *, rule_packs_dir: Path = RULE_PACKS_DIR) -> RulePack:
+    rule_packs_dir = _resolve_rule_packs_dir(rule_packs_dir)
     pack_name = (name or DEFAULT_PACK_NAME).strip() or DEFAULT_PACK_NAME
     path = _resolve_pack_path(pack_name, rule_packs_dir)
     payload = _load_structured_file(path)
