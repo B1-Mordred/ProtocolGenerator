@@ -81,6 +81,9 @@ class XmlImporter:
         xsd_root = ET.parse(self.xsd_path).getroot()
         self._validate_required_children(root, xsd_root, "AddOn", "AddOn")
 
+        if root.find("./Analytes") is not None:
+            raise XmlImportValidationError("XML does not conform to schema AddOn.xsd: AddOn/Analytes is not supported; use AddOn/Assays/Assay/Analytes")
+
         for assay in root.findall("./Assays/Assay"):
             self._validate_required_children(assay, xsd_root, "Assay", "AddOn/Assays/Assay")
         for analyte in root.findall("./Assays/Assay/Analytes/Analyte"):

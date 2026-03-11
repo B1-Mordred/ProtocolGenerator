@@ -23,8 +23,8 @@ def generate_analytes_addon_xml(addon: AddonModel, xsd_path: Path | str, output_
 
     root = ET.Element("AddOn")
     ET.SubElement(root, "Id").text = str(addon.addon_id)
-    ET.SubElement(root, "MethodId").text = addon.method.method_id
-    ET.SubElement(root, "MethodVersion").text = addon.method.method_version
+    ET.SubElement(root, "MethodId").text = addon.method.product_number or ""
+    ET.SubElement(root, "MethodVersion").text = ""
 
     assays_el = ET.SubElement(root, "Assays")
     analytes_by_assay: dict[str, list] = {}

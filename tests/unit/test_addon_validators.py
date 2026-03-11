@@ -125,3 +125,20 @@ def test_domain_validator_orders_unknown_assay_before_assay_missing_analytes() -
     codes = [issue.code for issue in validate_domain(addon).issues.issues]
 
     assert codes.index("unknown-assay-key") < codes.index("assay-missing-analytes")
+
+
+def test_cross_file_validator_allows_blank_xml_method_version_for_schema_shape() -> None:
+    protocol = {"MethodInformation": {"Id": "PN-1", "Version": "1"}, "AssayInformation": [{"Type": "chemistry"}]}
+    root = ET.fromstring(
+        "<AddOn><MethodId>PN-1</MethodId><MethodVersion></MethodVersion><Assays>"
+        "<Assay><Id>0</Id><Name>chemistry</Name><AddOnRef>0</AddOnRef><Analytes>"
+        "<Analyte><Id>0</Id><Name>N</Name><AssayRef>0</AssayRef>"
+        "<AnalyteUnits><AnalyteUnit><Id>0</Id><AnalyteRef>0</AnalyteRef></AnalyteUnit></AnalyteUnits>"
+        "</Analyte></Analytes></Assay></Assays></AddOn>"
+    )
+
+    result = validate_cross_file_consistency(protocol, root)
+    codes = {i.code for i in result.issues.issues}
+
+    assert "missing-method-identity" not in codes
+    assert "method-version-mismatch" not in codes

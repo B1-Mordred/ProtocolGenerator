@@ -12,6 +12,7 @@
 
 
 ### Changed
+- Changed `Analytes.xml` generation to remain `AddOn/Assays/Assay/Analytes` schema-compliant while mapping `MethodId` from Basics `AddOn Product Number` and intentionally leaving `MethodVersion` blank.
 - Field Mapping templates are now execution-effective during validation/export: enabled rows from the active template are applied to generated `ProtocolFile.json` and `Analytes.xml` before final serialization, with deterministic last-write-wins conflict handling and warning/report visibility for applied vs skipped rows.
 - Changed cross-file linkage validation so `alias_map` mode is now actively enforced in runtime assay matching (in addition to exact/normalized), and mismatch diagnostics now include actionable remediation text for fixing Type/XML-name linkage or switching modes.
 - Validation, preview, and export pipelines now apply optional runtime `mapping_overrides` (cross-file rules and protocol defaults) on top of `config/mapping.v1.yaml`, with config-schema validation and automatic rollback after each generation call.
