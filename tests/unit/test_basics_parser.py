@@ -186,3 +186,37 @@ def test_parse_basics_sheet_stops_at_first_empty_row_after_component_data() -> N
 
     assert [assay.key for assay in parsed.assays] == ["PS-1"]
     assert not diagnostics
+
+def test_parse_basics_sheet_keeps_distinct_calibrator_and_control_rows_with_shared_parameter_set_and_type() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100"],
+            ["Method Version", "1.0"],
+            [],
+            [
+                "Product Number",
+                "Component Name",
+                "Parameter Set Number",
+                "Assay Abbreviation",
+                'Parameter Set Name (or "BASIC Kit")',
+                "Type",
+                "Container Type (if liquid)",
+            ],
+            ["PN-1", "Calibrator A", "PS-CAL", "CAL-A", "Calibration", "Calibrator", "Vial"],
+            ["", "Calibrator B", "PS-CAL", "CAL-B", "Calibration", "Calibrator", "Vial"],
+            ["", "Control Low", "PS-CTRL", "CTRL-L", "Controls", "Control", "Vial"],
+            ["", "Control High", "PS-CTRL", "CTRL-H", "Controls", "Control", "Vial"],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert [assay.metadata["component_name"] for assay in parsed.assays] == [
+        "Calibrator A",
+        "Calibrator B",
+        "Control Low",
+        "Control High",
+    ]
+    assert [assay.key for assay in parsed.assays] == ["PS-CAL", "PS-CAL", "PS-CTRL", "PS-CTRL"]
+    assert not diagnostics
