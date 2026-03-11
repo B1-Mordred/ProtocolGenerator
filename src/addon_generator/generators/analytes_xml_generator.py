@@ -36,6 +36,10 @@ def generate_analytes_addon_xml(addon: AddonModel, xsd_path: Path | str, output_
         units_by_analyte.setdefault(unit.analyte_key, []).append(unit)
 
     for assay in sorted(addon.assays, key=lambda a: (a.xml_id if a.xml_id is not None else -1, a.key)):
+        assay_abbreviation = str((assay.metadata or {}).get("assay_abbreviation") or "").strip()
+        if not assay_abbreviation:
+            continue
+
         assay_el = ET.SubElement(assays_el, "Assay")
         ET.SubElement(assay_el, "Id").text = str(assay.xml_id if assay.xml_id is not None else 0)
         ET.SubElement(assay_el, "Name").text = assay.xml_name or assay.protocol_type or ""
