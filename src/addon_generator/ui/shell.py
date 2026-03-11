@@ -460,7 +460,7 @@ class MainShell(QMainWindow):
             metadata = dict(dilution.metadata or {})
             dilution_rows.append(
                 {
-                    "key": str(dilution.key or dilution.label or ""),
+                    "key": str(dilution.label or metadata.get("name") or dilution.key or ""),
                     "buffer1_ratio": str(metadata.get("buffer1_ratio") or ""),
                     "buffer2_ratio": str(metadata.get("buffer2_ratio") or ""),
                     "buffer3_ratio": str(metadata.get("buffer3_ratio") or ""),

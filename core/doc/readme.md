@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Dilutions imported into manual-entry now display the human-readable dilution label (`label`/`metadata.name`) instead of internal IDs (for example `1+2` instead of `dilution:1+2`) in the Dilutions tab table while preserving internal DTO/domain keys.
 - Workbook-template analyte linking now resolves analyte `assay_key` from `Analytes.Parameter Set` using `Basics` kit component context (`Parameter Set Name` / `Parameter Set Number`) when no `Assay Key` column is present; unresolved links now emit `missing-assay-link` diagnostics instead of defaulting to analyte names.
 - Workbook-template Dilutions parsing now accepts header aliases (`Dilution Name`, `Dilution Buffer 1 Ratio`, `Dilution Buffer 2 Ratio`, `Dilution Buffer 3 Ratio`) and emits both per-buffer ratio metadata plus synthesized legacy `ratio` values for compatibility with existing flows.
 - Workbook-template Basics parsing now accepts AddOn identity labels (`Kit Series`, `(Basic) Kit Name`, `Kit Product Number`, `AddOn Series`, `AddOn Product Name`, `AddOn Product Number`) and maps them to method metadata used by manual-entry backfill flows.

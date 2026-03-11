@@ -166,6 +166,42 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assert shell.manual_entry_view.dilutions_table.item(0, 1).text() == "50"
 
 
+def test_shell_populates_dilution_display_label_over_internal_key(qapp) -> None:
+    shell = MainShell()
+
+    bundle = InputDTOBundle(
+        source_type="excel",
+        method=MethodInputDTO(key="method:M-1"),
+        dilution_schemes=[
+            DilutionSchemeInputDTO(
+                key="dilution:1+2",
+                label="1+2",
+                metadata={"name": "1+2", "buffer1_ratio": "34", "buffer2_ratio": "66"},
+            )
+        ],
+    )
+
+    shell._populate_manual_entry_from_bundle(bundle)
+
+    assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+2"
+
+
+def test_shell_populates_dilution_display_label_from_real_workbook_fixture(qapp) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    assert openpyxl is not None
+
+    from pathlib import Path
+
+    from addon_generator.importers.excel_importer import ExcelImporter
+
+    shell = MainShell()
+    bundle = ExcelImporter().import_workbook_bundle(Path("tests/AddOn_Input_92111_v03.xlsx"))
+
+    shell._populate_manual_entry_from_bundle(bundle)
+
+    assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+2"
+
+
 def test_shell_admin_menu_has_dedicated_dropdown_configuration_actions(qapp) -> None:
     shell = MainShell()
 
