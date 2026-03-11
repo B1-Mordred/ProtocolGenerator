@@ -443,3 +443,60 @@ def test_user_workbook_addon_input_92111_v03_imports_successfully() -> None:
     assert bundle.method.method_id
     assert bundle.assays
     assert bundle.analytes
+
+def test_workbook_parser_keeps_each_non_empty_kit_component_row_when_parameter_set_and_type_repeat(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    basics = wb.create_sheet("Basics")
+    basics.append(["Method Id", "PRD-001"])
+    basics.append(["Method Version", "5.4"])
+    basics.append([])
+    basics.append(
+        [
+            "Product Number",
+            "Component Name",
+            "Parameter Set Number",
+            "Assay Abbreviation",
+            'Parameter Set Name (or "BASIC Kit")',
+            "Type",
+            "Container Type (if liquid)",
+        ]
+    )
+    basics.append(["PN-1", "Calibrator A", "PS-CAL", "CAL-A", "Calibration", "Calibrator", "Vial"])
+    basics.append(["", "Calibrator B", "PS-CAL", "CAL-B", "Calibration", "Calibrator", "Vial"])
+    basics.append(["", "Control Low", "PS-CTRL", "CTRL-L", "Controls", "Control", "Vial"])
+    basics.append(["", "Control High", "PS-CTRL", "CTRL-H", "Controls", "Control", "Vial"])
+    basics.append([None, None, None, None, None, None, None])
+
+    analytes = wb.create_sheet("Analytes")
+    analytes.append(["Analyte", "Unit", "Parameter Set", "Assay Key"])
+    analytes.append(["GLU", "mg/dL", "Calibration", "PS-CAL"])
+    analytes.append(["TSH", "uIU/mL", "Controls", "PS-CTRL"])
+
+    sample = wb.create_sheet("SamplePrep")
+    sample.append(["Order", "Action"])
+    sample.append(["1", "Mix"])
+
+    dilutions = wb.create_sheet("Dilutions")
+    dilutions.append(["Name", "Ratio"])
+    dilutions.append(["Std1", "1:2"])
+
+    hidden = wb.create_sheet("Hidden_Lists")
+    hidden.append(["Units", "SamplePrepAction"])
+    hidden.append(["mg/dL", "Mix"])
+    hidden.append(["uIU/mL", "Mix"])
+
+    path = tmp_path / "production-shape-duplicate-parameter-set-rows.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert len(bundle.assays) == 4
+    assert [assay.metadata["component_name"] for assay in bundle.assays] == [
+        "Calibrator A",
+        "Calibrator B",
+        "Control Low",
+        "Control High",
+    ]
