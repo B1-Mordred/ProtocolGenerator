@@ -211,6 +211,19 @@ def test_manual_entry_setters_restore_sample_prep_and_dilutions_rows(qapp) -> No
     assert payload["dilutions"][0]["buffer1_ratio"] == "50"
 
 
+def test_manual_entry_setters_do_not_emit_change_callbacks(qapp) -> None:
+    calls = {"count": 0}
+    view = ManualEntryView(on_data_changed=lambda: calls.__setitem__("count", calls["count"] + 1))
+
+    view.set_basics_values({"kit_series": "Series-1", "kit_product_number": "KIT-001"})
+    view.set_assays_rows([{"component_name": "Component A", "parameter_set_name": "Assay A", "type": "Liquid", "container_type": "Tube"}])
+    view.set_analytes_rows([{"name": "Analyte A", "assay_key": "Assay A", "unit_names": "mg/dL"}])
+    view.set_sample_prep_rows([{"action": "Mix", "source": "Component A", "destination": "Component A"}])
+    view.set_dilutions_rows([{"key": "1+4", "buffer1_ratio": "50", "buffer2_ratio": "50", "buffer3_ratio": ""}])
+
+    assert calls["count"] == 0
+
+
 def test_manual_entry_applies_content_width_hints(qapp) -> None:
     view = ManualEntryView()
 

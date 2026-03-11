@@ -55,6 +55,7 @@ class ManualEntryView(QWidget):
     def __init__(self, parent=None, *, on_data_changed: Callable[[], None] | None = None) -> None:
         super().__init__(parent)
         self._on_data_changed = on_data_changed
+        self._suspend_data_changed = False
         root = QVBoxLayout(self)
         root.addWidget(QLabel("Enter AddOn data manually. Changes are autosaved as you type."))
 
@@ -205,8 +206,13 @@ class ManualEntryView(QWidget):
         self._apply_table_dropdowns()
 
     def _emit_data_changed(self) -> None:
+        if self._suspend_data_changed:
+            return
         if self._on_data_changed:
             self._on_data_changed()
+
+    def _set_data_change_suspended(self, suspended: bool) -> None:
+        self._suspend_data_changed = suspended
 
     @staticmethod
     def _cell_text(table: QTableWidget, row: int, col: int) -> str:
@@ -285,63 +291,83 @@ class ManualEntryView(QWidget):
 
 
     def set_basics_values(self, values: dict[str, str]) -> None:
-        for key, field in self.basics_fields.items():
-            field.blockSignals(True)
-            field.setText(values.get(key, ""))
-            field.blockSignals(False)
+        self._set_data_change_suspended(True)
+        try:
+            for key, field in self.basics_fields.items():
+                field.blockSignals(True)
+                field.setText(values.get(key, ""))
+                field.blockSignals(False)
+        finally:
+            self._set_data_change_suspended(False)
 
     def set_assays_rows(self, rows: list[dict[str, str]]) -> None:
-        self.assays_table.blockSignals(True)
-        self.assays_table.setRowCount(max(1, len(rows)))
-        self._reset_table_cells(self.assays_table)
-        keys = [
-            "product_number",
-            "component_name",
-            "parameter_set_number",
-            "assay_abbreviation",
-            "parameter_set_name",
-            "type",
-            "container_type",
-        ]
-        for row_idx, row in enumerate(rows):
-            for col_idx, key in enumerate(keys):
-                value = str(row.get(key, ""))
-                self.assays_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
-        self.assays_table.blockSignals(False)
-        self._apply_table_dropdowns()
+        self._set_data_change_suspended(True)
+        try:
+            self.assays_table.blockSignals(True)
+            self.assays_table.setRowCount(max(1, len(rows)))
+            self._reset_table_cells(self.assays_table)
+            keys = [
+                "product_number",
+                "component_name",
+                "parameter_set_number",
+                "assay_abbreviation",
+                "parameter_set_name",
+                "type",
+                "container_type",
+            ]
+            for row_idx, row in enumerate(rows):
+                for col_idx, key in enumerate(keys):
+                    value = str(row.get(key, ""))
+                    self.assays_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+            self.assays_table.blockSignals(False)
+            self._apply_table_dropdowns()
+        finally:
+            self._set_data_change_suspended(False)
 
     def set_analytes_rows(self, rows: list[dict[str, str]]) -> None:
-        self.analytes_table.blockSignals(True)
-        self.analytes_table.setRowCount(max(1, len(rows)))
-        self._reset_table_cells(self.analytes_table)
-        keys = ["name", "assay_key", "unit_names"]
-        for row_idx, row in enumerate(rows):
-            for col_idx, key in enumerate(keys):
-                value = str(row.get(key, ""))
-                self.analytes_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
-        self.analytes_table.blockSignals(False)
-        self._apply_table_dropdowns()
+        self._set_data_change_suspended(True)
+        try:
+            self.analytes_table.blockSignals(True)
+            self.analytes_table.setRowCount(max(1, len(rows)))
+            self._reset_table_cells(self.analytes_table)
+            keys = ["name", "assay_key", "unit_names"]
+            for row_idx, row in enumerate(rows):
+                for col_idx, key in enumerate(keys):
+                    value = str(row.get(key, ""))
+                    self.analytes_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+            self.analytes_table.blockSignals(False)
+            self._apply_table_dropdowns()
+        finally:
+            self._set_data_change_suspended(False)
 
     def set_sample_prep_rows(self, rows: list[dict[str, str]]) -> None:
-        self.sample_prep_table.blockSignals(True)
-        self.sample_prep_table.setRowCount(max(1, len(rows)))
-        self._reset_table_cells(self.sample_prep_table)
-        keys = ["action", "source", "destination", "volume", "duration", "force"]
-        for row_idx, row in enumerate(rows):
-            for col_idx, key in enumerate(keys):
-                value = str(row.get(key, ""))
-                self.sample_prep_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
-        self.sample_prep_table.blockSignals(False)
-        self._apply_table_dropdowns()
+        self._set_data_change_suspended(True)
+        try:
+            self.sample_prep_table.blockSignals(True)
+            self.sample_prep_table.setRowCount(max(1, len(rows)))
+            self._reset_table_cells(self.sample_prep_table)
+            keys = ["action", "source", "destination", "volume", "duration", "force"]
+            for row_idx, row in enumerate(rows):
+                for col_idx, key in enumerate(keys):
+                    value = str(row.get(key, ""))
+                    self.sample_prep_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+            self.sample_prep_table.blockSignals(False)
+            self._apply_table_dropdowns()
+        finally:
+            self._set_data_change_suspended(False)
 
     def set_dilutions_rows(self, rows: list[dict[str, str]]) -> None:
-        self.dilutions_table.blockSignals(True)
-        self.dilutions_table.setRowCount(max(1, len(rows)))
-        self._reset_table_cells(self.dilutions_table)
-        keys = ["key", "buffer1_ratio", "buffer2_ratio", "buffer3_ratio"]
-        for row_idx, row in enumerate(rows):
-            for col_idx, key in enumerate(keys):
-                value = str(row.get(key, ""))
-                self.dilutions_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
-        self.dilutions_table.blockSignals(False)
-        self._apply_table_dropdowns()
+        self._set_data_change_suspended(True)
+        try:
+            self.dilutions_table.blockSignals(True)
+            self.dilutions_table.setRowCount(max(1, len(rows)))
+            self._reset_table_cells(self.dilutions_table)
+            keys = ["key", "buffer1_ratio", "buffer2_ratio", "buffer3_ratio"]
+            for row_idx, row in enumerate(rows):
+                for col_idx, key in enumerate(keys):
+                    value = str(row.get(key, ""))
+                    self.dilutions_table.setItem(row_idx, col_idx, QTableWidgetItem(value))
+            self.dilutions_table.blockSignals(False)
+            self._apply_table_dropdowns()
+        finally:
+            self._set_data_change_suspended(False)

@@ -659,6 +659,64 @@ def test_shell_import_excel_prompts_for_file_when_setting_missing(qapp, monkeypa
     assert shell.app_state.import_state.bundles[0].source_type == "excel"
 
 
+def test_shell_import_excel_shows_manual_entry_with_imported_values(qapp):
+    class _ImportServiceWithWorkbookData(_ImportService):
+        def load_excel(self, path):
+            bundle = InputDTOBundle(
+                source_type="excel",
+                method=MethodInputDTO(
+                    key="m",
+                    method_id="M-1",
+                    method_version="1",
+                    series_name="Series-42",
+                    display_name="Kit Display",
+                    order_number="KIT-42",
+                    main_title="Addon Series",
+                    sub_title="Addon Product",
+                    product_number="ADDON-42",
+                ),
+                assays=[
+                    AssayInputDTO(
+                        key="assay:1",
+                        protocol_type="CHEM",
+                        protocol_display_name="Component X",
+                        xml_name="BASIC Kit",
+                        metadata={
+                            "product_number": "PN-42",
+                            "component_name": "Component X",
+                            "parameter_set_number": "PS-42",
+                            "assay_abbreviation": "CX",
+                            "parameter_set_name": "BASIC Kit",
+                            "type": "Liquid",
+                            "container_type": "Vial",
+                        },
+                    )
+                ],
+            )
+            return bundle, {}, []
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportServiceWithWorkbookData(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+
+    shell.import_excel()
+
+    assert shell.main_stack.currentIndex() == 1
+    assert len(shell.app_state.import_state.bundles[0].assays) == 1
+    assert shell.app_state.import_state.bundles[0].method.series_name == "Series-42"
+    assert shell.manual_entry_view.basics_fields["kit_series"].text() == "Series-42"
+    assert shell.manual_entry_view.basics_fields["kit_product_number"].text() == "KIT-42"
+    assert shell.manual_entry_view.basics_fields["addon_product_number"].text() == "ADDON-42"
+    assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-42"
+
+
 def test_shell_import_xml_prompts_for_file_when_setting_missing(qapp, monkeypatch):
     shell = MainShell(
         app_state=AppState(),
