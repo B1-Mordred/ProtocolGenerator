@@ -412,7 +412,12 @@ def test_preview_service_returns_structured_summary(monkeypatch) -> None:
 
     svc = PreviewService()
     monkeypatch.setattr(svc._builder, "build", lambda bundle: _Addon())
-    monkeypatch.setattr(svc._service, "generate_all", lambda addon, dto_bundle: _Result())
+
+    class _GenService:
+        def generate_all(self, addon, dto_bundle=None, field_mapping_settings=None, mapping_overrides=None):
+            return _Result()
+
+    monkeypatch.setattr(svc, "_service_for_settings", lambda export_settings: _GenService())
 
     protocol, analytes, summary, failure = svc.generate(InputDTOBundle(source_type="excel"))
 
@@ -441,3 +446,61 @@ def test_preview_service_returns_clean_failure(monkeypatch) -> None:
     assert failure is not None
     assert failure["code"] == "preview-generation-failed"
     assert "Preview generation failed" in failure["message"]
+
+
+def test_preview_and_export_keep_default_ruleset_assay_grouping_for_manual_analytes(tmp_path: Path) -> None:
+    import xml.etree.ElementTree as ET
+
+    from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
+    from addon_generator.services.generation_service import GenerationService
+
+    bundle = InputDTOBundle(
+        source_type="gui",
+        method=MethodInputDTO(key="method:m", method_id="M-LOCK", method_version="1"),
+        assays=[
+            AssayInputDTO(
+                key="assay:chem",
+                protocol_type="CHEM",
+                protocol_display_name="Chemistry",
+                xml_name="Chemistry",
+            )
+        ],
+        analytes=[
+            AnalyteInputDTO(key="analyte:glu", name="Glucose", assay_key=" chemistry "),
+            AnalyteInputDTO(key="analyte:lac", name="Lactate", assay_key="CHEMISTRY"),
+            AnalyteInputDTO(key="analyte:k", name="Potassium", assay_key=" Reflex Panel "),
+            AnalyteInputDTO(key="analyte:na", name="Sodium", assay_key=" Reflex Panel "),
+        ],
+        units=[
+            UnitInputDTO(key="unit:glu", name="mg/dL", analyte_key="analyte:glu"),
+            UnitInputDTO(key="unit:lac", name="mmol/L", analyte_key="analyte:lac"),
+            UnitInputDTO(key="unit:k", name="mmol/L", analyte_key="analyte:k"),
+            UnitInputDTO(key="unit:na", name="mEq/L", analyte_key="analyte:na"),
+        ],
+    )
+
+    service = GenerationService()
+    addon = CanonicalModelBuilder().build(bundle)
+    preview_like_xml = service.generate_all(addon, dto_bundle=bundle).analytes_xml_string
+
+    package = service.build_package(addon, destination_root=tmp_path, overwrite=True)
+    export_xml = package.artifacts["Analytes.xml"].read_text(encoding="utf-8")
+
+    def _grouping(xml_text: str) -> dict[str, list[tuple[str, list[str]]]]:
+        root = ET.fromstring(xml_text)
+        grouped: dict[str, list[tuple[str, list[str]]]] = {}
+        for assay in root.findall("./Assays/Assay"):
+            assay_name = assay.findtext("Name") or ""
+            entries: list[tuple[str, list[str]]] = []
+            for analyte in assay.findall("./Analytes/Analyte"):
+                analyte_name = analyte.findtext("Name") or ""
+                units = [unit.findtext("Name") or "" for unit in analyte.findall("./AnalyteUnits/AnalyteUnit")]
+                entries.append((analyte_name, units))
+            grouped[assay_name] = entries
+        return grouped
+
+    assert _grouping(preview_like_xml) == _grouping(export_xml)
+    assert _grouping(preview_like_xml) == {
+        "Chemistry": [("Glucose", ["mg/dL"]), ("Lactate", ["mmol/L"])],
+        "Reflex Panel": [("Potassium", ["mmol/L"]), ("Sodium", ["mEq/L"])],
+    }

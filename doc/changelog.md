@@ -16,6 +16,7 @@
 - Changed cross-file linkage validation so `alias_map` mode is now actively enforced in runtime assay matching (in addition to exact/normalized), and mismatch diagnostics now include actionable remediation text for fixing Type/XML-name linkage or switching modes.
 - Validation, preview, and export pipelines now apply optional runtime `mapping_overrides` (cross-file rules and protocol defaults) on top of `config/mapping.v1.yaml`, with config-schema validation and automatic rollback after each generation call.
 - Default-ruleset generation now normalizes analyte `assay_key` linkage into resolvable assay groups before projection: analytes resolve through assay identity aliases when possible, and analyte-only assay references synthesize deterministic assay containers so preview/export `Analytes.xml` includes every analyte.
+- Default-ruleset manual/excel analyte assay references are now locked by regression tests for synthesized assay grouping, mixed-case/whitespace alias resolution, repeated analytes per synthesized assay group, and analyte-unit linkage parity between preview and export `Analytes.xml`.
 
 ### Fixed
 - Fixed manual-entry analyte assay dropdown sourcing to read Kit Components `Assay Abbreviation` (column index 3) instead of `Parameter Set Name`, while preserving first-seen, non-empty deduplication semantics for dropdown options.
