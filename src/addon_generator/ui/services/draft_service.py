@@ -38,7 +38,11 @@ class DraftService:
             stamp = datetime.now(tz=timezone.utc).strftime("%Y%m%dT%H%M%SZ")
             path = root / f"addon_draft_{stamp}.json"
 
+        saved_at = datetime.now(tz=timezone.utc)
         sanitized_draft_state = asdict(app_state.draft_state)
+        sanitized_draft_state["path"] = str(path)
+        sanitized_draft_state["dirty"] = False
+        sanitized_draft_state["last_saved_at"] = saved_at
         sanitized_draft_state["payload"] = {}
         payload = {
             "import_state": asdict(app_state.import_state),
@@ -47,11 +51,12 @@ class DraftService:
             "preview_state": asdict(app_state.preview_state),
             "draft_state": sanitized_draft_state,
         }
-        path.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+        json_payload = self._json_ready(payload)
+        path.write_text(json.dumps(json_payload, indent=2, sort_keys=True), encoding="utf-8")
         app_state.draft_state.path = str(path)
         app_state.draft_state.payload = payload
         app_state.draft_state.dirty = False
-        app_state.draft_state.last_saved_at = datetime.now(tz=timezone.utc)
+        app_state.draft_state.last_saved_at = saved_at
         return path
 
     def load(self, path: str | Path) -> dict[str, Any]:
@@ -272,3 +277,13 @@ class DraftService:
             except ValueError:
                 return None
         return None
+
+    @staticmethod
+    def _json_ready(value: Any) -> Any:
+        if isinstance(value, datetime):
+            return value.isoformat()
+        if isinstance(value, dict):
+            return {key: DraftService._json_ready(item) for key, item in value.items()}
+        if isinstance(value, list):
+            return [DraftService._json_ready(item) for item in value]
+        return value
