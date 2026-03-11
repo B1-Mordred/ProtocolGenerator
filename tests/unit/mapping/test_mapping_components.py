@@ -4,7 +4,8 @@ from addon_generator.mapping.config_loader import MappingConfigError, load_mappi
 from addon_generator.mapping.field_path import get_field_value, parse_field_path
 from addon_generator.mapping.normalizers import normalize_for_matching
 from addon_generator.mapping.link_resolver import LinkResolver
-from addon_generator.domain.models import AssayModel
+from addon_generator.domain.models import AddonModel, AssayModel
+from addon_generator.domain.issues import IssueSeverity
 
 
 def test_field_path_resolution_and_normalize() -> None:
@@ -97,3 +98,40 @@ def test_link_resolver_applies_explicit_projection_fallbacks_when_configured() -
     )
 
     assert projection.xml_name == "PROTO-ONLY"
+
+
+def test_link_resolver_cross_file_mismatch_includes_actionable_remediation() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml")
+    cfg.raw["assay_mapping"]["cross_file_match"]["mode"] = "exact"
+    addon = AddonModel(
+        assays=[AssayModel(key="assay:1", protocol_type="CHEM", xml_name="IA")],
+        analytes=[],
+        units=[],
+    )
+
+    issues = LinkResolver(cfg).validate_cross_file_linkage(addon)
+
+    assert len(issues) == 1
+    assert issues[0].code == "assay-cross-file-mismatch"
+    assert issues[0].severity == IssueSeverity.ERROR
+    assert "Set XML assay name equal to Type" in str(issues[0].details.get("recommended_action", ""))
+
+
+def test_link_resolver_alias_map_mode_accepts_alias_equivalence() -> None:
+    cfg = load_mapping_config("config/mapping.v1.yaml")
+    cfg.raw["assay_mapping"]["cross_file_match"] = {
+        "mode": "alias_map",
+        "alias_map": {
+            "CHEM": "chemistry",
+            "Chem": "chemistry",
+        },
+    }
+    addon = AddonModel(
+        assays=[AssayModel(key="assay:1", protocol_type="CHEM", xml_name="Chem")],
+        analytes=[],
+        units=[],
+    )
+
+    issues = LinkResolver(cfg).validate_cross_file_linkage(addon)
+
+    assert issues == []

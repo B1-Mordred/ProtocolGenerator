@@ -275,3 +275,18 @@ def test_manual_entry_dropdowns_expand_for_long_option_values(qapp) -> None:
     action_combo = view.sample_prep_table.cellWidget(0, 0)
     assert isinstance(action_combo, QComboBox)
     assert action_combo.minimumContentsLength() >= len(long_action)
+
+
+def test_manual_entry_shows_assay_linkage_guidance_and_warning_on_mismatch(qapp) -> None:
+    view = ManualEntryView()
+
+    assert "AssayInformation[].Type" in view.linkage_guidance_label.text()
+    assert "Analytes.xml Assay.Name" in view.linkage_guidance_label.text()
+
+    view.assays_table.setItem(0, 1, QTableWidgetItem("Chem Display"))
+    view.assays_table.setItem(0, 4, QTableWidgetItem("IA"))
+    view.assays_table.cellWidget(0, 5).setCurrentText("CHEM")
+    view._update_linkage_warning()
+
+    assert view.linkage_warning_label.isHidden() is False
+    assert "Set XML assay name equal to Type or change matching mode to alias_map/normalized." in view.linkage_warning_label.text()

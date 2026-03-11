@@ -18,6 +18,9 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from addon_generator.mapping.config_loader import load_mapping_config
+from addon_generator.mapping.normalizers import normalize_for_matching
+
 
 class ManualEntryView(QWidget):
     _BASICS_FIELD_WIDTH_CHARS = 36
@@ -58,6 +61,17 @@ class ManualEntryView(QWidget):
         self._suspend_data_changed = False
         root = QVBoxLayout(self)
         root.addWidget(QLabel("Enter AddOn data manually. Changes are autosaved as you type."))
+        self.linkage_guidance_label = QLabel(
+            "Assay linkage guidance: ProtocolFile AssayInformation[].Type must link to Analytes.xml Assay.Name "
+            "based on assay_mapping.cross_file_match.mode. ProtocolFile AssayInformation[].DisplayName is a UI label "
+            "and does not drive linkage."
+        )
+        self.linkage_guidance_label.setWordWrap(True)
+        root.addWidget(self.linkage_guidance_label)
+        self.linkage_warning_label = QLabel("")
+        self.linkage_warning_label.setWordWrap(True)
+        self.linkage_warning_label.hide()
+        root.addWidget(self.linkage_warning_label)
 
         self.tabs = QTabWidget(self)
         root.addWidget(self.tabs)
@@ -81,6 +95,10 @@ class ManualEntryView(QWidget):
                 "Container Type (if Liquid)",
             ],
             tab_name="Kit Components",
+            guidance=(
+                "Maps to ProtocolFile AssayInformation fields. 'Type' populates AssayInformation[].Type and should match "
+                "Analytes.xml Assay.Name under current matching mode. 'Component Name' maps to DisplayName."
+            ),
         )
         self.dilutions_table = self._build_table_tab(
             ["Dilution Key", "Buffer1 Ratio", "Buffer2 Ratio", "Buffer3 Ratio"],
@@ -89,11 +107,16 @@ class ManualEntryView(QWidget):
         self.analytes_table = self._build_table_tab(
             ["Analyte Name", "Assay", "Unit of Measurement"],
             tab_name="Analytes",
+            guidance=(
+                "Analyte 'Assay' should reference the same assay identity used for Analytes.xml Assay.Name. "
+                "Assay.Name is cross-file matched against ProtocolFile AssayInformation[].Type."
+            ),
         )
         self.sample_prep_table = self._build_table_tab(
             ["Action", "Source", "Destination", "Volume", "Duration", "Force"],
             tab_name="Sample Prep",
         )
+        self._update_linkage_warning()
 
     def _build_basics_tab(self) -> None:
         widget = QWidget(self)
@@ -114,9 +137,13 @@ class ManualEntryView(QWidget):
             layout.addRow(label, line)
         self.tabs.addTab(widget, "Basics")
 
-    def _build_table_tab(self, headers: list[str], *, tab_name: str) -> QTableWidget:
+    def _build_table_tab(self, headers: list[str], *, tab_name: str, guidance: str | None = None) -> QTableWidget:
         container = QWidget(self)
         layout = QVBoxLayout(container)
+        if guidance:
+            guidance_label = QLabel(guidance, container)
+            guidance_label.setWordWrap(True)
+            layout.addWidget(guidance_label)
         table = QTableWidget(1, len(headers), container)
         table.setHorizontalHeaderLabels(headers)
         table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
@@ -206,10 +233,55 @@ class ManualEntryView(QWidget):
         self._apply_table_dropdowns()
 
     def _emit_data_changed(self) -> None:
+        self._update_linkage_warning()
         if self._suspend_data_changed:
             return
         if self._on_data_changed:
             self._on_data_changed()
+
+    def _update_linkage_warning(self) -> None:
+        mode, alias_map = self._cross_file_match_settings()
+        mismatches = self._linkage_mismatches(mode, alias_map)
+        if not mismatches:
+            self.linkage_warning_label.hide()
+            self.linkage_warning_label.setText("")
+            return
+        sample_pairs = ", ".join(f"Type='{p}' vs XML Name='{x}'" for p, x in mismatches[:3])
+        self.linkage_warning_label.setText(
+            f"Warning: {len(mismatches)} assay linkage mismatch(es) for mode '{mode}'. {sample_pairs}. "
+            "Set XML assay name equal to Type or change matching mode to alias_map/normalized."
+        )
+        self.linkage_warning_label.show()
+
+    def _cross_file_match_settings(self) -> tuple[str, dict[str, str]]:
+        try:
+            config = load_mapping_config("config/mapping.v1.yaml")
+            cross_file = config.raw.get("assay_mapping", {}).get("cross_file_match", {})
+            mode = str(cross_file.get("mode", "exact"))
+            alias_map = cross_file.get("alias_map", {})
+            normalized_alias_map = alias_map if isinstance(alias_map, dict) else {}
+            return mode, {str(k): str(v) for k, v in normalized_alias_map.items()}
+        except Exception:
+            return "exact", {}
+
+    def _linkage_mismatches(self, mode: str, alias_map: dict[str, str]) -> list[tuple[str, str]]:
+        mismatches: list[tuple[str, str]] = []
+        for row in range(self.assays_table.rowCount()):
+            protocol_type = self._cell_text(self.assays_table, row, 5)
+            xml_name = self._cell_text(self.assays_table, row, 4) or self._cell_text(self.assays_table, row, 1)
+            if not protocol_type and not xml_name:
+                continue
+            if mode == "normalized":
+                matches = normalize_for_matching(protocol_type) == normalize_for_matching(xml_name)
+            elif mode == "alias_map":
+                protocol_value = alias_map.get(protocol_type, protocol_type)
+                xml_value = alias_map.get(xml_name, xml_name)
+                matches = protocol_value == xml_value
+            else:
+                matches = protocol_type == xml_name
+            if not matches:
+                mismatches.append((protocol_type, xml_name))
+        return mismatches
 
     def _set_data_change_suspended(self, suspended: bool) -> None:
         self._suspend_data_changed = suspended

@@ -84,29 +84,48 @@ class LinkResolver:
 
     def validate_cross_file_linkage(self, addon: AddonModel) -> list[ValidationIssue]:
         issues: list[ValidationIssue] = []
-        mode = self.config.raw["assay_mapping"]["cross_file_match"].get("mode", "exact")
+        cross_file_match = self.config.raw["assay_mapping"]["cross_file_match"]
+        mode = cross_file_match.get("mode", "exact")
+        alias_map = cross_file_match.get("alias_map", {}) if isinstance(cross_file_match, dict) else {}
 
         protocol_types = [assay.protocol_type or "" for assay in addon.assays]
         xml_names = [assay.xml_name or "" for assay in addon.assays]
         for p, x in zip(protocol_types, xml_names):
-            if mode == "exact" and p != x:
+            if not self._assay_names_match(p, x, mode=mode, alias_map=alias_map):
                 issues.append(
-                    ValidationIssue(
-                        code="assay-cross-file-mismatch",
-                        message=f"Protocol assay type '{p}' does not match XML assay name '{x}'",
-                        path="assays",
-                        severity=IssueSeverity.ERROR,
-                        source=IssueSource.PROJECTION,
-                    )
-                )
-            if mode == "normalized" and normalize_for_matching(p) != normalize_for_matching(x):
-                issues.append(
-                    ValidationIssue(
-                        code="assay-cross-file-mismatch",
-                        message=f"Protocol assay type '{p}' does not match XML assay name '{x}'",
-                        path="assays",
-                        severity=IssueSeverity.ERROR,
-                        source=IssueSource.PROJECTION,
-                    )
+                    self._build_assay_mismatch_issue(protocol_type=p, xml_name=x, mode=mode)
                 )
         return issues
+
+    def _assay_names_match(self, protocol_type: str, xml_name: str, *, mode: str, alias_map: dict[str, str]) -> bool:
+        if mode == "normalized":
+            return normalize_for_matching(protocol_type) == normalize_for_matching(xml_name)
+        if mode == "alias_map":
+            mapped_protocol = self._apply_alias_map(protocol_type, alias_map)
+            mapped_xml = self._apply_alias_map(xml_name, alias_map)
+            return mapped_protocol == mapped_xml
+        return protocol_type == xml_name
+
+    def _apply_alias_map(self, value: str, alias_map: dict[str, str]) -> str:
+        if not alias_map:
+            return value
+        canonical_map = {k.strip(): v.strip() for k, v in alias_map.items() if isinstance(k, str) and isinstance(v, str)}
+        if value in canonical_map:
+            return canonical_map[value]
+        reverse_lookup = {target: target for target in canonical_map.values()}
+        return reverse_lookup.get(value, value)
+
+    def _build_assay_mismatch_issue(self, *, protocol_type: str, xml_name: str, mode: str) -> ValidationIssue:
+        recommended_action = "Set XML assay name equal to Type or change matching mode to alias_map/normalized."
+        if mode == "normalized":
+            recommended_action = "Normalize Type and XML assay name to the same value or switch to alias_map mode."
+        if mode == "alias_map":
+            recommended_action = "Add/adjust assay_mapping.cross_file_match.alias_map so Type and XML assay name resolve to the same canonical value."
+        return ValidationIssue(
+            code="assay-cross-file-mismatch",
+            message=f"Protocol assay type '{protocol_type}' does not match XML assay name '{xml_name}' under mode '{mode}'.",
+            path="assays",
+            severity=IssueSeverity.ERROR,
+            source=IssueSource.PROJECTION,
+            details={"recommended_action": recommended_action},
+        )
