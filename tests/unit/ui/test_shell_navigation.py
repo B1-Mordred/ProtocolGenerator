@@ -139,7 +139,7 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
             )
         ],
         dilution_schemes=[
-            DilutionSchemeInputDTO(key="1+4", label="1+4", metadata={"buffer1_ratio": "50", "buffer2_ratio": "50"})
+            DilutionSchemeInputDTO(key="dilution:1+4", label="1+4", metadata={"buffer1_ratio": "50", "buffer2_ratio": "50"})
         ],
     )
 
@@ -166,40 +166,32 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assert shell.manual_entry_view.dilutions_table.item(0, 1).text() == "50"
 
 
-def test_shell_populates_dilution_display_label_over_internal_key(qapp) -> None:
+def test_shell_does_not_backfill_parameter_set_number_from_internal_assay_key(qapp) -> None:
     shell = MainShell()
 
     bundle = InputDTOBundle(
         source_type="excel",
-        method=MethodInputDTO(key="method:M-1"),
-        dilution_schemes=[
-            DilutionSchemeInputDTO(
-                key="dilution:1+2",
-                label="1+2",
-                metadata={"name": "1+2", "buffer1_ratio": "34", "buffer2_ratio": "66"},
+        assays=[
+            AssayInputDTO(
+                key="dilution-buffer-1",
+                protocol_type="Reagent",
+                protocol_display_name="Dilution Buffer 1",
+                xml_name="BASIC Kit",
+                metadata={
+                    "product_number": "92007",
+                    "component_name": "Dilution Buffer 1",
+                    "parameter_set_name": "BASIC Kit",
+                    "type": "Reagent",
+                    "container_type": "BG 50mL",
+                },
             )
         ],
     )
 
     shell._populate_manual_entry_from_bundle(bundle)
 
-    assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+2"
-
-
-def test_shell_populates_dilution_display_label_from_real_workbook_fixture(qapp) -> None:
-    openpyxl = pytest.importorskip("openpyxl")
-    assert openpyxl is not None
-
-    from pathlib import Path
-
-    from addon_generator.importers.excel_importer import ExcelImporter
-
-    shell = MainShell()
-    bundle = ExcelImporter().import_workbook_bundle(Path("tests/AddOn_Input_92111_v03.xlsx"))
-
-    shell._populate_manual_entry_from_bundle(bundle)
-
-    assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+2"
+    assert shell.manual_entry_view.assays_table.item(0, 1).text() == "Dilution Buffer 1"
+    assert shell.manual_entry_view.assays_table.item(0, 2).text() == ""
 
 
 def test_shell_admin_menu_has_dedicated_dropdown_configuration_actions(qapp) -> None:

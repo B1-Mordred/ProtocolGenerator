@@ -417,7 +417,7 @@ class MainShell(QMainWindow):
                 {
                     "product_number": str(meta.get("product_number") or ""),
                     "component_name": str(meta.get("component_name") or assay.protocol_display_name or assay.xml_name or ""),
-                    "parameter_set_number": str(meta.get("parameter_set_number") or assay.key or ""),
+                    "parameter_set_number": str(meta.get("parameter_set_number") or ""),
                     "assay_abbreviation": str(meta.get("assay_abbreviation") or ""),
                     "parameter_set_name": str(meta.get("parameter_set_name") or assay.xml_name or ""),
                     "type": str(meta.get("type") or assay.protocol_type or ""),
