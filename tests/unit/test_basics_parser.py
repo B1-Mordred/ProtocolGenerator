@@ -158,3 +158,31 @@ def test_parse_basics_sheet_fills_down_sparse_kit_component_cells() -> None:
     assert parsed.assays[1].metadata["type"] == "Internal Standard"
     assert parsed.assays[1].metadata["container_type"] == "BG 50mL"
     assert not diagnostics
+
+
+def test_parse_basics_sheet_stops_at_first_empty_row_after_component_data() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100"],
+            ["Method Version", "1.0"],
+            [],
+            [
+                "Product Number",
+                "Component Name",
+                "Parameter Set Number",
+                "Assay Abbreviation",
+                'Parameter Set Name (or "BASIC Kit")',
+                "Type",
+                "Container Type (if liquid)",
+            ],
+            ["PN-1", "Component A", "PS-1", "A1", "Panel A", "CHEM", "Tube"],
+            ["", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", ""],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert [assay.key for assay in parsed.assays] == ["PS-1"]
+    assert not diagnostics
