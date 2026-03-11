@@ -541,3 +541,21 @@ def test_normalize_workbook_rows_falls_back_protocol_display_name_to_protocol_ty
     )
 
     assert payload["assays"][0]["protocol_display_name"] == "Chem"
+
+
+def test_gui_mapper_preserves_analytes_when_assay_rows_are_missing_or_sparse() -> None:
+    addon = map_gui_payload_to_addon(
+        {
+            "method_id": "M-3",
+            "method_version": "1.0",
+            "assays": [{"key": "assay:defined", "protocol_type": "CHEM", "xml_name": "CHEM"}],
+            "analytes": [
+                {"name": "DefinedAnalyte", "assay_key": "assay:defined", "unit_names": "mg/dL"},
+                {"name": "MissingAssayAnalyte", "assay_key": "assay:missing", "unit_names": "mmol/L"},
+            ],
+        }
+    )
+
+    assert [a.name for a in addon.analytes] == ["DefinedAnalyte", "MissingAssayAnalyte"]
+    assert [a.assay_key for a in addon.analytes] == ["assay:defined", "assay:missing"]
+    assert sorted(unit.name for unit in addon.units) == ["mg/dL", "mmol/L"]
