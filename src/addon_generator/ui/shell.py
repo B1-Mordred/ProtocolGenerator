@@ -417,7 +417,7 @@ class MainShell(QMainWindow):
                 {
                     "product_number": str(meta.get("product_number") or ""),
                     "component_name": str(meta.get("component_name") or assay.protocol_display_name or assay.xml_name or ""),
-                    "parameter_set_number": str(meta.get("parameter_set_number") or assay.key or ""),
+                    "parameter_set_number": str(meta.get("parameter_set_number") or ""),
                     "assay_abbreviation": str(meta.get("assay_abbreviation") or ""),
                     "parameter_set_name": str(meta.get("parameter_set_name") or assay.xml_name or ""),
                     "type": str(meta.get("type") or assay.protocol_type or ""),
@@ -460,7 +460,7 @@ class MainShell(QMainWindow):
             metadata = dict(dilution.metadata or {})
             dilution_rows.append(
                 {
-                    "key": str(dilution.key or dilution.label or ""),
+                    "key": str(dilution.label or metadata.get("name") or dilution.key or ""),
                     "buffer1_ratio": str(metadata.get("buffer1_ratio") or ""),
                     "buffer2_ratio": str(metadata.get("buffer2_ratio") or ""),
                     "buffer3_ratio": str(metadata.get("buffer3_ratio") or ""),

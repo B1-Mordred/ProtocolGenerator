@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Excel import manual-entry backfill now keeps Kit Components `Parameter Set Number` blank when the workbook omits it (instead of leaking internal assay keys), and Dilutions show display labels (`1+2`) rather than internal identifiers (`dilution:1+2`).
 - Workbook-template analyte linking now resolves analyte `assay_key` from `Analytes.Parameter Set` using `Basics` kit component context (`Parameter Set Name` / `Parameter Set Number`) when no `Assay Key` column is present; unresolved links now emit `missing-assay-link` diagnostics instead of defaulting to analyte names.
 - Workbook-template Dilutions parsing now accepts header aliases (`Dilution Name`, `Dilution Buffer 1 Ratio`, `Dilution Buffer 2 Ratio`, `Dilution Buffer 3 Ratio`) and emits both per-buffer ratio metadata plus synthesized legacy `ratio` values for compatibility with existing flows.
 - Workbook-template Basics parsing now accepts AddOn identity labels (`Kit Series`, `(Basic) Kit Name`, `Kit Product Number`, `AddOn Series`, `AddOn Product Name`, `AddOn Product Number`) and maps them to method metadata used by manual-entry backfill flows.

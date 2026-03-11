@@ -139,7 +139,7 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
             )
         ],
         dilution_schemes=[
-            DilutionSchemeInputDTO(key="1+4", label="1+4", metadata={"buffer1_ratio": "50", "buffer2_ratio": "50"})
+            DilutionSchemeInputDTO(key="dilution:1+4", label="1+4", metadata={"buffer1_ratio": "50", "buffer2_ratio": "50"})
         ],
     )
 
@@ -164,6 +164,34 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assert shell.manual_entry_view.sample_prep_table.item(0, 4).text() == "00:30"
     assert shell.manual_entry_view.dilutions_table.item(0, 0).text() == "1+4"
     assert shell.manual_entry_view.dilutions_table.item(0, 1).text() == "50"
+
+
+def test_shell_does_not_backfill_parameter_set_number_from_internal_assay_key(qapp) -> None:
+    shell = MainShell()
+
+    bundle = InputDTOBundle(
+        source_type="excel",
+        assays=[
+            AssayInputDTO(
+                key="dilution-buffer-1",
+                protocol_type="Reagent",
+                protocol_display_name="Dilution Buffer 1",
+                xml_name="BASIC Kit",
+                metadata={
+                    "product_number": "92007",
+                    "component_name": "Dilution Buffer 1",
+                    "parameter_set_name": "BASIC Kit",
+                    "type": "Reagent",
+                    "container_type": "BG 50mL",
+                },
+            )
+        ],
+    )
+
+    shell._populate_manual_entry_from_bundle(bundle)
+
+    assert shell.manual_entry_view.assays_table.item(0, 1).text() == "Dilution Buffer 1"
+    assert shell.manual_entry_view.assays_table.item(0, 2).text() == ""
 
 
 def test_shell_admin_menu_has_dedicated_dropdown_configuration_actions(qapp) -> None:

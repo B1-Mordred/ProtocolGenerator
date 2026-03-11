@@ -236,12 +236,12 @@ def test_sampleprep_assigns_row_order_when_order_header_absent(tmp_path: Path) -
     assert [step.key for step in bundle.sample_prep_steps] == ["sampleprep:1", "sampleprep:2"]
 
 
-def test_dilutions_import_buffer_ratio_aliases_and_synthesizes_ratio(tmp_path: Path) -> None:
+def test_dilutions_import_buffer_ratio_aliases_and_synthesizes_ratio_with_inconsistent_spacing(tmp_path: Path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     wb = _build_template_workbook(openpyxl)
 
     wb["Dilutions"].delete_rows(1, wb["Dilutions"].max_row)
-    wb["Dilutions"].append(["Dilution Name", "Dilution Buffer 1 Ratio", "Dilution Buffer 2 Ratio", "Dilution Buffer 3 Ratio"])
+    wb["Dilutions"].append(["Dilution Name", "Dilution Buffer 1 Ratio", "Dilution Buffer 2  Ratio", "Dilution Buffer 3  Ratio"])
     wb["Dilutions"].append(["Std1", "2", "3", "5"])
 
     path = tmp_path / "dilutions-buffer-aliases.xlsx"
