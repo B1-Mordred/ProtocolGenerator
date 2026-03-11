@@ -7,6 +7,7 @@
 
 
 ### Fixed
+- Fixed `InputMergeService` assay deduplication to use a composite assay identity (`key` + component metadata) instead of key-only matching, so same-key rows for different kit components survive merge while true same-row conflicts are still reported.
 - Fixed workbook-template Basics duplicate detection to preserve every non-empty kit-component row (including repeated calibrator/control/internal-standard rows sharing `Parameter Set Number` + `Type`) by deduplicating only exact row identities while retaining row-level metadata.
 - Fixed workbook-template Basics component-row scanning to ignore completely empty rows instead of treating the first blank as end-of-table, so internal blank separators no longer truncate later component imports while trailing blank rows remain diagnostic-free.
 - Fixed workbook-template Basics kit-component import for sparse XLSX rows where Product Number / Type / Container Type are intentionally provided once then left blank on following rows; parser now fills these fields down so imported Kit Components keep correct metadata in manual entry.
