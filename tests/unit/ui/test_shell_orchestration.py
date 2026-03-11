@@ -21,6 +21,7 @@ from addon_generator.input_models.dtos import (
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QFileDialog, QMessageBox
 
+from addon_generator.importers import ExcelImportValidationError, ImportDiagnostic
 from addon_generator.ui.models.issue_view_model import IssueViewModel
 from addon_generator.ui.services.export_service import ExportResult
 from addon_generator.ui.services.draft_service import DraftService
@@ -634,6 +635,52 @@ def test_shell_open_logs_uses_runtime_log_directory(qapp, monkeypatch, tmp_path)
     assert opened == [str(tmp_path / "logs")]
     assert (tmp_path / "logs").exists()
 
+
+
+
+def test_shell_import_excel_failure_clears_cached_path_and_allows_retry(qapp, monkeypatch, messagebox_spy):
+    class _FailingImportService(_ImportService):
+        def __init__(self):
+            self.calls = 0
+
+        def load_excel(self, path):
+            self.calls += 1
+            raise ExcelImportValidationError(
+                "Workbook contains validation errors",
+                [
+                    ImportDiagnostic(
+                        rule_id="missing-required-field",
+                        message="Method Id is required",
+                        sheet="Basics",
+                        row=2,
+                        column="Method Id",
+                    )
+                ],
+            )
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_FailingImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+
+    selected_paths = ["/tmp/bad-first.xlsx", "/tmp/bad-second.xlsx"]
+
+    def _open_file_name(*_args, **_kwargs):
+        return selected_paths.pop(0), "Excel Files (*.xlsx *.xlsm *.xls)"
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(_open_file_name))
+
+    shell.import_excel()
+    assert "excel_path" not in shell.app_state.editor_state.export_settings
+
+    shell.import_excel()
+    assert "excel_path" not in shell.app_state.editor_state.export_settings
+    assert len(messagebox_spy["warning"]) == 2
 
 def test_shell_import_excel_prompts_for_file_when_setting_missing(qapp, monkeypatch):
     shell = MainShell(

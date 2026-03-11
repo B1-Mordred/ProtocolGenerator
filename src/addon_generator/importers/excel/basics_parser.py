@@ -98,19 +98,20 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
             )
             assay_identity = (_identity_token(key), _identity_token(protocol_type))
             if assay_identity in seen_assays:
-                diagnostics.append(
-                    ImportDiagnostic(
-                        rule_id="duplicate-row",
-                        message="Duplicate assay row",
-                        sheet=sheet.title,
-                        row=row_idx,
-                        value={
-                            "assay_key": key,
-                            "protocol_type": protocol_type,
-                            "duplicate_key": f"{key}|{protocol_type}",
-                        },
+                if _identity_token(protocol_type) not in {"calibrator", "control", "internal standard"}:
+                    diagnostics.append(
+                        ImportDiagnostic(
+                            rule_id="duplicate-row",
+                            message="Duplicate assay row",
+                            sheet=sheet.title,
+                            row=row_idx,
+                            value={
+                                "assay_key": key,
+                                "protocol_type": protocol_type,
+                                "duplicate_key": f"{key}|{protocol_type}",
+                            },
+                        )
                     )
-                )
                 continue
             seen_assays.add(assay_identity)
             assays.append(
@@ -200,5 +201,5 @@ def _normalize_label(value: Any) -> str:
     return _text(value).rstrip(":").casefold()
 
 
-def _identity_token(value: str) -> str:
-    return value.strip().casefold()
+def _identity_token(value: Any) -> str:
+    return _text(value).casefold()

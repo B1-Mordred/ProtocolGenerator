@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 import json
+import logging
 from pathlib import Path
 from typing import Callable
 
@@ -26,6 +27,7 @@ from addon_generator.__about__ import (
     __draft_format_version__,
     __version__,
 )
+from addon_generator.importers import ExcelImportValidationError
 from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
 from addon_generator.input_models.dtos import DilutionSchemeInputDTO, SamplePrepStepInputDTO
 from addon_generator.runtime.paths import get_runtime_paths
@@ -55,6 +57,8 @@ from addon_generator.ui.widgets.status_banner import StatusBanner
 
 
 
+
+LOGGER = logging.getLogger(__name__)
 
 DEFAULT_UPDATE_MANIFEST_URL = "https://example.invalid/addon-generator/update.json"
 
@@ -330,7 +334,45 @@ class MainShell(QMainWindow):
         )
         if not source_path:
             return
-        bundle, provenance, issues = self.import_service.load_excel(source_path)
+        try:
+            bundle, provenance, issues = self.import_service.load_excel(source_path)
+        except ExcelImportValidationError as exc:
+            LOGGER.warning("Excel import failed for %s: %s", source_path, exc, exc_info=True)
+            diagnostics_summary = "\n".join(
+                f"- [{diagnostic.rule_id}] {diagnostic.sheet}"
+                f"{f' (row {diagnostic.row})' if diagnostic.row is not None else ''}"
+                f"{f' ({diagnostic.column})' if diagnostic.column else ''}: {diagnostic.message}"
+                for diagnostic in exc.diagnostics[:5]
+            )
+            more_count = len(exc.diagnostics) - 5
+            if more_count > 0:
+                diagnostics_summary += f"\n- ... and {more_count} more issue(s)."
+            QMessageBox.warning(
+                self,
+                "Excel Import Failed",
+                "Workbook import did not complete.\n\n"
+                f"Reason: {exc}\n\n"
+                f"{diagnostics_summary}\n\n"
+                "Check the workbook and retry. A detailed stack trace was written to the app logs.",
+            )
+            self.app_state.editor_state.export_settings.pop("excel_path", None)
+            self._mark_dirty(reason="excel_import_failed")
+            self._refresh_status()
+            return
+        except Exception as exc:
+            LOGGER.exception("Unexpected Excel import failure for %s", source_path)
+            QMessageBox.warning(
+                self,
+                "Excel Import Failed",
+                "Workbook import failed unexpectedly.\n\n"
+                f"{type(exc).__name__}: {exc}\n\n"
+                "See the app logs for details.",
+            )
+            self.app_state.editor_state.export_settings.pop("excel_path", None)
+            self._mark_dirty(reason="excel_import_failed")
+            self._refresh_status()
+            return
+
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
         self._populate_manual_entry_from_bundle(self._last_merged_bundle)
