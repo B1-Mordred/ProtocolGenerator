@@ -246,6 +246,14 @@ class MainShell(QMainWindow):
         field_mapping_action.triggered.connect(self.show_field_mapping)
         admin_menu.addAction(field_mapping_action)
 
+        cross_file_rules_action = QAction("Configure Cross-file Match Rules", self)
+        cross_file_rules_action.triggered.connect(self.configure_cross_file_match_rules)
+        admin_menu.addAction(cross_file_rules_action)
+
+        protocol_defaults_action = QAction("Configure Protocol Defaults", self)
+        protocol_defaults_action.triggered.connect(self.configure_protocol_defaults)
+        admin_menu.addAction(protocol_defaults_action)
+
     def show_manual_entry(self) -> None:
         current_bundle = self._current_merged_bundle()
         if current_bundle is not None:
@@ -594,6 +602,101 @@ class MainShell(QMainWindow):
             reason="admin_sample_prep_actions",
         )
 
+    def configure_cross_file_match_rules(self) -> None:
+        settings = self.app_state.editor_state.export_settings
+        mapping_overrides = settings.setdefault("mapping_overrides", {})
+        assay_mapping = mapping_overrides.setdefault("assay_mapping", {})
+        cross_file = assay_mapping.setdefault("cross_file_match", {})
+
+        modes = ["exact", "normalized", "alias_map", "explicit_key"]
+        current_mode = str(cross_file.get("mode") or "exact")
+        initial_index = modes.index(current_mode) if current_mode in modes else 0
+        selected_mode, ok = QInputDialog.getItem(
+            self,
+            "Configure Cross-file Match Mode",
+            "Cross-file match mode:",
+            modes,
+            initial_index,
+            False,
+        )
+        if not ok:
+            return
+
+        next_cross_file: dict[str, object] = {"mode": selected_mode}
+        if selected_mode == "alias_map":
+            existing_alias_map = cross_file.get("alias_map") if isinstance(cross_file.get("alias_map"), dict) else {}
+            current_aliases = ", ".join(f"{alias}={target}" for alias, target in sorted(existing_alias_map.items()))
+            raw_aliases, alias_ok = QInputDialog.getText(
+                self,
+                "Configure Alias Map",
+                "Alias mapping pairs (comma-separated alias=target):",
+                text=current_aliases,
+            )
+            if not alias_ok:
+                return
+            alias_map: dict[str, str] = {}
+            for part in [segment.strip() for segment in raw_aliases.split(",") if segment.strip()]:
+                alias, separator, target = part.partition("=")
+                if not separator or not alias.strip() or not target.strip():
+                    QMessageBox.warning(self, "Invalid Alias Map", "Each alias pair must use alias=target syntax.")
+                    return
+                alias_map[alias.strip()] = target.strip()
+            next_cross_file["alias_map"] = alias_map
+        elif selected_mode == "explicit_key":
+            protocol_field, protocol_ok = QInputDialog.getText(
+                self,
+                "Configure Explicit Protocol Field",
+                "Protocol field path:",
+                text=str(cross_file.get("protocol_field") or "protocol.type"),
+            )
+            if not protocol_ok:
+                return
+            analytes_xml_field, xml_ok = QInputDialog.getText(
+                self,
+                "Configure Explicit Analytes.xml Field",
+                "Analytes.xml field path:",
+                text=str(cross_file.get("analytes_xml_field") or "analytes_xml.name"),
+            )
+            if not xml_ok:
+                return
+            next_cross_file["protocol_field"] = protocol_field.strip()
+            next_cross_file["analytes_xml_field"] = analytes_xml_field.strip()
+
+        assay_mapping["cross_file_match"] = next_cross_file
+        self._mark_dirty(reason="mapping_overrides_cross_file")
+        self._refresh_status()
+
+    def configure_protocol_defaults(self) -> None:
+        settings = self.app_state.editor_state.export_settings
+        mapping_overrides = settings.setdefault("mapping_overrides", {})
+        current_defaults = mapping_overrides.get("protocol_defaults")
+        default_payload = current_defaults if isinstance(current_defaults, dict) else {}
+        raw, ok = QInputDialog.getMultiLineText(
+            self,
+            "Configure Protocol Defaults",
+            "JSON object merged into mapping protocol_defaults:",
+            json.dumps(default_payload, indent=2, sort_keys=True),
+        )
+        if not ok:
+            return
+        text = raw.strip()
+        if not text:
+            mapping_overrides.pop("protocol_defaults", None)
+            self._mark_dirty(reason="mapping_overrides_protocol_defaults")
+            self._refresh_status()
+            return
+        try:
+            parsed = json.loads(text)
+        except json.JSONDecodeError as exc:
+            QMessageBox.warning(self, "Invalid Protocol Defaults", f"Invalid JSON: {exc}")
+            return
+        if not isinstance(parsed, dict):
+            QMessageBox.warning(self, "Invalid Protocol Defaults", "Protocol defaults must be a JSON object.")
+            return
+        mapping_overrides["protocol_defaults"] = parsed
+        self._mark_dirty(reason="mapping_overrides_protocol_defaults")
+        self._refresh_status()
+
     def run_validation(self) -> None:
         merged = self._current_merged_bundle()
         if merged is None:
@@ -621,7 +724,10 @@ class MainShell(QMainWindow):
         merged = self._current_merged_bundle()
         if merged is None:
             return
-        protocol, analytes, summary, failure = self.preview_service.generate(merged)
+        protocol, analytes, summary, failure = self.preview_service.generate(
+            merged,
+            export_settings=self.app_state.editor_state.export_settings,
+        )
         self.app_state.preview_state.protocol_json = protocol
         self.app_state.preview_state.analytes_xml = analytes
         self.app_state.preview_state.summary = summary or None

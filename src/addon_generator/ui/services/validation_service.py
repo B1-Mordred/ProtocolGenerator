@@ -28,7 +28,13 @@ class ValidationService:
     def validate(self, merged_bundle: InputDTOBundle, *, export_settings: dict[str, object] | None = None) -> tuple[object, ValidationSummary]:
         addon = self._builder.build(merged_bundle)
         field_mapping_settings = (export_settings or {}).get("field_mapping")
-        result = self._service.generate_all(addon, dto_bundle=merged_bundle, field_mapping_settings=field_mapping_settings)
+        mapping_overrides = (export_settings or {}).get("mapping_overrides")
+        result = self._service.generate_all(
+            addon,
+            dto_bundle=merged_bundle,
+            field_mapping_settings=field_mapping_settings,
+            mapping_overrides=mapping_overrides,
+        )
         issues = [self._to_issue_view_model(issue) for issue in result.issues + result.warnings]
 
         grouped_issues: dict[str, list[IssueViewModel]] = defaultdict(list)

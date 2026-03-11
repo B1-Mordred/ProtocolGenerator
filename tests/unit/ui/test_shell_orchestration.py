@@ -19,7 +19,7 @@ from addon_generator.input_models.dtos import (
     SamplePrepStepInputDTO,
 )
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QFileDialog, QMessageBox
+from PySide6.QtWidgets import QFileDialog, QInputDialog, QMessageBox
 
 from addon_generator.importers import ExcelImportValidationError, ImportDiagnostic
 from addon_generator.ui.models.issue_view_model import IssueViewModel
@@ -101,7 +101,7 @@ class _ValidationService:
 
 
 class _PreviewService:
-    def generate(self, merged):
+    def generate(self, merged, *, export_settings=None):
         return "{}", "<xml/>", {"export_readiness": True, "validation_status": "valid"}, None
 
 
@@ -114,6 +114,42 @@ class _ExportService:
         self.called = True
         self.result.destination = destination_folder
         return self.result
+
+
+def test_shell_configure_cross_file_match_rules_updates_export_settings(qapp, monkeypatch):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+    )
+
+    monkeypatch.setattr(QInputDialog, "getItem", staticmethod(lambda *args, **kwargs: ("normalized", True)))
+    shell.configure_cross_file_match_rules()
+
+    assert shell.app_state.editor_state.export_settings["mapping_overrides"]["assay_mapping"]["cross_file_match"] == {"mode": "normalized"}
+
+
+def test_shell_configure_protocol_defaults_updates_export_settings(qapp, monkeypatch):
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+    )
+
+    monkeypatch.setattr(
+        QInputDialog,
+        "getMultiLineText",
+        staticmethod(lambda *args, **kwargs: ('{"method_information": {"DisplayName": "Configured"}}', True)),
+    )
+    shell.configure_protocol_defaults()
+
+    assert shell.app_state.editor_state.export_settings["mapping_overrides"]["protocol_defaults"]["method_information"]["DisplayName"] == "Configured"
 
 
 
