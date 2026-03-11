@@ -31,6 +31,8 @@ KIT_COMPONENT_HEADERS = {
     "container type (if liquid)": "container_type",
 }
 
+FILL_DOWN_METADATA_FIELDS = ("product_number", "type", "container_type")
+
 
 @dataclass(slots=True)
 class BasicsParseResult:
@@ -68,6 +70,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
         diagnostics.append(ImportDiagnostic(rule_id="missing-component-table", message="Could not find component table headers", sheet=sheet.title))
     else:
         seen_assays: set[tuple[str, str]] = set()
+        fill_down_values: dict[str, str] = {field: "" for field in FILL_DOWN_METADATA_FIELDS}
         for row_idx in range(header_row_idx + 1, len(rows) + 1):
             row = rows[row_idx - 1]
 
@@ -83,6 +86,25 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
             parameter_set_name = _value(row, header_map, "parameter_set_name")
             assay_type = _value(row, header_map, "type")
             container_type = _value(row, header_map, "container_type")
+
+            for field_name in FILL_DOWN_METADATA_FIELDS:
+                current_value = {
+                    "product_number": product_number,
+                    "type": assay_type,
+                    "container_type": container_type,
+                }[field_name]
+                if current_value:
+                    fill_down_values[field_name] = current_value
+                    continue
+                inherited_value = fill_down_values.get(field_name, "")
+                if not inherited_value:
+                    continue
+                if field_name == "product_number":
+                    product_number = inherited_value
+                elif field_name == "type":
+                    assay_type = inherited_value
+                elif field_name == "container_type":
+                    container_type = inherited_value
 
             if not any((key, protocol, display, xml_name, product_number, component_name, parameter_set_number, assay_abbreviation, parameter_set_name, assay_type, container_type)):
                 continue

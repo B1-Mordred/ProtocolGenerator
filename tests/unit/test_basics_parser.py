@@ -128,3 +128,33 @@ def test_parse_basics_sheet_prefers_latest_identity_match_when_label_repeats() -
     assert parsed.method.sub_title == "New Product"
     assert parsed.method.product_number == "P-002"
     assert not diagnostics
+
+
+def test_parse_basics_sheet_fills_down_sparse_kit_component_cells() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100"],
+            ["Method Version", "1.0"],
+            [],
+            [
+                "Product Number",
+                "Component Name",
+                "Parameter Set Number",
+                "Assay Abbreviation",
+                'Parameter Set Name (or "BASIC Kit")',
+                "Type",
+                "Container Type (if liquid)",
+            ],
+            ["92046/N2/XT2", "Internal Standard Mix", "92714-XT2", "NL2-XT2", "Neuroleptics 2/EXTENDED 2", "Internal Standard", "BG 50mL"],
+            ["", "", "92913-XT", "AD1-XT", "Antidepressants 1/EXTENDED", "", ""],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert [assay.key for assay in parsed.assays] == ["92714-XT2", "92913-XT"]
+    assert parsed.assays[1].metadata["product_number"] == "92046/N2/XT2"
+    assert parsed.assays[1].metadata["type"] == "Internal Standard"
+    assert parsed.assays[1].metadata["container_type"] == "BG 50mL"
+    assert not diagnostics
