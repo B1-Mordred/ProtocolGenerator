@@ -94,7 +94,7 @@ def test_basics_fixture_with_internal_empty_rows_does_not_truncate_component_imp
 
     bundle = ExcelImporter().import_workbook_bundle(workbook_path)
 
-    assert [assay.key for assay in bundle.assays] == ["PS-1", "PS-2"]
+    assert [assay.key for assay in bundle.assays] == ["A1", "A2"]
     assert bundle.assays[1].metadata["product_number"] == "PN-1"
     assert bundle.assays[1].metadata["type"] == "CHEM"
     assert bundle.assays[1].metadata["container_type"] == "Tube"
@@ -365,8 +365,52 @@ def test_analytes_resolve_assay_key_from_parameter_set_when_assay_key_column_abs
 
     bundle = ExcelImporter().import_workbook_bundle(path)
 
+    assert [assay.key for assay in bundle.assays] == ["CHEM", "IMM"]
     assert [(a.name, a.assay_key) for a in bundle.analytes] == [
-        ("GLU", "100"),
+        ("GLU", "CHEM"),
+        ("TSH", "IMM"),
+    ]
+
+
+def test_analytes_parameter_set_linking_falls_back_deterministically_when_assay_abbreviation_missing(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = openpyxl.Workbook()
+    wb.remove(wb.active)
+
+    basics = wb.create_sheet("Basics")
+    basics.append(["Method Id", "M-302"])
+    basics.append(["Method Version", "1.0"])
+    basics.append([])
+    basics.append([
+        "Product Number",
+        "Component Name",
+        "Parameter Set Number",
+        "Assay Abbreviation",
+        'Parameter Set Name (or "Basic Kit")',
+        "Type",
+        "Container Type (if Liquid)",
+    ])
+    basics.append(["P-1", "Chemistry Panel", "100", "CHEM", "Chemistry", "KIT", "Tube"])
+    basics.append(["P-2", "Immuno Panel", "200", "", "Immunology", "KIT", "Tube"])
+
+    analytes = wb.create_sheet("Analytes")
+    analytes.append(["Analyte", "Unit", "Parameter Set"])
+    analytes.append(["GLU", "mg/dL", "Chemistry"])
+    analytes.append(["TSH", "IU/mL", "Immunology"])
+
+    hidden = wb.create_sheet("Hidden_Lists")
+    hidden.append(["Units"])
+    hidden.append(["mg/dL"])
+    hidden.append(["IU/mL"])
+
+    path = tmp_path / "parameter-set-linking-missing-abbreviation.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert [assay.key for assay in bundle.assays] == ["CHEM", "200"]
+    assert [(a.name, a.assay_key) for a in bundle.analytes] == [
+        ("GLU", "CHEM"),
         ("TSH", "200"),
     ]
 
@@ -439,11 +483,12 @@ def test_user_workbook_fills_down_component_metadata_for_sparse_rows() -> None:
 
     bundle = ExcelImporter().import_workbook_bundle(Path("tests/AddOn_Input_92111_v03.xlsx"))
 
-    assay_by_key = {assay.key: assay for assay in bundle.assays}
+    assay = next((a for a in bundle.assays if (a.metadata or {}).get("parameter_set_number") == "92913-XT"), None)
 
-    assert assay_by_key["92913-XT"].metadata["product_number"] == "92046/N2/XT2"
-    assert assay_by_key["92913-XT"].metadata["type"] == "Internal Standard"
-    assert assay_by_key["92913-XT"].metadata["container_type"] == "BG 50mL"
+    assert assay is not None
+    assert assay.metadata["product_number"] == "92046/N2/XT2"
+    assert assay.metadata["type"] == "Internal Standard"
+    assert assay.metadata["container_type"] == "BG 50mL"
 
 def test_user_workbook_addon_input_92111_v03_imports_successfully() -> None:
     pytest.importorskip("openpyxl")
