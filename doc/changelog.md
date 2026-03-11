@@ -7,6 +7,7 @@
 
 
 ### Fixed
+- Fixed manual-entry analyte assay dropdown sourcing to read Kit Components `Assay Abbreviation` (column index 3) instead of `Parameter Set Name`, while preserving first-seen, non-empty deduplication semantics for dropdown options.
 - Fixed `InputMergeService` assay deduplication to use a composite assay identity (`key` + component metadata) instead of key-only matching, so same-key rows for different kit components survive merge while true same-row conflicts are still reported.
 - Fixed workbook-template Basics duplicate detection to preserve every non-empty kit-component row (including repeated calibrator/control/internal-standard rows sharing `Parameter Set Number` + `Type`) by deduplicating only exact row identities while retaining row-level metadata.
 - Fixed workbook-template Basics component-row scanning to ignore completely empty rows instead of treating the first blank as end-of-table, so internal blank separators no longer truncate later component imports while trailing blank rows remain diagnostic-free.

@@ -176,7 +176,7 @@ class ManualEntryView(QWidget):
     def _assay_dropdown_values(self) -> list[str]:
         values: list[str] = []
         for row in range(self.assays_table.rowCount()):
-            value = self._cell_text(self.assays_table, row, 4)
+            value = self._cell_text(self.assays_table, row, 3)
             if value and value not in values:
                 values.append(value)
         return values

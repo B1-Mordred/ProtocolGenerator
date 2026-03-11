@@ -96,13 +96,13 @@ def test_manual_entry_tab_order_and_kit_component_headers(qapp) -> None:
     assert sample_prep_headers == ["Action", "Source", "Destination", "Volume", "Duration", "Force"]
 
 
-def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
+def test_manual_entry_dropdown_cells_and_assay_options_use_assay_abbreviation(qapp) -> None:
     view = ManualEntryView()
 
     view.assays_table.setItem(0, 1, QTableWidgetItem("Component A"))
-    view.assays_table.setItem(0, 4, QTableWidgetItem("Basic Kit"))
-    view.set_assays_rows([{"component_name": "Component A", "parameter_set_name": "Basic Kit", "type": "Liquid", "container_type": "Bottle"}])
-    view.set_analytes_rows([{"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}])
+    view.assays_table.setItem(0, 3, QTableWidgetItem("CHEM"))
+    view.set_assays_rows([{"component_name": "Component A", "assay_abbreviation": "CHEM", "parameter_set_name": "Basic Kit", "type": "Liquid", "container_type": "Bottle"}])
+    view.set_analytes_rows([{"name": "Glucose", "assay_key": "CHEM", "unit_names": "mg/dL"}])
 
     assay_type_combo = view.assays_table.cellWidget(0, 5)
     container_combo = view.assays_table.cellWidget(0, 6)
@@ -119,7 +119,8 @@ def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
     assert isinstance(sample_action_combo, QComboBox)
     assert isinstance(sample_source_combo, QComboBox)
     assert isinstance(sample_destination_combo, QComboBox)
-    assert analyte_assay_combo.findText("Basic Kit") >= 0
+    assert analyte_assay_combo.findText("CHEM") >= 0
+    assert analyte_assay_combo.findText("Basic Kit") < 0
     assert sample_source_combo.findText("Component A") >= 0
     assert sample_destination_combo.findText("Component A") >= 0
 
@@ -128,10 +129,32 @@ def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
     sample_destination_combo.setCurrentText("Component A")
 
     payload = view.payload()
-    assert payload["analytes"][0] == {"name": "Glucose", "assay_key": "Basic Kit", "unit_names": "mg/dL"}
+    assert payload["analytes"][0] == {"name": "Glucose", "assay_key": "CHEM", "unit_names": "mg/dL"}
     assert payload["sample_prep"][0]["action"] == "Mix"
     assert payload["sample_prep"][0]["source"] == "Component A"
     assert payload["sample_prep"][0]["destination"] == "Component A"
+
+
+def test_manual_entry_analyte_assay_dropdown_deduplicates_non_empty_assay_abbreviations(qapp) -> None:
+    view = ManualEntryView()
+
+    view.set_assays_rows(
+        [
+            {"component_name": "Component A", "assay_abbreviation": "CHEM", "parameter_set_name": "Chemistry Core"},
+            {"component_name": "Component B", "assay_abbreviation": "CHEM", "parameter_set_name": "Chemistry Duplicate"},
+            {"component_name": "Component C", "assay_abbreviation": "", "parameter_set_name": "No Abbrev"},
+            {"component_name": "Component D", "assay_abbreviation": "IMM", "parameter_set_name": "Immuno Core"},
+        ]
+    )
+    view.refresh_dynamic_dropdowns()
+
+    analyte_assay_combo = view.analytes_table.cellWidget(0, 1)
+    assert isinstance(analyte_assay_combo, QComboBox)
+
+    options = [analyte_assay_combo.itemText(i) for i in range(analyte_assay_combo.count())]
+    assert options == ["", "CHEM", "IMM"]
+
+
 
 
 def test_manual_entry_dropdown_cells_clear_underlying_table_items(qapp) -> None:
