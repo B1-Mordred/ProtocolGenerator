@@ -71,3 +71,25 @@ def test_validation_service_derives_severity_counts_and_export_blocking() -> Non
 
     assert summary.severity_counts == {"error": 1, "warning": 1, "info": 0}
     assert summary.export_blocked is True
+
+
+def test_validation_service_uses_issue_recommended_action_when_present() -> None:
+    service = ValidationService()
+    service._builder = _Builder()
+    service._service = _GenerationService(
+        issues=[
+            ValidationIssue(
+                code="assay-cross-file-mismatch",
+                message="Mismatch",
+                path="assays",
+                severity=IssueSeverity.ERROR,
+                source=IssueSource.PROJECTION,
+                details={"recommended_action": "Set XML assay name equal to Type or change matching mode to alias_map/normalized."},
+            )
+        ],
+        warnings=[],
+    )
+
+    _addon, summary = service.validate(merged_bundle=object())
+
+    assert summary.issues[0].recommended_action == "Set XML assay name equal to Type or change matching mode to alias_map/normalized."

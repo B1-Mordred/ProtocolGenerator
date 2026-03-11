@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Assay/manual-entry authoring UX now provides explicit inline guidance describing how `ProtocolFile.AssayInformation[].Type`, `ProtocolFile.AssayInformation[].DisplayName`, and `Analytes.xml Assay.Name` relate; manual entry now warns immediately when current values would fail linkage under the active `assay_mapping.cross_file_match.mode` and points users to remediation (`set XML assay name equal to Type` or switch to `alias_map`/`normalized`).
 - Excel import manual-entry backfill now keeps Kit Components `Parameter Set Number` blank when the workbook omits it (instead of leaking internal assay keys), and Dilutions show display labels (`1+2`) rather than internal identifiers (`dilution:1+2`).
 - Workbook-template Basics kit-component parsing now fills down sparse `Product Number`, `Type`, and `Container Type (if liquid)` values across contiguous rows (matching common merged-cell workbook layouts), so imported Kit Components preserve expected metadata for rows that only supply `Parameter Set` fields.
 - Workbook-template Basics parsing now keeps each non-empty kit-component row as a distinct imported assay row even when `Parameter Set Number` and `Type` repeat (for example multiple calibrator/control rows), while still deduplicating exact accidental row repeats and preserving per-row metadata fields.
