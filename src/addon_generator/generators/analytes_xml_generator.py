@@ -22,7 +22,7 @@ def generate_analytes_addon_xml(addon: AddonModel, xsd_path: Path | str, output_
         raise ValueError("AddonModel.method is required")
 
     root = ET.Element("AddOn")
-    ET.SubElement(root, "Id").text = str(addon.addon_id)
+    ET.SubElement(root, "Id").text = "0"
     ET.SubElement(root, "MethodId").text = addon.method.product_number or ""
     ET.SubElement(root, "MethodVersion").text = ""
 
@@ -41,23 +41,23 @@ def generate_analytes_addon_xml(addon: AddonModel, xsd_path: Path | str, output_
             continue
 
         assay_el = ET.SubElement(assays_el, "Assay")
-        ET.SubElement(assay_el, "Id").text = str(assay.xml_id if assay.xml_id is not None else 0)
+        ET.SubElement(assay_el, "Id").text = "0"
         ET.SubElement(assay_el, "Name").text = assay.xml_name or assay.protocol_type or ""
-        ET.SubElement(assay_el, "AddOnRef").text = str(assay.addon_ref if assay.addon_ref is not None else addon.addon_id)
+        ET.SubElement(assay_el, "AddOnRef").text = "0"
 
         analytes_el = ET.SubElement(assay_el, "Analytes")
         for analyte in sorted(analytes_by_assay.get(assay.key, []), key=lambda a: (a.xml_id if a.xml_id is not None else -1, a.key)):
             analyte_el = ET.SubElement(analytes_el, "Analyte")
-            ET.SubElement(analyte_el, "Id").text = str(analyte.xml_id if analyte.xml_id is not None else 0)
+            ET.SubElement(analyte_el, "Id").text = "0"
             ET.SubElement(analyte_el, "Name").text = analyte.name
-            ET.SubElement(analyte_el, "AssayRef").text = str(analyte.assay_ref if analyte.assay_ref is not None else 0)
+            ET.SubElement(analyte_el, "AssayRef").text = "0"
 
             unit_parent = ET.SubElement(analyte_el, "AnalyteUnits")
             for unit in sorted(units_by_analyte.get(analyte.key, []), key=lambda u: (u.xml_id if u.xml_id is not None else -1, u.key)):
                 unit_el = ET.SubElement(unit_parent, "AnalyteUnit")
-                ET.SubElement(unit_el, "Id").text = str(unit.xml_id if unit.xml_id is not None else 0)
+                ET.SubElement(unit_el, "Id").text = "0"
                 ET.SubElement(unit_el, "Name").text = unit.name
-                ET.SubElement(unit_el, "AnalyteRef").text = str(unit.analyte_ref if unit.analyte_ref is not None else 0)
+                ET.SubElement(unit_el, "AnalyteRef").text = "0"
 
             if analyte.assay_information_type:
                 ET.SubElement(analyte_el, "AssayInformationType").text = analyte.assay_information_type

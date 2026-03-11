@@ -61,6 +61,33 @@ def test_generate_analytes_xml_skips_assays_without_abbreviation() -> None:
     assert assay_names == ["CHEM"]
     assert analyte_names == ["Glucose"]
 
+
+def test_generate_analytes_xml_forces_zero_ids_and_refs_for_preview_and_export() -> None:
+    addon = AddonModel(
+        addon_id=99,
+        method=MethodModel(key="method:k", method_id="M-100", method_version="2.0", product_number="PN-100"),
+        assays=[
+            AssayModel(
+                key="assay:chem",
+                protocol_type="CHEM",
+                xml_name="CHEM",
+                xml_id=7,
+                addon_ref=99,
+                metadata={"assay_abbreviation": "CHEM"},
+            )
+        ],
+        analytes=[AnalyteModel(key="analyte:glu", name="Glucose", assay_key="assay:chem", xml_id=8, assay_ref=7)],
+        units=[AnalyteUnitModel(key="unit:mgdl", name="mg/dL", analyte_key="analyte:glu", xml_id=9, analyte_ref=8)],
+    )
+
+    result = generate_analytes_addon_xml(addon, xsd_path="AddOn.xsd")
+    root = ET.fromstring(result.xml_content)
+
+    assert set(root.findall('.//Id'))
+    assert all(node.text == "0" for node in root.findall('.//Id'))
+    assert all(node.text == "0" for node in root.findall('.//AddOnRef'))
+    assert all(node.text == "0" for node in root.findall('.//AnalyteRef'))
+
 def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_with_units() -> None:
     service = GenerationService()
     addon = service.import_from_gui_payload(
