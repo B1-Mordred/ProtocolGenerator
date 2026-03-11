@@ -13,13 +13,15 @@ from xml.etree import ElementTree as ET
 
 from addon_generator.domain.issues import ValidationIssue
 from addon_generator.__about__ import about_payload
-from addon_generator.domain.models import AddonModel
+from addon_generator.domain.issues import IssueSeverity, IssueSource
+from addon_generator.domain.models import AddonModel, AssayModel
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.generators.analytes_xml_generator import generate_analytes_addon_xml
 from addon_generator.generators.protocol_json_generator import generate_protocol_json
 from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payload_to_bundle
 from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.link_resolver import LinkResolver
+from addon_generator.mapping.normalizers import normalize_for_matching
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.default_derivation_service import DefaultDerivationService
 from addon_generator.services.input_merge_service import InputMergeService
@@ -83,10 +85,12 @@ class GenerationService:
         return validate_domain(addon).issues
 
     def generate_analytes_xml(self, addon: AddonModel, xsd_path: str | Path = "AddOn.xsd") -> str:
+        self._normalize_assay_groups_for_analytes(addon)
         self.resolver.assign_ids(addon)
         return generate_analytes_addon_xml(addon, xsd_path=xsd_path).xml_content
 
     def generate_protocol_json(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None):
+        self._normalize_assay_groups_for_analytes(addon)
         derived_overrides = self.derivation_service.derive_protocol_defaults(addon)
         with self._temporary_mapping_overrides(derived_overrides):
             self.resolver.assign_ids(addon)
@@ -108,8 +112,10 @@ class GenerationService:
             self._deep_merge(merged_overrides, mapping_overrides)
 
         with self._temporary_mapping_overrides(merged_overrides):
+            normalization_issues = self._normalize_assay_groups_for_analytes(addon)
             self.resolver.assign_ids(addon)
             staged_issues: list[tuple[str, ValidationIssue]] = []
+            staged_issues.extend(("domain", issue) for issue in normalization_issues)
 
             # Phase 1: structural/domain validation.
             staged_issues.extend(("domain", issue) for issue in validate_domain(addon).issues.issues)
@@ -140,7 +146,7 @@ class GenerationService:
                             message=str(warning),
                             path="field_mapping",
                             source_location="field_mapping",
-                            severity="warning",
+                            severity=IssueSeverity.WARNING,
                         ),
                     )
                 )
@@ -180,6 +186,70 @@ class GenerationService:
                 conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
                 field_mapping_report=mapping_result.report,
             )
+
+    def _normalize_assay_groups_for_analytes(self, addon: AddonModel) -> list[ValidationIssue]:
+        assays_by_key = {assay.key: assay for assay in addon.assays}
+        alias_to_key: dict[str, str] = {}
+        identity_conflicts: set[str] = set()
+
+        def _register_alias(raw_value: str | None, assay_key: str) -> None:
+            normalized = normalize_for_matching(raw_value or "")
+            if not normalized:
+                return
+            existing = alias_to_key.get(normalized)
+            if existing is None:
+                alias_to_key[normalized] = assay_key
+                return
+            if existing != assay_key:
+                identity_conflicts.add(normalized)
+
+        for assay in addon.assays:
+            _register_alias(assay.key, assay.key)
+            _register_alias(assay.protocol_type, assay.key)
+            _register_alias(assay.protocol_display_name, assay.key)
+            _register_alias(assay.xml_name, assay.key)
+            for alias in assay.aliases:
+                _register_alias(alias, assay.key)
+
+        unresolved_assay_keys: set[str] = set()
+        for analyte in addon.analytes:
+            if analyte.assay_key in assays_by_key:
+                continue
+            normalized_assay_key = normalize_for_matching(analyte.assay_key)
+            if normalized_assay_key and normalized_assay_key not in identity_conflicts and normalized_assay_key in alias_to_key:
+                analyte.assay_key = alias_to_key[normalized_assay_key]
+                continue
+            unresolved_assay_keys.add(analyte.assay_key)
+
+        synthesized: list[str] = []
+        for assay_key in sorted(unresolved_assay_keys):
+            if assay_key in assays_by_key:
+                continue
+            synthesized_assay = AssayModel(
+                key=assay_key,
+                protocol_type=assay_key,
+                protocol_display_name=assay_key,
+                xml_name=assay_key,
+                metadata={"synthesized_from_analyte": True},
+            )
+            addon.assays.append(synthesized_assay)
+            assays_by_key[assay_key] = synthesized_assay
+            synthesized.append(assay_key)
+
+        if not synthesized:
+            return []
+
+        return [
+            ValidationIssue(
+                code="assay-group-synthesized-from-analytes",
+                message="Synthesized assay groups from analyte-only assay references.",
+                path="assays",
+                severity=IssueSeverity.WARNING,
+                source=IssueSource.DOMAIN,
+                entity_keys=tuple(synthesized),
+                details={"synthesized_assay_keys": synthesized},
+            )
+        ]
 
     def _sort_issues(self, staged_issues: list[tuple[str, ValidationIssue]]) -> list[ValidationIssue]:
         severity_priority = {"error": 0, "warning": 1, "info": 2}
