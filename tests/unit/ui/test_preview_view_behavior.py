@@ -93,3 +93,14 @@ def test_preview_refresh_updates_summary_and_readiness(qapp):
     assert '"method_id": "M-1"' in shell.preview_view.tabs.summary.toPlainText()
     assert shell.preview_view.validation_readiness.text() == "Validation: valid"
     assert shell.preview_view.export_readiness.text() == "Export readiness: ready"
+
+
+def test_output_preview_navigation_regenerates_when_stale(qapp):
+    shell = _build_shell()
+    assert shell.app_state.preview_state.stale is True
+
+    shell._switch_section(7)
+
+    assert shell.app_state.preview_state.stale is False
+    assert shell.preview_view.stale_banner.text() == "Preview status: current"
+    assert shell.preview_view.tabs.analytes.toPlainText() == "<analytes/>"

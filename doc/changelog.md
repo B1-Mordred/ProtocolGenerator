@@ -19,6 +19,8 @@
 - Default-ruleset manual/excel analyte assay references are now locked by regression tests for synthesized assay grouping, mixed-case/whitespace alias resolution, repeated analytes per synthesized assay group, and analyte-unit linkage parity between preview and export `Analytes.xml`.
 
 ### Fixed
+- Fixed Output Preview navigation in the Qt shell to auto-regenerate stale preview artifacts when users open `Output Preview`, so latest manual/imported assays, analytes, and units appear without requiring an extra `Regenerate` click.
+- Fixed Output Preview fallback rendering so `Analytes.xml` still shows when protocol generation fails and method identity is missing; preview now synthesizes a temporary method context for analytes-only fallback instead of returning an empty analytes pane.
 - Fixed packaged/UI startup rule-pack loading to resolve relative `config/rule_packs` paths via shared runtime resource lookup (including Windows-style separators), preventing `FileNotFoundError` for `default.yaml` when launched outside the repo root.
 - Fixed startup-time circular import between `config.schema_validator` and `mapping.config_loader` by deferring `parse_field_path` import, preventing `ImportError: cannot import name 'MappingConfigError'` in packaged app launches (ref: user-reported issue).
 - Fixed manual-entry analyte assay dropdown sourcing to read Kit Components `Assay Abbreviation` (column index 3) instead of `Parameter Set Name`, while preserving first-seen, non-empty deduplication semantics for dropdown options.
