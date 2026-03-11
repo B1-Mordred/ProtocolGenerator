@@ -132,7 +132,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                     container_type = inherited_value
 
             if not key:
-                key = parameter_set_number or component_name
+                key = assay_abbreviation or parameter_set_number or component_name
             if not key:
                 diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Assay key is required", sheet=sheet.title, row=row_idx, column="Assay Key"))
                 continue
@@ -207,18 +207,18 @@ def _build_assay_reference_lookup(assays: list[AssayInputDTO]) -> dict[str, str]
         key = assay.key.strip()
         if not key:
             continue
-        candidates = {
+        candidates = (
             key,
+            str((assay.metadata or {}).get("assay_abbreviation") or "").strip(),
             str((assay.metadata or {}).get("parameter_set_number") or "").strip(),
             str((assay.metadata or {}).get("parameter_set_name") or "").strip(),
             str((assay.metadata or {}).get("component_name") or "").strip(),
-            str((assay.metadata or {}).get("assay_abbreviation") or "").strip(),
             str(assay.protocol_display_name or "").strip(),
             str(assay.xml_name or "").strip(),
-        }
+        )
         for candidate in candidates:
             if candidate:
-                lookup[candidate.casefold()] = key
+                lookup.setdefault(candidate.casefold(), key)
     return lookup
 
 
