@@ -7,6 +7,7 @@
 
 
 ### Fixed
+- Fixed `Save Status` draft metadata persistence to always write the actual selected save path and an ISO `last_saved_at` timestamp into `draft_state`, preventing recoveries from pointing at stale filenames when users save to renamed files (for example `2addon_status_draft.json`).
 - Fixed workbook-template Basics identity extraction for real AddOn workbooks so `Kit Series`, `(Basic) Kit Name`, `Kit Product Number`, `AddOn Series`, `AddOn Product Name`, and `AddOn Product Number` are mapped into method metadata used to prefill manual data-entry basics fields.
 - Fixed workbook-template analyte linking to stop defaulting `assay_key` to the analyte name when `Assay Key` is absent; parser now resolves links from `Analytes.Parameter Set` through `Basics` `Parameter Set Name`/`Parameter Set Number` context and emits `missing-assay-link` diagnostics when unresolved.
 - Fixed draft save serialization to persist a sanitized `draft_state.payload` (`{}`) on disk so stale nested session payloads are not re-saved; persisted state now treats top-level `import_state` as the authoritative source while keeping full payload assignment in memory after save.

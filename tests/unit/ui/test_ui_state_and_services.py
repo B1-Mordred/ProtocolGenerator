@@ -73,6 +73,8 @@ def test_draft_service_save_and_load_roundtrip(tmp_path: Path) -> None:
 
     assert path.exists()
     assert restored["editor_state"]["manual_overrides"]["method.method_version"] == "2"
+    assert restored["draft_state"]["path"] == str(path)
+    assert isinstance(restored["draft_state"]["last_saved_at"], str)
 
 
 
