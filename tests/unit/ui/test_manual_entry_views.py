@@ -134,6 +134,31 @@ def test_manual_entry_dropdown_cells_and_assay_options(qapp) -> None:
     assert payload["sample_prep"][0]["destination"] == "Component A"
 
 
+def test_manual_entry_dropdown_cells_clear_underlying_table_items(qapp) -> None:
+    view = ManualEntryView()
+
+    view.set_assays_rows([
+        {
+            "component_name": "Component A",
+            "parameter_set_name": "Assay A",
+            "type": "Liquid",
+            "container_type": "Bottle",
+        }
+    ])
+
+    assert view.assays_table.item(0, 5) is None
+    assert view.assays_table.item(0, 6) is None
+
+    view.set_analytes_rows([{"name": "Analyte 1", "assay_key": "Assay A", "unit_names": "mg/dL"}])
+    assert view.analytes_table.item(0, 1) is None
+    assert view.analytes_table.item(0, 2) is None
+
+    view.set_sample_prep_rows([{"action": "Mix", "source": "Component A", "destination": "Component A"}])
+    assert view.sample_prep_table.item(0, 0) is None
+    assert view.sample_prep_table.item(0, 1) is None
+    assert view.sample_prep_table.item(0, 2) is None
+
+
 def test_manual_entry_set_rows_replaces_existing_combo_values_without_carryover(qapp) -> None:
     view = ManualEntryView()
 
