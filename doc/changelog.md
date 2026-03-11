@@ -19,6 +19,7 @@
 - Default-ruleset manual/excel analyte assay references are now locked by regression tests for synthesized assay grouping, mixed-case/whitespace alias resolution, repeated analytes per synthesized assay group, and analyte-unit linkage parity between preview and export `Analytes.xml`.
 
 ### Fixed
+- Fixed packaged/UI startup rule-pack loading to resolve relative `config/rule_packs` paths via shared runtime resource lookup (including Windows-style separators), preventing `FileNotFoundError` for `default.yaml` when launched outside the repo root.
 - Fixed startup-time circular import between `config.schema_validator` and `mapping.config_loader` by deferring `parse_field_path` import, preventing `ImportError: cannot import name 'MappingConfigError'` in packaged app launches (ref: user-reported issue).
 - Fixed manual-entry analyte assay dropdown sourcing to read Kit Components `Assay Abbreviation` (column index 3) instead of `Parameter Set Name`, while preserving first-seen, non-empty deduplication semantics for dropdown options.
 - Fixed `InputMergeService` assay deduplication to use a composite assay identity (`key` + component metadata) instead of key-only matching, so same-key rows for different kit components survive merge while true same-row conflicts are still reported.
