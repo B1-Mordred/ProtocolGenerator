@@ -27,9 +27,6 @@ from addon_generator.config.models import (
     UnitMappingConfig,
     WorkbookParsingRulesConfig,
 )
-from addon_generator.mapping.field_path import parse_field_path
-
-
 class MappingConfigError(ValueError):
     pass
 
@@ -82,6 +79,8 @@ def _ensure_allowed_keys(value: dict[str, Any], *, path: str, allowed: set[str])
 
 
 def _validate_field_path(path: str, *, source: str) -> None:
+    from addon_generator.mapping.field_path import parse_field_path
+
     try:
         parse_field_path(path)
     except ValueError as exc:

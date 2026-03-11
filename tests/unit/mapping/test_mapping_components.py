@@ -135,3 +135,20 @@ def test_link_resolver_alias_map_mode_accepts_alias_equivalence() -> None:
     issues = LinkResolver(cfg).validate_cross_file_linkage(addon)
 
     assert issues == []
+
+
+def test_schema_validator_import_does_not_raise_circular_import() -> None:
+    import importlib
+    import sys
+
+    for module_name in (
+        "addon_generator.mapping",
+        "addon_generator.mapping.config_loader",
+        "addon_generator.mapping.field_path",
+        "addon_generator.config.schema_validator",
+    ):
+        sys.modules.pop(module_name, None)
+
+    module = importlib.import_module("addon_generator.config.schema_validator")
+
+    assert hasattr(module, "MappingConfigError")
