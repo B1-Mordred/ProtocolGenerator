@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Any
 
 from addon_generator.importers.excel_importer import ImportDiagnostic
@@ -55,11 +56,14 @@ def _find_header(rows: list[Any]) -> tuple[int | None, dict[str, int]]:
     aliases = {
         "dilution name": "name",
         "dilution buffer 1 ratio": "buffer1_ratio",
+        "buffer1 ratio": "buffer1_ratio",
         "dilution buffer 2 ratio": "buffer2_ratio",
+        "buffer2 ratio": "buffer2_ratio",
         "dilution buffer 3 ratio": "buffer3_ratio",
+        "buffer3 ratio": "buffer3_ratio",
     }
     for idx, row in enumerate(rows, start=1):
-        labels = {_text(c.value).casefold(): i for i, c in enumerate(row) if _text(c.value)}
+        labels = {_normalize_label(c.value): i for i, c in enumerate(row) if _normalize_label(c.value)}
         normalized_labels = {aliases.get(label, label): col for label, col in labels.items()}
         if "name" in normalized_labels and (
             "ratio" in normalized_labels
@@ -82,3 +86,8 @@ def _text(value: Any) -> str:
 
 def _identity_token(value: str) -> str:
     return value.strip().casefold()
+
+
+def _normalize_label(value: Any) -> str:
+    label = _text(value).casefold().replace("_", " ").replace("-", " ")
+    return re.sub(r"\s+", " ", label).strip()
