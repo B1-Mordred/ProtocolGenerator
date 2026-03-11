@@ -145,6 +145,9 @@ class InputMergeService:
         )
 
     def _merge_keyed(self, bundles: list[InputDTOBundle], attr: str, conflicts: list[dict[str, Any]]) -> list[Any]:
+        if attr == "assays":
+            return self._merge_assays(bundles, conflicts)
+
         merged: dict[str, Any] = {}
         owners: dict[str, str] = {}
         for bundle in bundles:
@@ -155,6 +158,43 @@ class InputMergeService:
                 merged[key] = item
                 owners[key] = bundle.source_type
         return [merged[key] for key in sorted(merged)]
+
+    def _merge_assays(self, bundles: list[InputDTOBundle], conflicts: list[dict[str, Any]]) -> list[AssayInputDTO]:
+        merged: dict[tuple[str, str, str, str, str, str], AssayInputDTO] = {}
+        owners: dict[tuple[str, str, str, str, str, str], str] = {}
+        order: list[tuple[str, str, str, str, str, str]] = []
+
+        for bundle in bundles:
+            for item in bundle.assays:
+                identity = self._assay_identity(item)
+                if identity in merged:
+                    if merged[identity] != item:
+                        conflicts.append(
+                            {
+                                "path": f"assays.{item.key}",
+                                "winner": asdict(item),
+                                "loser": asdict(merged[identity]),
+                                "winner_source": bundle.source_type,
+                                "loser_source": owners[identity],
+                            }
+                        )
+                else:
+                    order.append(identity)
+                merged[identity] = item
+                owners[identity] = bundle.source_type
+
+        return [merged[identity] for identity in order]
+
+    def _assay_identity(self, item: AssayInputDTO) -> tuple[str, str, str, str, str, str]:
+        metadata = item.metadata or {}
+        return (
+            item.key,
+            str(metadata.get("component_name") or ""),
+            str(metadata.get("parameter_set_number") or ""),
+            str(metadata.get("assay_abbreviation") or ""),
+            str(metadata.get("type") or ""),
+            str(metadata.get("container_type") or ""),
+        )
 
     def _merge_dicts(self, bundles: list[InputDTOBundle], attr: str, conflicts: list[dict[str, Any]], path_root: str) -> dict[str, Any]:
         merged: dict[str, Any] = {}

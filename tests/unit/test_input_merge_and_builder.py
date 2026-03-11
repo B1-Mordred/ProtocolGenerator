@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
-from addon_generator.input_models.dtos import DilutionSchemeInputDTO, InputDTOBundle, MethodInputDTO, SamplePrepStepInputDTO
+from addon_generator.input_models.dtos import AssayInputDTO, DilutionSchemeInputDTO, InputDTOBundle, MethodInputDTO, SamplePrepStepInputDTO
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.input_merge_service import InputMergeService
 
@@ -92,3 +92,72 @@ def test_merge_service_includes_sample_prep_and_dilutions_from_input_bundles() -
     assert merged.sample_prep_steps[0].key == "sp1"
     assert len(merged.dilution_schemes) == 1
     assert merged.dilution_schemes[0].key == "d1"
+
+
+def test_merge_service_preserves_same_key_assays_with_different_component_metadata() -> None:
+    bundle = InputDTOBundle(
+        source_type="excel",
+        assays=[
+            AssayInputDTO(key="assay:shared", metadata={"component_name": "Component A", "parameter_set_number": "PS-1"}),
+            AssayInputDTO(key="assay:shared", metadata={"component_name": "Component B", "parameter_set_number": "PS-1"}),
+        ],
+    )
+
+    merged, report = InputMergeService().merge([bundle])
+
+    assert [assay.metadata.get("component_name") for assay in merged.assays] == ["Component A", "Component B"]
+    assert not any(item["path"] == "assays.assay:shared" for item in report["conflicts"])
+
+
+def test_merge_service_reports_assay_conflicts_only_for_same_composite_identity() -> None:
+    low = InputDTOBundle(
+        source_type="xml",
+        assays=[
+            AssayInputDTO(
+                key="assay:shared",
+                protocol_type="Legacy",
+                metadata={
+                    "component_name": "Component A",
+                    "parameter_set_number": "PS-1",
+                    "assay_abbreviation": "ABB",
+                    "type": "Liquid",
+                    "container_type": "Tube",
+                },
+            )
+        ],
+    )
+    high = InputDTOBundle(
+        source_type="gui",
+        assays=[
+            AssayInputDTO(
+                key="assay:shared",
+                protocol_type="New",
+                metadata={
+                    "component_name": "Component A",
+                    "parameter_set_number": "PS-1",
+                    "assay_abbreviation": "ABB",
+                    "type": "Liquid",
+                    "container_type": "Tube",
+                },
+            ),
+            AssayInputDTO(
+                key="assay:shared",
+                protocol_type="Other",
+                metadata={
+                    "component_name": "Component B",
+                    "parameter_set_number": "PS-1",
+                    "assay_abbreviation": "ABB",
+                    "type": "Liquid",
+                    "container_type": "Tube",
+                },
+            ),
+        ],
+    )
+
+    merged, report = InputMergeService().merge([low, high])
+
+    assert [assay.metadata.get("component_name") for assay in merged.assays] == ["Component A", "Component B"]
+    assay_conflicts = [item for item in report["conflicts"] if item["path"] == "assays.assay:shared"]
+    assert len(assay_conflicts) == 1
+    assert assay_conflicts[0]["winner_source"] == "gui"
+    assert assay_conflicts[0]["loser_source"] == "xml"
