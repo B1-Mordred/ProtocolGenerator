@@ -444,16 +444,24 @@ class MainShell(QMainWindow):
 
         assay_rows = []
         assays = assay_source_bundle.assays if assay_source_bundle is not None else bundle.assays
+        preserve_excel_blanks = assay_source_bundle is not None and assay_source_bundle.source_type == "excel"
         for assay in assays:
             meta = dict(assay.metadata or {})
+            component_name = str(meta.get("component_name") or "")
+            parameter_set_name = str(meta.get("parameter_set_name") or "")
+            assay_type = str(meta.get("type") or "")
+            if not preserve_excel_blanks:
+                component_name = component_name or str(assay.protocol_display_name or assay.xml_name or "")
+                parameter_set_name = parameter_set_name or str(assay.xml_name or "")
+                assay_type = assay_type or str(assay.protocol_type or "")
             assay_rows.append(
                 {
                     "product_number": str(meta.get("product_number") or ""),
-                    "component_name": str(meta.get("component_name") or assay.protocol_display_name or assay.xml_name or ""),
+                    "component_name": component_name,
                     "parameter_set_number": str(meta.get("parameter_set_number") or ""),
                     "assay_abbreviation": str(meta.get("assay_abbreviation") or ""),
-                    "parameter_set_name": str(meta.get("parameter_set_name") or assay.xml_name or ""),
-                    "type": str(meta.get("type") or assay.protocol_type or ""),
+                    "parameter_set_name": parameter_set_name,
+                    "type": assay_type,
                     "container_type": str(meta.get("container_type") or ""),
                 }
             )

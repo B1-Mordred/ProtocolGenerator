@@ -50,3 +50,21 @@ def test_sampleprep_vm_mutations_and_validation() -> None:
     assert "sample_prep.steps" in state.editor_state.manual_overrides
     assert state.validation_state.stale is True
     assert state.preview_state.stale is True
+
+
+def test_sampleprep_vm_load_keeps_imported_step_order() -> None:
+    state = AppState()
+    state.import_state.bundles = [
+        InputDTOBundle(
+            source_type="excel",
+            sample_prep_steps=[
+                SamplePrepStepInputDTO(key="sample-prep-1", label="Mix", metadata={"order": "1"}),
+                SamplePrepStepInputDTO(key="sample-prep-10", label="Heat", metadata={"order": "10"}),
+                SamplePrepStepInputDTO(key="sample-prep-2", label="Shake", metadata={"order": "2"}),
+            ],
+        )
+    ]
+
+    vm = SamplePrepScreenViewModel(state, MergeServiceAdapter())
+
+    assert [step.fields["action"].value for step in vm.steps] == ["Mix", "Heat", "Shake"]

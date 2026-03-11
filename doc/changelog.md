@@ -325,3 +325,5 @@
 - Fixed AddOn Data Entry import flow so `Import Excel File` switches to Manual Entry and reliably preserves imported workbook values while the manual-entry tables initialize dropdown editors (preventing autosave callbacks from replacing imported rows with empty payloads).
 
 - Added: rule-pack authoring profiles (`config/rule_packs/*.yaml`) with early UI selection, mapping-path aware config resolution, manual-entry prefill/lock behavior for high-risk assay fields, and integration coverage for near-complete ProtocolFile generation from minimal manual identity input.
+- Fixed Sample Prep merge ordering to preserve imported worksheet step sequence (no lexical key re-sort), so Excel imports keep their original table order while UI move-up/move-down/delete edits remain intact through merge recomputation.
+- Fixed Excel→Manual Entry Kit Components hydration to preserve blank workbook values for `component_name`, `parameter_set_name`, `type`, and `container_type` instead of backfilling from protocol fallback fields.
