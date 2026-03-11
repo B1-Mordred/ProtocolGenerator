@@ -336,7 +336,7 @@ class MainShell(QMainWindow):
         self._populate_manual_entry_from_bundle(bundle)
         self._mark_dirty(reason="excel_import")
         self.import_review_view.refresh_table()
-        self.show_data_review()
+        self.show_manual_entry()
         self._refresh_status()
 
     def import_xml(self) -> None:
