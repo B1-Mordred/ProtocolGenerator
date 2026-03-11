@@ -4,6 +4,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 
 from addon_generator.domain.issues import IssueSource, ValidationIssue
+from addon_generator.config.rule_pack_loader import mapping_path_for_rule_pack
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.generation_service import GenerationService
@@ -23,13 +24,16 @@ class ValidationSummary:
 class ValidationService:
     def __init__(self) -> None:
         self._builder = CanonicalModelBuilder()
-        self._service = GenerationService()
+
+    def _service_for_settings(self, export_settings: dict[str, object] | None) -> GenerationService:
+        selected_pack = str((export_settings or {}).get("selected_rule_pack") or "")
+        return GenerationService(mapping_path=mapping_path_for_rule_pack(selected_pack or None))
 
     def validate(self, merged_bundle: InputDTOBundle, *, export_settings: dict[str, object] | None = None) -> tuple[object, ValidationSummary]:
         addon = self._builder.build(merged_bundle)
         field_mapping_settings = (export_settings or {}).get("field_mapping")
         mapping_overrides = (export_settings or {}).get("mapping_overrides")
-        result = self._service.generate_all(
+        result = self._service_for_settings(export_settings).generate_all(
             addon,
             dto_bundle=merged_bundle,
             field_mapping_settings=field_mapping_settings,

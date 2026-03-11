@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 
+from addon_generator.config.rule_pack_loader import mapping_path_for_rule_pack
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.generation_service import GenerationService
@@ -11,7 +12,10 @@ from addon_generator.services.generation_service import GenerationService
 class PreviewService:
     def __init__(self) -> None:
         self._builder = CanonicalModelBuilder()
-        self._service = GenerationService()
+
+    def _service_for_settings(self, export_settings: dict[str, object] | None) -> GenerationService:
+        selected_pack = str((export_settings or {}).get("selected_rule_pack") or "")
+        return GenerationService(mapping_path=mapping_path_for_rule_pack(selected_pack or None))
 
     def generate(
         self,
@@ -21,7 +25,7 @@ class PreviewService:
     ) -> tuple[str, str, dict[str, str | int | bool], dict[str, str] | None]:
         try:
             addon = self._builder.build(merged_bundle)
-            result = self._service.generate_all(
+            result = self._service_for_settings(export_settings).generate_all(
                 addon,
                 dto_bundle=merged_bundle,
                 field_mapping_settings=(export_settings or {}).get("field_mapping"),

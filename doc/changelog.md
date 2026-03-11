@@ -311,3 +311,5 @@
 - Stopped emitting invalid `MethodInformation.SamplesLayoutType` (`SAMPLES_LAYOUT_SEPARATE`) during protocol generation; multi-assay output now uses schema-allowed values and mapping validation now rejects invalid `protocol_defaults.method_information.SamplesLayoutType`.
 - Hardened Excel workbook parsing entrypoints to convert workbook open failures into `ExcelImportValidationError` diagnostics with stable rule taxonomy (`invalid-workbook-format`/`workbook-open-failed`) and debug-safe error metadata (`path`, `error_type`, `error_message`).
 - Fixed AddOn Data Entry import flow so `Import Excel File` switches to Manual Entry and reliably preserves imported workbook values while the manual-entry tables initialize dropdown editors (preventing autosave callbacks from replacing imported rows with empty payloads).
+
+- Added: rule-pack authoring profiles (`config/rule_packs/*.yaml`) with early UI selection, mapping-path aware config resolution, manual-entry prefill/lock behavior for high-risk assay fields, and integration coverage for near-complete ProtocolFile generation from minimal manual identity input.
