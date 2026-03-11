@@ -1,0 +1,1754 @@
+{
+  "draft_state": {
+    "dirty": false,
+    "last_saved_at": "2026-03-11T09:43:45.879112+00:00",
+    "path": "C:\\Users\\marco\\Downloads\\ProtocolGenerator-dev\\tests\\addon_status_draft_import1.json",
+    "payload": {},
+    "restore_metadata": {
+      "last_dirty_at": "2026-03-11T09:42:19.091311+00:00",
+      "last_dirty_reason": "excel_import"
+    }
+  },
+  "editor_state": {
+    "dilution_overrides": [],
+    "effective_values": {
+      "analytes": [
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:1",
+          "metadata": {},
+          "name": "Amisulpride"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:10",
+          "metadata": {},
+          "name": "Guanfacine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:11",
+          "metadata": {},
+          "name": "Iloperidone"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:12",
+          "metadata": {},
+          "name": "Levomepromazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:13",
+          "metadata": {},
+          "name": "Loxapine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:14",
+          "metadata": {},
+          "name": "Lurasidone"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:15",
+          "metadata": {},
+          "name": "Melperone"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:16",
+          "metadata": {},
+          "name": "Perazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:17",
+          "metadata": {},
+          "name": "Perphenazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:18",
+          "metadata": {},
+          "name": "Pimozide"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:19",
+          "metadata": {},
+          "name": "Pipamperone"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:2",
+          "metadata": {},
+          "name": "Benperidol"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:20",
+          "metadata": {},
+          "name": "Promethazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:21",
+          "metadata": {},
+          "name": "Prothipendyl"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:22",
+          "metadata": {},
+          "name": "Sertindole"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:23",
+          "metadata": {},
+          "name": "Sulforidazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:24",
+          "metadata": {},
+          "name": "Sulpiride"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:25",
+          "metadata": {},
+          "name": "Thioridazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:26",
+          "metadata": {},
+          "name": "Ziprasidone"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:27",
+          "metadata": {},
+          "name": "Zotepine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:28",
+          "metadata": {},
+          "name": "Zuclopenthixol"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:3",
+          "metadata": {},
+          "name": "Brexpiprazole"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:4",
+          "metadata": {},
+          "name": "Bromperidol"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:5",
+          "metadata": {},
+          "name": "Cariprazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:6",
+          "metadata": {},
+          "name": "Chlorpromazine"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:7",
+          "metadata": {},
+          "name": "Chlorprothixene"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:8",
+          "metadata": {},
+          "name": "Flupentixol"
+        },
+        {
+          "assay_information_type": null,
+          "assay_key": "92714-XT2",
+          "key": "analyte:9",
+          "metadata": {},
+          "name": "Fluphenazine"
+        }
+      ],
+      "assay_fragments": [],
+      "assays": [
+        {
+          "aliases": [],
+          "key": "92714-XT2",
+          "metadata": {
+            "assay_abbreviation": "NL2-XT2",
+            "component_name": "Internal Standard Mix",
+            "container_type": "BG 50mL",
+            "parameter_set_name": "Neuroleptics 2/EXTENDED 2",
+            "parameter_set_number": "92714-XT2",
+            "product_number": "92046/N2/XT2",
+            "type": "Internal Standard"
+          },
+          "protocol_display_name": "Internal Standard Mix",
+          "protocol_type": "Internal Standard",
+          "xml_name": "Neuroleptics 2/EXTENDED 2"
+        },
+        {
+          "aliases": [],
+          "key": "92913-XT",
+          "metadata": {
+            "assay_abbreviation": "AD1-XT",
+            "component_name": "Antidepressants 1/EXTENDED",
+            "parameter_set_name": "Antidepressants 1/EXTENDED",
+            "parameter_set_number": "92913-XT"
+          },
+          "protocol_display_name": "Antidepressants 1/EXTENDED",
+          "protocol_type": null,
+          "xml_name": "Antidepressants 1/EXTENDED"
+        },
+        {
+          "aliases": [],
+          "key": "92921-XT2",
+          "metadata": {
+            "assay_abbreviation": "AED-XT2",
+            "component_name": "Antiepileptic Drugs XT2",
+            "parameter_set_name": "Antiepileptic Drugs XT2",
+            "parameter_set_number": "92921-XT2"
+          },
+          "protocol_display_name": "Antiepileptic Drugs XT2",
+          "protocol_type": null,
+          "xml_name": "Antiepileptic Drugs XT2"
+        },
+        {
+          "aliases": [],
+          "key": "96 Well collection plates",
+          "metadata": {
+            "component_name": "96 Well collection plates",
+            "parameter_set_name": "BASIC Kit",
+            "parameter_set_number": "96 Well collection plates",
+            "product_number": "92058",
+            "type": "Collection Plate, 96 well"
+          },
+          "protocol_display_name": "96 Well collection plates",
+          "protocol_type": "Collection Plate, 96 well",
+          "xml_name": "BASIC Kit"
+        },
+        {
+          "aliases": [],
+          "key": "96 Well filter plates",
+          "metadata": {
+            "component_name": "96 Well filter plates",
+            "parameter_set_name": "BASIC Kit",
+            "parameter_set_number": "96 Well filter plates",
+            "product_number": "92057",
+            "type": "Filter Plate, 96 well"
+          },
+          "protocol_display_name": "96 Well filter plates",
+          "protocol_type": "Filter Plate, 96 well",
+          "xml_name": "BASIC Kit"
+        },
+        {
+          "aliases": [],
+          "key": "Dilution Buffer 1",
+          "metadata": {
+            "component_name": "Dilution Buffer 1",
+            "container_type": "BG 50mL",
+            "parameter_set_name": "BASIC Kit",
+            "parameter_set_number": "Dilution Buffer 1",
+            "product_number": "92007",
+            "type": "Reagent"
+          },
+          "protocol_display_name": "Dilution Buffer 1",
+          "protocol_type": "Reagent",
+          "xml_name": "BASIC Kit"
+        },
+        {
+          "aliases": [],
+          "key": "Dilution Buffer 2",
+          "metadata": {
+            "component_name": "Dilution Buffer 2",
+            "container_type": "BG 50mL",
+            "parameter_set_name": "BASIC Kit",
+            "parameter_set_number": "Dilution Buffer 2",
+            "product_number": "92008",
+            "type": "Reagent"
+          },
+          "protocol_display_name": "Dilution Buffer 2",
+          "protocol_type": "Reagent",
+          "xml_name": "BASIC Kit"
+        },
+        {
+          "aliases": [],
+          "key": "Extraction Buffer",
+          "metadata": {
+            "component_name": "Extraction Buffer",
+            "container_type": "BG 7mL",
+            "parameter_set_name": "BASIC Kit",
+            "parameter_set_number": "Extraction Buffer",
+            "product_number": "92005",
+            "type": "Reagent"
+          },
+          "protocol_display_name": "Extraction Buffer",
+          "protocol_type": "Reagent",
+          "xml_name": "BASIC Kit"
+        },
+        {
+          "aliases": [],
+          "key": "Plasma",
+          "metadata": {
+            "component_name": "Plasma",
+            "container_type": "Sample Tube",
+            "parameter_set_name": "Plasma",
+            "parameter_set_number": "Plasma",
+            "type": "Sample"
+          },
+          "protocol_display_name": "Plasma",
+          "protocol_type": "Sample",
+          "xml_name": "Plasma"
+        },
+        {
+          "aliases": [],
+          "key": "Precipitation Reagent",
+          "metadata": {
+            "component_name": "Precipitation Reagent",
+            "container_type": "BG 50mL",
+            "parameter_set_name": "BASIC Kit",
+            "parameter_set_number": "Precipitation Reagent",
+            "product_number": "92012",
+            "type": "Reagent"
+          },
+          "protocol_display_name": "Precipitation Reagent",
+          "protocol_type": "Reagent",
+          "xml_name": "BASIC Kit"
+        }
+      ],
+      "dilution_schemes": [
+        {
+          "key": "dilution:1+2",
+          "label": "dilution:1+2",
+          "metadata": {
+            "buffer1_ratio": "100"
+          }
+        },
+        {
+          "key": "dilution:1+3",
+          "label": "dilution:1+3",
+          "metadata": {
+            "buffer1_ratio": "100"
+          }
+        },
+        {
+          "key": "dilution:1+4",
+          "label": "dilution:1+4",
+          "metadata": {
+            "buffer1_ratio": "50"
+          }
+        },
+        {
+          "key": "dilution:1+5",
+          "label": "dilution:1+5",
+          "metadata": {
+            "buffer1_ratio": "50"
+          }
+        },
+        {
+          "key": "dilution:1+6",
+          "label": "dilution:1+6",
+          "metadata": {
+            "buffer1_ratio": "50"
+          }
+        },
+        {
+          "key": "dilution:1+7",
+          "label": "dilution:1+7",
+          "metadata": {
+            "buffer1_ratio": "50"
+          }
+        },
+        {
+          "key": "dilution:1+8",
+          "label": "dilution:1+8",
+          "metadata": {}
+        }
+      ],
+      "hidden_vocab": {},
+      "loading_fragments": [],
+      "method": {
+        "display_name": "TDM Series A",
+        "key": "method:92711",
+        "legacy_protocol_id": null,
+        "main_title": null,
+        "method_id": "92711",
+        "method_version": "1.0",
+        "order_number": "92711",
+        "product_name": null,
+        "product_number": null,
+        "series_name": "MassTox\u00ae",
+        "sub_title": null
+      },
+      "method_information_overrides": {
+        "DisplayName": "TDM Series A",
+        "OrderNumber": "92711",
+        "SeriesName": "MassTox\u00ae"
+      },
+      "processing_fragments": [],
+      "provenance": {
+        "method.method_id": [
+          {
+            "column": null,
+            "field_key": "method_id",
+            "is_override": true,
+            "row": null,
+            "source_file": null,
+            "source_sheet": null,
+            "source_type": "gui"
+          }
+        ],
+        "method.method_version": [
+          {
+            "column": null,
+            "field_key": "method_version",
+            "is_override": true,
+            "row": null,
+            "source_file": null,
+            "source_sheet": null,
+            "source_type": "gui"
+          }
+        ]
+      },
+      "sample_prep_steps": [
+        {
+          "key": "sample-prep-1",
+          "label": "Pipette (1000)",
+          "metadata": {
+            "action": "Pipette (1000)",
+            "destination": "96 Well filter plates",
+            "source": "Urine",
+            "volume": "50"
+          }
+        },
+        {
+          "key": "sample-prep-10",
+          "label": "Pipette (1000)",
+          "metadata": {
+            "action": "Pipette (1000)",
+            "destination": "96 Well filter plates",
+            "source": "Extraction Buffer",
+            "volume": "25"
+          }
+        },
+        {
+          "key": "sample-prep-11",
+          "label": "Shake",
+          "metadata": {
+            "action": "Shake",
+            "duration": "120",
+            "force": "600",
+            "source": "96 Well filter plates"
+          }
+        },
+        {
+          "key": "sample-prep-12",
+          "label": "Pipette (1000)",
+          "metadata": {
+            "action": "Pipette (1000)",
+            "destination": "96 Well filter plates",
+            "source": "Internal Standard Mix",
+            "volume": "250"
+          }
+        },
+        {
+          "key": "sample-prep-2",
+          "label": "Shake",
+          "metadata": {
+            "action": "Shake",
+            "duration": "30",
+            "force": "1000",
+            "source": "96 Well filter plates"
+          }
+        },
+        {
+          "key": "sample-prep-3",
+          "label": "Centrifuge",
+          "metadata": {
+            "action": "Centrifuge",
+            "destination": "96 Well collection plates",
+            "duration": "300",
+            "force": "2000",
+            "source": "96 Well filter plates"
+          }
+        },
+        {
+          "key": "sample-prep-4",
+          "label": "Dilute",
+          "metadata": {
+            "action": "Dilute",
+            "source": "96 Well collection plates"
+          }
+        },
+        {
+          "key": "sample-prep-5",
+          "label": "Pipette (300)",
+          "metadata": {
+            "action": "Pipette (300)",
+            "destination": "96 Well filter plates",
+            "source": "Plasma Calibrator Level 1",
+            "volume": "50"
+          }
+        },
+        {
+          "key": "sample-prep-6",
+          "label": "Pipette (300)",
+          "metadata": {
+            "action": "Pipette (300)",
+            "destination": "96 Well filter plates",
+            "source": "Plasma Calibrator Level 2",
+            "volume": "50"
+          }
+        },
+        {
+          "key": "sample-prep-7",
+          "label": "Pipette (300)",
+          "metadata": {
+            "action": "Pipette (300)",
+            "destination": "96 Well filter plates",
+            "source": "Plasma Calibrator Level 3",
+            "volume": "50"
+          }
+        },
+        {
+          "key": "sample-prep-8",
+          "label": "Pipette (300)",
+          "metadata": {
+            "action": "Pipette (300)",
+            "destination": "96 Well filter plates",
+            "source": "Plasma Control Level I",
+            "volume": "50"
+          }
+        },
+        {
+          "key": "sample-prep-9",
+          "label": "Pipette (300)",
+          "metadata": {
+            "action": "Pipette (300)",
+            "destination": "96 Well filter plates",
+            "source": "Plasma Control Level II",
+            "volume": "50"
+          }
+        }
+      ],
+      "source_name": "merged",
+      "source_type": "default",
+      "units": [
+        {
+          "analyte_key": "analyte:10",
+          "key": "analyte:10:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:11",
+          "key": "analyte:11:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:12",
+          "key": "analyte:12:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:13",
+          "key": "analyte:13:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:14",
+          "key": "analyte:14:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:15",
+          "key": "analyte:15:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:16",
+          "key": "analyte:16:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:17",
+          "key": "analyte:17:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:18",
+          "key": "analyte:18:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:19",
+          "key": "analyte:19:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:1",
+          "key": "analyte:1:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:20",
+          "key": "analyte:20:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:21",
+          "key": "analyte:21:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:22",
+          "key": "analyte:22:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:23",
+          "key": "analyte:23:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:24",
+          "key": "analyte:24:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:25",
+          "key": "analyte:25:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:26",
+          "key": "analyte:26:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:27",
+          "key": "analyte:27:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:28",
+          "key": "analyte:28:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:2",
+          "key": "analyte:2:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:3",
+          "key": "analyte:3:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:4",
+          "key": "analyte:4:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:5",
+          "key": "analyte:5:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:6",
+          "key": "analyte:6:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:7",
+          "key": "analyte:7:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:8",
+          "key": "analyte:8:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        },
+        {
+          "analyte_key": "analyte:9",
+          "key": "analyte:9:unit:0:\u00b5g/L",
+          "metadata": {},
+          "name": "\u00b5g/L"
+        }
+      ]
+    },
+    "export_settings": {
+      "excel_path": "C:/Users/marco/Downloads/ProtocolGenerator-dev/tests/AddOn_Input_92111_v03.xlsx",
+      "field_mapping": {
+        "active_template": "Default",
+        "templates": {
+          "Default": []
+        }
+      },
+      "preview_staleness": {
+        "dirty": true,
+        "stale": true,
+        "validation_stale": true
+      }
+    },
+    "manual_edit_markers": {},
+    "manual_overrides": {},
+    "sample_prep_overrides": [],
+    "selected_dilution_id": null,
+    "selected_entity": null,
+    "selected_sample_prep_step_id": null,
+    "selected_section_index": 0,
+    "unresolved_conflicts": {}
+  },
+  "import_state": {
+    "bundles": [
+      {
+        "analytes": [
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:1",
+            "metadata": {},
+            "name": "Amisulpride"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:2",
+            "metadata": {},
+            "name": "Benperidol"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:3",
+            "metadata": {},
+            "name": "Brexpiprazole"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:4",
+            "metadata": {},
+            "name": "Bromperidol"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:5",
+            "metadata": {},
+            "name": "Cariprazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:6",
+            "metadata": {},
+            "name": "Chlorpromazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:7",
+            "metadata": {},
+            "name": "Chlorprothixene"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:8",
+            "metadata": {},
+            "name": "Flupentixol"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:9",
+            "metadata": {},
+            "name": "Fluphenazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:10",
+            "metadata": {},
+            "name": "Guanfacine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:11",
+            "metadata": {},
+            "name": "Iloperidone"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:12",
+            "metadata": {},
+            "name": "Levomepromazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:13",
+            "metadata": {},
+            "name": "Loxapine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:14",
+            "metadata": {},
+            "name": "Lurasidone"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:15",
+            "metadata": {},
+            "name": "Melperone"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:16",
+            "metadata": {},
+            "name": "Perazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:17",
+            "metadata": {},
+            "name": "Perphenazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:18",
+            "metadata": {},
+            "name": "Pimozide"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:19",
+            "metadata": {},
+            "name": "Pipamperone"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:20",
+            "metadata": {},
+            "name": "Promethazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:21",
+            "metadata": {},
+            "name": "Prothipendyl"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:22",
+            "metadata": {},
+            "name": "Sertindole"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:23",
+            "metadata": {},
+            "name": "Sulforidazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:24",
+            "metadata": {},
+            "name": "Sulpiride"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:25",
+            "metadata": {},
+            "name": "Thioridazine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:26",
+            "metadata": {},
+            "name": "Ziprasidone"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:27",
+            "metadata": {},
+            "name": "Zotepine"
+          },
+          {
+            "assay_information_type": null,
+            "assay_key": "92714-XT2",
+            "key": "analyte:28",
+            "metadata": {},
+            "name": "Zuclopenthixol"
+          }
+        ],
+        "assay_fragments": [],
+        "assays": [
+          {
+            "aliases": [],
+            "key": "92714-XT2",
+            "metadata": {
+              "assay_abbreviation": "NL2-XT2",
+              "component_name": "Internal Standard Mix",
+              "container_type": "BG 50mL",
+              "parameter_set_name": "Neuroleptics 2/EXTENDED 2",
+              "parameter_set_number": "92714-XT2",
+              "product_number": "92046/N2/XT2",
+              "type": "Internal Standard"
+            },
+            "protocol_display_name": "Internal Standard Mix",
+            "protocol_type": "Internal Standard",
+            "xml_name": "Neuroleptics 2/EXTENDED 2"
+          },
+          {
+            "aliases": [],
+            "key": "92913-XT",
+            "metadata": {
+              "assay_abbreviation": "AD1-XT",
+              "component_name": "Antidepressants 1/EXTENDED",
+              "container_type": "",
+              "parameter_set_name": "Antidepressants 1/EXTENDED",
+              "parameter_set_number": "92913-XT",
+              "product_number": "",
+              "type": ""
+            },
+            "protocol_display_name": "Antidepressants 1/EXTENDED",
+            "protocol_type": null,
+            "xml_name": "Antidepressants 1/EXTENDED"
+          },
+          {
+            "aliases": [],
+            "key": "92921-XT2",
+            "metadata": {
+              "assay_abbreviation": "AED-XT2",
+              "component_name": "Antiepileptic Drugs XT2",
+              "container_type": "",
+              "parameter_set_name": "Antiepileptic Drugs XT2",
+              "parameter_set_number": "92921-XT2",
+              "product_number": "",
+              "type": ""
+            },
+            "protocol_display_name": "Antiepileptic Drugs XT2",
+            "protocol_type": null,
+            "xml_name": "Antiepileptic Drugs XT2"
+          },
+          {
+            "aliases": [],
+            "key": "96 Well collection plates",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "96 Well collection plates",
+              "container_type": "",
+              "parameter_set_name": "BASIC Kit",
+              "parameter_set_number": "96 Well collection plates",
+              "product_number": "92058",
+              "type": "Collection Plate, 96 well"
+            },
+            "protocol_display_name": "96 Well collection plates",
+            "protocol_type": "Collection Plate, 96 well",
+            "xml_name": "BASIC Kit"
+          },
+          {
+            "aliases": [],
+            "key": "96 Well filter plates",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "96 Well filter plates",
+              "container_type": "",
+              "parameter_set_name": "BASIC Kit",
+              "parameter_set_number": "96 Well filter plates",
+              "product_number": "92057",
+              "type": "Filter Plate, 96 well"
+            },
+            "protocol_display_name": "96 Well filter plates",
+            "protocol_type": "Filter Plate, 96 well",
+            "xml_name": "BASIC Kit"
+          },
+          {
+            "aliases": [],
+            "key": "Dilution Buffer 1",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "Dilution Buffer 1",
+              "container_type": "BG 50mL",
+              "parameter_set_name": "BASIC Kit",
+              "parameter_set_number": "Dilution Buffer 1",
+              "product_number": "92007",
+              "type": "Reagent"
+            },
+            "protocol_display_name": "Dilution Buffer 1",
+            "protocol_type": "Reagent",
+            "xml_name": "BASIC Kit"
+          },
+          {
+            "aliases": [],
+            "key": "Dilution Buffer 2",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "Dilution Buffer 2",
+              "container_type": "BG 50mL",
+              "parameter_set_name": "BASIC Kit",
+              "parameter_set_number": "Dilution Buffer 2",
+              "product_number": "92008",
+              "type": "Reagent"
+            },
+            "protocol_display_name": "Dilution Buffer 2",
+            "protocol_type": "Reagent",
+            "xml_name": "BASIC Kit"
+          },
+          {
+            "aliases": [],
+            "key": "Extraction Buffer",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "Extraction Buffer",
+              "container_type": "BG 7mL",
+              "parameter_set_name": "BASIC Kit",
+              "parameter_set_number": "Extraction Buffer",
+              "product_number": "92005",
+              "type": "Reagent"
+            },
+            "protocol_display_name": "Extraction Buffer",
+            "protocol_type": "Reagent",
+            "xml_name": "BASIC Kit"
+          },
+          {
+            "aliases": [],
+            "key": "Plasma",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "Plasma",
+              "container_type": "Sample Tube",
+              "parameter_set_name": "Plasma",
+              "parameter_set_number": "Plasma",
+              "product_number": "",
+              "type": "Sample"
+            },
+            "protocol_display_name": "Plasma",
+            "protocol_type": "Sample",
+            "xml_name": "Plasma"
+          },
+          {
+            "aliases": [],
+            "key": "Precipitation Reagent",
+            "metadata": {
+              "assay_abbreviation": "",
+              "component_name": "Precipitation Reagent",
+              "container_type": "BG 50mL",
+              "parameter_set_name": "BASIC Kit",
+              "parameter_set_number": "Precipitation Reagent",
+              "product_number": "92012",
+              "type": "Reagent"
+            },
+            "protocol_display_name": "Precipitation Reagent",
+            "protocol_type": "Reagent",
+            "xml_name": "BASIC Kit"
+          }
+        ],
+        "dilution_schemes": [
+          {
+            "key": "dilution:1+2",
+            "label": "dilution:1+2",
+            "metadata": {
+              "buffer1_ratio": "100",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          },
+          {
+            "key": "dilution:1+3",
+            "label": "dilution:1+3",
+            "metadata": {
+              "buffer1_ratio": "100",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          },
+          {
+            "key": "dilution:1+4",
+            "label": "dilution:1+4",
+            "metadata": {
+              "buffer1_ratio": "50",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          },
+          {
+            "key": "dilution:1+5",
+            "label": "dilution:1+5",
+            "metadata": {
+              "buffer1_ratio": "50",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          },
+          {
+            "key": "dilution:1+6",
+            "label": "dilution:1+6",
+            "metadata": {
+              "buffer1_ratio": "50",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          },
+          {
+            "key": "dilution:1+7",
+            "label": "dilution:1+7",
+            "metadata": {
+              "buffer1_ratio": "50",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          },
+          {
+            "key": "dilution:1+8",
+            "label": "dilution:1+8",
+            "metadata": {
+              "buffer1_ratio": "",
+              "buffer2_ratio": "",
+              "buffer3_ratio": ""
+            }
+          }
+        ],
+        "hidden_vocab": {},
+        "loading_fragments": [],
+        "method": {
+          "display_name": "TDM Series A",
+          "key": "method:92711",
+          "legacy_protocol_id": null,
+          "main_title": "",
+          "method_id": "92711",
+          "method_version": "1.0",
+          "order_number": "92711",
+          "product_name": null,
+          "product_number": "",
+          "series_name": "MassTox\u00ae",
+          "sub_title": ""
+        },
+        "method_information_overrides": {
+          "DisplayName": "TDM Series A",
+          "MainTitle": "",
+          "OrderNumber": "92711",
+          "ProductNumber": "",
+          "SeriesName": "MassTox\u00ae",
+          "SubTitle": ""
+        },
+        "processing_fragments": [],
+        "provenance": {
+          "method.method_id": [
+            {
+              "column": null,
+              "field_key": "method_id",
+              "is_override": true,
+              "row": null,
+              "source_file": null,
+              "source_sheet": null,
+              "source_type": "gui"
+            }
+          ],
+          "method.method_version": [
+            {
+              "column": null,
+              "field_key": "method_version",
+              "is_override": true,
+              "row": null,
+              "source_file": null,
+              "source_sheet": null,
+              "source_type": "gui"
+            }
+          ]
+        },
+        "sample_prep_steps": [
+          {
+            "key": "sample-prep-1",
+            "label": "Pipette (1000)",
+            "metadata": {
+              "action": "Pipette (1000)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Urine",
+              "volume": "50"
+            }
+          },
+          {
+            "key": "sample-prep-2",
+            "label": "Shake",
+            "metadata": {
+              "action": "Shake",
+              "destination": "",
+              "duration": "30",
+              "force": "1000",
+              "source": "96 Well filter plates",
+              "volume": ""
+            }
+          },
+          {
+            "key": "sample-prep-3",
+            "label": "Centrifuge",
+            "metadata": {
+              "action": "Centrifuge",
+              "destination": "96 Well collection plates",
+              "duration": "300",
+              "force": "2000",
+              "source": "96 Well filter plates",
+              "volume": ""
+            }
+          },
+          {
+            "key": "sample-prep-4",
+            "label": "Dilute",
+            "metadata": {
+              "action": "Dilute",
+              "destination": "",
+              "duration": "",
+              "force": "",
+              "source": "96 Well collection plates",
+              "volume": ""
+            }
+          },
+          {
+            "key": "sample-prep-5",
+            "label": "Pipette (300)",
+            "metadata": {
+              "action": "Pipette (300)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Plasma Calibrator Level 1",
+              "volume": "50"
+            }
+          },
+          {
+            "key": "sample-prep-6",
+            "label": "Pipette (300)",
+            "metadata": {
+              "action": "Pipette (300)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Plasma Calibrator Level 2",
+              "volume": "50"
+            }
+          },
+          {
+            "key": "sample-prep-7",
+            "label": "Pipette (300)",
+            "metadata": {
+              "action": "Pipette (300)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Plasma Calibrator Level 3",
+              "volume": "50"
+            }
+          },
+          {
+            "key": "sample-prep-8",
+            "label": "Pipette (300)",
+            "metadata": {
+              "action": "Pipette (300)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Plasma Control Level I",
+              "volume": "50"
+            }
+          },
+          {
+            "key": "sample-prep-9",
+            "label": "Pipette (300)",
+            "metadata": {
+              "action": "Pipette (300)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Plasma Control Level II",
+              "volume": "50"
+            }
+          },
+          {
+            "key": "sample-prep-10",
+            "label": "Pipette (1000)",
+            "metadata": {
+              "action": "Pipette (1000)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Extraction Buffer",
+              "volume": "25"
+            }
+          },
+          {
+            "key": "sample-prep-11",
+            "label": "Shake",
+            "metadata": {
+              "action": "Shake",
+              "destination": "",
+              "duration": "120",
+              "force": "600",
+              "source": "96 Well filter plates",
+              "volume": ""
+            }
+          },
+          {
+            "key": "sample-prep-12",
+            "label": "Pipette (1000)",
+            "metadata": {
+              "action": "Pipette (1000)",
+              "destination": "96 Well filter plates",
+              "duration": "",
+              "force": "",
+              "source": "Internal Standard Mix",
+              "volume": "250"
+            }
+          }
+        ],
+        "source_name": "gui",
+        "source_type": "gui",
+        "units": [
+          {
+            "analyte_key": "analyte:1",
+            "key": "analyte:1:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:2",
+            "key": "analyte:2:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:3",
+            "key": "analyte:3:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:4",
+            "key": "analyte:4:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:5",
+            "key": "analyte:5:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:6",
+            "key": "analyte:6:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:7",
+            "key": "analyte:7:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:8",
+            "key": "analyte:8:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:9",
+            "key": "analyte:9:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:10",
+            "key": "analyte:10:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:11",
+            "key": "analyte:11:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:12",
+            "key": "analyte:12:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:13",
+            "key": "analyte:13:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:14",
+            "key": "analyte:14:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:15",
+            "key": "analyte:15:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:16",
+            "key": "analyte:16:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:17",
+            "key": "analyte:17:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:18",
+            "key": "analyte:18:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:19",
+            "key": "analyte:19:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:20",
+            "key": "analyte:20:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:21",
+            "key": "analyte:21:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:22",
+            "key": "analyte:22:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:23",
+            "key": "analyte:23:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:24",
+            "key": "analyte:24:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:25",
+            "key": "analyte:25:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:26",
+            "key": "analyte:26:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:27",
+            "key": "analyte:27:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          },
+          {
+            "analyte_key": "analyte:28",
+            "key": "analyte:28:unit:0:\u00b5g/L",
+            "metadata": {},
+            "name": "\u00b5g/L"
+          }
+        ]
+      }
+    ],
+    "conflict_summary": {
+      "total": 0,
+      "unresolved": 0
+    },
+    "imported_dilution_dtos": [
+      {
+        "buffer1_ratio": "100",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+2"
+      },
+      {
+        "buffer1_ratio": "100",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+3"
+      },
+      {
+        "buffer1_ratio": "50",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+4"
+      },
+      {
+        "buffer1_ratio": "50",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+5"
+      },
+      {
+        "buffer1_ratio": "50",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+6"
+      },
+      {
+        "buffer1_ratio": "50",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+7"
+      },
+      {
+        "buffer1_ratio": "",
+        "buffer2_ratio": "",
+        "buffer3_ratio": "",
+        "name": "dilution:1+8"
+      }
+    ],
+    "imported_sample_prep_dtos": [
+      {
+        "action": "Pipette (1000)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Urine",
+        "volume": "50"
+      },
+      {
+        "action": "Pipette (1000)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Extraction Buffer",
+        "volume": "25"
+      },
+      {
+        "action": "Shake",
+        "destination": "",
+        "duration": "120",
+        "force": "600",
+        "order": "",
+        "source": "96 Well filter plates",
+        "volume": ""
+      },
+      {
+        "action": "Pipette (1000)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Internal Standard Mix",
+        "volume": "250"
+      },
+      {
+        "action": "Shake",
+        "destination": "",
+        "duration": "30",
+        "force": "1000",
+        "order": "",
+        "source": "96 Well filter plates",
+        "volume": ""
+      },
+      {
+        "action": "Centrifuge",
+        "destination": "96 Well collection plates",
+        "duration": "300",
+        "force": "2000",
+        "order": "",
+        "source": "96 Well filter plates",
+        "volume": ""
+      },
+      {
+        "action": "Dilute",
+        "destination": "",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "96 Well collection plates",
+        "volume": ""
+      },
+      {
+        "action": "Pipette (300)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Plasma Calibrator Level 1",
+        "volume": "50"
+      },
+      {
+        "action": "Pipette (300)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Plasma Calibrator Level 2",
+        "volume": "50"
+      },
+      {
+        "action": "Pipette (300)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Plasma Calibrator Level 3",
+        "volume": "50"
+      },
+      {
+        "action": "Pipette (300)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Plasma Control Level I",
+        "volume": "50"
+      },
+      {
+        "action": "Pipette (300)",
+        "destination": "96 Well filter plates",
+        "duration": "",
+        "force": "",
+        "order": "",
+        "source": "Plasma Control Level II",
+        "volume": "50"
+      }
+    ],
+    "issues": [],
+    "provenance": {},
+    "provenance_lookup": {},
+    "review_resolutions": {}
+  },
+  "preview_state": {
+    "analytes_xml": "",
+    "export_readiness_snapshot": false,
+    "generation_error": null,
+    "last_generated_at": null,
+    "protocol_json": "",
+    "stale": true,
+    "summary": null,
+    "validation_state_snapshot": "unknown"
+  },
+  "validation_state": {
+    "category_counts": {},
+    "export_blocked": false,
+    "grouped_issues": {},
+    "issues": [],
+    "last_validated_at": null,
+    "severity_counts": {
+      "error": 0,
+      "info": 0,
+      "warning": 0
+    },
+    "stale": true
+  }
+}
