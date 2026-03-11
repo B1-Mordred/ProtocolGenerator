@@ -33,12 +33,12 @@ def validate_cross_file_consistency(protocol_json: dict[str, Any], analytes_xml_
     protocol_method_id = str(protocol_method.get("Id") or "")
     protocol_method_version = str(protocol_method.get("Version") or "")
 
-    if xml_method_id != protocol_method_id:
+    if xml_method_id and xml_method_id != protocol_method_id:
         issues.add(_issue("method-id-mismatch", "Analytes.xml MethodId differs from protocol MethodInformation.Id", "MethodInformation.Id", entity_keys=(xml_method_id, protocol_method_id), source_location="AddOn/MethodId"))
-    if xml_method_version != protocol_method_version:
+    if xml_method_version and xml_method_version != protocol_method_version:
         issues.add(_issue("method-version-mismatch", "Analytes.xml MethodVersion differs from protocol MethodInformation.Version", "MethodInformation.Version", entity_keys=(xml_method_version, protocol_method_version), source_location="AddOn/MethodVersion"))
-    if not xml_method_id or not xml_method_version:
-        issues.add(_issue("missing-method-identity", "Analytes.xml must define non-empty MethodId and MethodVersion", "AddOn", source_location="AddOn"))
+    if not xml_method_id:
+        issues.add(_issue("missing-method-identity", "Analytes.xml must define non-empty MethodId", "AddOn", source_location="AddOn"))
 
     if not protocol_method_id or not protocol_method_version:
         issues.add(_issue("missing-merged-method-identity", "Merged protocol must define non-empty MethodInformation.Id and MethodInformation.Version", "MethodInformation", source_location="ProtocolFile.json/MethodInformation"))
@@ -101,6 +101,6 @@ def validate_cross_file_consistency(protocol_json: dict[str, Any], analytes_xml_
     xml_assay_names = {str(node.findtext("Name") or "").strip().casefold() for node in analytes_xml_root.findall("./Assays/Assay")}
     for assay_name in sorted(name for name in xml_assay_names if name):
         if assay_name not in protocol_types:
-            issues.add(_issue("cross-file-assay-mismatch", f"Assay '{assay_name}' exists in Analytes.xml but not in protocol AssayInformation", "AssayInformation", entity_keys=(assay_name,), source_location="AddOn/Assays/Assay/Name"))
+            issues.add(_issue("cross-file-assay-mismatch", f"Assay '{assay_name}' exists in Analytes.xml but not in protocol AssayInformation", "AssayInformation", entity_keys=(assay_name,), source_location="AddOn/AssayReference"))
 
     return CrossFileValidationResult(is_valid=not issues.has_errors(), issues=issues)

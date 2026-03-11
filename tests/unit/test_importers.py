@@ -167,6 +167,21 @@ def test_xml_importer_produces_same_canonical_entities_as_excel(tmp_path) -> Non
     assert canonical_addons_equal(addon_from_xml, addon_from_excel)
 
 
+
+
+def test_xml_importer_rejects_flat_analytes_shape_not_in_schema(tmp_path) -> None:
+    xml_content = (
+        "<AddOn><Id>0</Id><MethodId>PN-1</MethodId><MethodVersion></MethodVersion>"
+        "<Analytes><Analyte><Id>0</Id><Name>Glucose</Name><AddOnRef>Chemistry</AddOnRef>"
+        "<AnalyteUnits><AnalyteUnit><Id>0</Id><Name>mg/dL</Name><AnalyteRef>0</AnalyteRef></AnalyteUnit></AnalyteUnits>"
+        "</Analyte></Analytes></AddOn>"
+    )
+    xml_path = tmp_path / "flat.xml"
+    xml_path.write_text(xml_content, encoding="utf-8")
+
+    with pytest.raises(XmlImportValidationError, match="AddOn/Analytes is not supported"):
+        XmlImporter().import_xml(xml_path)
+
 def test_fixture_loader_materializes_valid_and_malformed_workbooks(tmp_path) -> None:
     valid_path = materialize_workbook_fixture("multi-analyte", tmp_path)
     malformed_path = materialize_workbook_fixture("malformed-workbook", tmp_path)
