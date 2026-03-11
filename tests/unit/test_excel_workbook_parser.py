@@ -355,3 +355,25 @@ def test_analytes_emit_missing_assay_link_diagnostic_when_parameter_set_is_unres
     assert diagnostics[0].sheet == "Analytes"
     assert diagnostics[0].column == "Parameter Set"
     assert diagnostics[0].value == {"analyte": "GLU", "parameter_set": "Unknown Set"}
+
+
+def test_real_world_workbook_populates_manual_entry_identity_fields() -> None:
+    pytest.importorskip("openpyxl")
+
+    bundle = ExcelImporter().import_workbook_bundle(Path("tests/AddOn_Input_92111_v03.xlsx"))
+
+    assert bundle.method is not None
+    assert bundle.method.series_name == "MassTox®"
+    assert bundle.method.display_name == "TDM Series A"
+    assert bundle.method.order_number == "92711"
+    assert bundle.method.main_title == "MassPrep®"
+    assert bundle.method.sub_title == "TDM Series A"
+    assert bundle.method.product_number == "42952"
+
+    assert bundle.sample_prep_steps
+    assert bundle.sample_prep_steps[0].metadata["source"] == "Urine"
+    assert bundle.sample_prep_steps[0].metadata["destination"] == "96 Well filter plates"
+
+    assert bundle.dilution_schemes
+    assert bundle.dilution_schemes[0].metadata["buffer1_ratio"] == "50"
+    assert bundle.dilution_schemes[0].metadata["buffer2_ratio"] == "50"
