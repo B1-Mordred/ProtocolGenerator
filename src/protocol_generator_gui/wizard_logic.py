@@ -100,6 +100,15 @@ METHOD_ID_PATTERN = re.compile(r"^[A-Za-z0-9._-]+$")
 VERSION_PATTERN = re.compile(r"^\d+(\.\d+)*$")
 
 
+@dataclass(slots=True)
+class RequiredFieldStatus:
+    path: str
+    source: str
+    resolved: bool
+    fallback_only: bool
+    value: Any = None
+
+
 def validate_method_editor(method_information: dict[str, Any]) -> list[str]:
     issues: list[str] = []
     method_id = str(method_information.get("Id", "")).strip()
@@ -207,6 +216,97 @@ def build_output_preview(protocol_json: dict[str, Any], analytes_xml: str, targe
         "messages": messages,
         "can_export": not blockers and bool(target_dir),
     }
+
+
+def _is_populated(value: Any) -> bool:
+    if value is None:
+        return False
+    if isinstance(value, str):
+        return bool(value.strip())
+    if isinstance(value, (list, dict, set, tuple)):
+        return len(value) > 0
+    return True
+
+
+def required_schema_paths(schema: dict[str, Any]) -> list[str]:
+    paths: list[str] = []
+    paths.extend(str(name) for name in schema.get("required", []))
+    for name in schema.get("$defs", {}).get("MethodInformation", {}).get("required", []):
+        paths.append(f"MethodInformation.{name}")
+    for name in schema.get("$defs", {}).get("AssayInformation", {}).get("required", []):
+        paths.append(f"AssayInformation[0].{name}")
+    return paths
+
+
+def _value_for_path(payload: dict[str, Any], path: str) -> Any:
+    if "." not in path and "[" not in path:
+        return payload.get(path)
+    if path.startswith("MethodInformation."):
+        key = path.split(".", 1)[1]
+        return payload.get("MethodInformation", {}).get(key)
+    if path.startswith("AssayInformation[0]."):
+        key = path.split(".", 1)[1]
+        assays = payload.get("AssayInformation", [])
+        assay0 = assays[0] if assays else {}
+        if isinstance(assay0, dict):
+            return assay0.get(key)
+    return None
+
+
+def build_required_by_schema_checklist(
+    schema: dict[str, Any],
+    payload: dict[str, Any],
+    imported_payload: dict[str, Any] | None = None,
+) -> list[RequiredFieldStatus]:
+    imported_payload = imported_payload or {}
+    built_in_values = {
+        "ProcessingWorkflowSteps": [{"GroupDisplayName": "Default Group", "GroupIndex": 0}],
+        "ProcessingWorkflowSteps[0].GroupDisplayName": "Default Group",
+    }
+    checklist: list[RequiredFieldStatus] = []
+    for path in required_schema_paths(schema):
+        current_value = _value_for_path(payload, path)
+        imported_value = _value_for_path(imported_payload, path)
+        source = "unresolved"
+        value = None
+        fallback_only = False
+        if _is_populated(current_value):
+            source = "gui"
+            value = current_value
+        elif _is_populated(imported_value):
+            source = "import"
+            value = imported_value
+        else:
+            default_value = None
+            if path.startswith("MethodInformation."):
+                field = path.split(".", 1)[1]
+                default_value = schema.get("$defs", {}).get("MethodInformation", {}).get("properties", {}).get(field, {}).get("default")
+            elif path.startswith("AssayInformation[0]."):
+                field = path.split(".", 1)[1]
+                default_value = schema.get("$defs", {}).get("AssayInformation", {}).get("properties", {}).get(field, {}).get("default")
+            elif "." not in path and "[" not in path:
+                default_value = schema.get("properties", {}).get(path, {}).get("default")
+            if _is_populated(default_value):
+                source = "default"
+                value = default_value
+                fallback_only = True
+            elif _is_populated(built_in_values.get(path)):
+                source = "built-in"
+                value = built_in_values[path]
+                fallback_only = True
+        checklist.append(RequiredFieldStatus(path=path, source=source, resolved=source != "unresolved", fallback_only=fallback_only, value=value))
+    return checklist
+
+
+def required_checklist_blockers(checklist: list[RequiredFieldStatus]) -> list[str]:
+    unresolved = [item.path for item in checklist if not item.resolved]
+    fallback_only = [item.path for item in checklist if item.fallback_only]
+    blockers: list[str] = []
+    if unresolved:
+        blockers.append(f"Unresolved required schema fields: {', '.join(unresolved)}")
+    if fallback_only:
+        blockers.append(f"Fallback-only required fields: {', '.join(fallback_only)}")
+    return blockers
 
 
 def gui_payload_to_canonical_dto(payload: dict[str, Any]) -> dict[str, Any]:

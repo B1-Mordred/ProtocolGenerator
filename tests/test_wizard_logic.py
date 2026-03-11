@@ -6,11 +6,15 @@ from protocol_generator_gui.wizard_logic import (
     build_output_preview,
     can_progress,
     categorize_schema_fields,
+    build_required_by_schema_checklist,
     make_step_help,
+    required_checklist_blockers,
     resolve_conflict,
+    required_schema_paths,
     summarize_progress,
     validate_method_editor,
 )
+from protocol_generator_gui.schema_utils import load_schema
 
 
 class DummyVar:
@@ -104,6 +108,51 @@ def test_output_preview_messages_include_blocker_and_target_prompt():
     preview = build_output_preview({"a": 1}, "<xml />", None, ["MethodInformation"])
     assert preview["can_export"] is False
     assert any("Blocked" in m for m in preview["messages"])
+
+
+def test_required_schema_paths_include_top_method_and_assay_required_nodes():
+    schema = load_schema()
+    paths = required_schema_paths(schema)
+    assert "MethodInformation" in paths
+    assert "AssayInformation" in paths
+    assert "MethodInformation.Id" in paths
+    assert "AssayInformation[0].Type" in paths
+
+
+def test_required_checklist_populates_sources_and_flags_unresolved_and_fallback_only():
+    schema = load_schema()
+    payload = {
+        "MethodInformation": {"Id": "M-1", "DisplayName": "Panel A", "Version": "1.0"},
+        "AssayInformation": [{"Type": "A", "DisplayName": "Assay A"}],
+        "LoadingWorkflowSteps": [],
+        "ProcessingWorkflowSteps": [],
+    }
+    checklist = build_required_by_schema_checklist(schema, payload, imported_payload={})
+    by_path = {item.path: item for item in checklist}
+
+    assert by_path["MethodInformation.Id"].source == "gui"
+    assert by_path["ProcessingWorkflowSteps"].source == "built-in"
+    assert by_path["LoadingWorkflowSteps"].resolved is False
+    assert by_path["MethodInformation.MainTitle"].resolved is False
+
+    blockers = required_checklist_blockers(checklist)
+    assert any("Unresolved required schema fields" in msg for msg in blockers)
+
+
+def test_required_checklist_detects_fallback_only_built_in_sources():
+    schema = load_schema()
+    payload = {
+        "MethodInformation": {},
+        "AssayInformation": [],
+        "LoadingWorkflowSteps": [],
+    }
+    checklist = build_required_by_schema_checklist(schema, payload, imported_payload={})
+    by_path = {item.path: item for item in checklist}
+    assert by_path["ProcessingWorkflowSteps"].source == "built-in"
+    assert by_path["ProcessingWorkflowSteps"].fallback_only is True
+    assert by_path["MethodInformation"].resolved is False
+    assert any("Fallback-only required fields" in msg for msg in required_checklist_blockers(checklist))
+    assert any("Unresolved required schema fields" in msg for msg in required_checklist_blockers(checklist))
 
 
 def test_summarize_progress_counts_completion_and_errors():
