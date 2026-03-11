@@ -194,6 +194,14 @@
           }
         ]
       }
+    },
+    "basics-internal-blank-separators": {
+      "intent": "Workbook-template Basics kit-component table includes fully empty separator rows between populated rows and trailing empties; parser should continue importing later populated rows.",
+      "workbook": "tests/fixtures/workbooks/basics-internal-blank-separators/workbook.json",
+      "expected": {
+        "import": "success",
+        "error_codes": []
+      }
     }
   }
 }

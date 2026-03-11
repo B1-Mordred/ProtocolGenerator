@@ -160,7 +160,7 @@ def test_parse_basics_sheet_fills_down_sparse_kit_component_cells() -> None:
     assert not diagnostics
 
 
-def test_parse_basics_sheet_stops_at_first_empty_row_after_component_data() -> None:
+def test_parse_basics_sheet_ignores_trailing_empty_component_rows() -> None:
     diagnostics = []
     sheet = _Sheet(
         [
@@ -185,6 +185,39 @@ def test_parse_basics_sheet_stops_at_first_empty_row_after_component_data() -> N
     parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
 
     assert [assay.key for assay in parsed.assays] == ["PS-1"]
+    assert not diagnostics
+
+
+def test_parse_basics_sheet_reads_component_rows_after_internal_empty_separators() -> None:
+    diagnostics = []
+    sheet = _Sheet(
+        [
+            ["Method Id", "M-100"],
+            ["Method Version", "1.0"],
+            [],
+            [
+                "Product Number",
+                "Component Name",
+                "Parameter Set Number",
+                "Assay Abbreviation",
+                'Parameter Set Name (or "BASIC Kit")',
+                "Type",
+                "Container Type (if liquid)",
+            ],
+            ["PN-1", "Component A", "PS-1", "A1", "Panel A", "CHEM", "Tube"],
+            ["", "", "", "", "", "", ""],
+            ["", "", "", "", "", "", ""],
+            ["", "Component B", "PS-2", "A2", "Panel B", "", ""],
+            ["", "", "", "", "", "", ""],
+        ]
+    )
+
+    parsed = parse_basics_sheet(sheet, diagnostics=diagnostics)
+
+    assert [assay.key for assay in parsed.assays] == ["PS-1", "PS-2"]
+    assert parsed.assays[1].metadata["product_number"] == "PN-1"
+    assert parsed.assays[1].metadata["type"] == "CHEM"
+    assert parsed.assays[1].metadata["container_type"] == "Tube"
     assert not diagnostics
 
 def test_parse_basics_sheet_keeps_distinct_calibrator_and_control_rows_with_shared_parameter_set_and_type() -> None:

@@ -1,0 +1,53 @@
+{
+  "layout": "v2-sheeted",
+  "sheets": {
+    "Basics": {
+      "columns": ["Key", "Value", "Unused"],
+      "rows": [
+        ["Method Id", "BLK-001", ""],
+        ["Method Version", "1.0", ""],
+        ["", "", ""],
+        [
+          "Product Number",
+          "Component Name",
+          "Parameter Set Number",
+          "Assay Abbreviation",
+          "Parameter Set Name (or \"BASIC Kit\")",
+          "Type",
+          "Container Type (if liquid)"
+        ],
+        ["PN-1", "Component A", "PS-1", "A1", "Panel A", "CHEM", "Tube"],
+        ["", "", "", "", "", "", ""],
+        ["", "", "", "", "", "", ""],
+        ["", "Component B", "PS-2", "A2", "Panel B", "", ""],
+        ["", "", "", "", "", "", ""]
+      ]
+    },
+    "Analytes": {
+      "columns": ["Ignore"],
+      "rows": [
+        ["Analyte", "Unit", "Parameter Set", "Assay Key"],
+        ["GLU", "mg/dL", "PS-1", "PS-1"],
+        ["TSH", "mg/dL", "PS-2", "PS-2"]
+      ]
+    },
+    "SamplePrep": {
+      "columns": ["Order", "Action"],
+      "rows": [
+        ["1", "Mix"]
+      ]
+    },
+    "Dilutions": {
+      "columns": ["Name", "Ratio"],
+      "rows": [
+        ["Std1", "1:2"]
+      ]
+    },
+    "Hidden_Lists": {
+      "columns": ["Units", "SamplePrepAction"],
+      "rows": [
+        ["mg/dL", "Mix"]
+      ]
+    }
+  }
+}

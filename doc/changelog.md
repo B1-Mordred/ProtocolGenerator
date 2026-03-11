@@ -8,7 +8,7 @@
 
 ### Fixed
 - Fixed workbook-template Basics duplicate detection to preserve every non-empty kit-component row (including repeated calibrator/control/internal-standard rows sharing `Parameter Set Number` + `Type`) by deduplicating only exact row identities while retaining row-level metadata.
-- Fixed workbook-template Basics validation to stop component-row parsing at the first fully empty row after populated data, so trailing blank rows no longer emit repeated `missing-required-field` (`Assay key is required`) errors; parser now logs a debug message identifying the detected end-of-table row for troubleshooting.
+- Fixed workbook-template Basics component-row scanning to ignore completely empty rows instead of treating the first blank as end-of-table, so internal blank separators no longer truncate later component imports while trailing blank rows remain diagnostic-free.
 - Fixed workbook-template Basics kit-component import for sparse XLSX rows where Product Number / Type / Container Type are intentionally provided once then left blank on following rows; parser now fills these fields down so imported Kit Components keep correct metadata in manual entry.
 - Fixed manual-entry workbook backfill for imported data: Kit Components no longer inject internal assay keys into the `Parameter Set Number` column when source values are blank, and Dilutions now display human-readable dilution labels (for example `1+2`) instead of internal keys like `dilution:1+2`.
 - Fixed manual-entry dilution-table backfill mapping to prefer display label/name over internal dilution keys, so imported rows render human-readable values (for example `1+2` instead of `dilution:1+2`) while DTO/domain keys remain unchanged.

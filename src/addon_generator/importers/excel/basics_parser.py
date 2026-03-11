@@ -107,10 +107,9 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
             if not any(raw_component_values):
                 if assays:
                     LOGGER.debug(
-                        "Basics parser reached end of component table at row %d (first fully empty component row after parsed data).",
+                        "Basics parser skipping fully empty component row %d after parsed data.",
                         row_idx,
                     )
-                    break
                 continue
 
             for field_name in FILL_DOWN_METADATA_FIELDS:

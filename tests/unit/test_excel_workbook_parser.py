@@ -88,6 +88,18 @@ def test_production_fixture_successfully_imports_and_links_entities(tmp_path: Pa
     assert [unit.analyte_key for unit in bundle.units] == ["analyte:GLU", "analyte:TSH"]
 
 
+
+def test_basics_fixture_with_internal_empty_rows_does_not_truncate_component_imports(tmp_path: Path) -> None:
+    workbook_path = materialize_workbook_fixture("basics-internal-blank-separators", tmp_path)
+
+    bundle = ExcelImporter().import_workbook_bundle(workbook_path)
+
+    assert [assay.key for assay in bundle.assays] == ["PS-1", "PS-2"]
+    assert bundle.assays[1].metadata["product_number"] == "PN-1"
+    assert bundle.assays[1].metadata["type"] == "CHEM"
+    assert bundle.assays[1].metadata["container_type"] == "Tube"
+    assert [(a.name, a.assay_key) for a in bundle.analytes] == [("GLU", "PS-1"), ("TSH", "PS-2")]
+
 def test_header_detection_and_checklist_exclusion_are_robust(tmp_path: Path) -> None:
     workbook_path = materialize_workbook_fixture("header-offset-and-checklist", tmp_path)
 
