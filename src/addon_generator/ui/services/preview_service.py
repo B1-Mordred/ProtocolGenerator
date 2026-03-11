@@ -13,10 +13,20 @@ class PreviewService:
         self._builder = CanonicalModelBuilder()
         self._service = GenerationService()
 
-    def generate(self, merged_bundle: InputDTOBundle) -> tuple[str, str, dict[str, str | int | bool], dict[str, str] | None]:
+    def generate(
+        self,
+        merged_bundle: InputDTOBundle,
+        *,
+        export_settings: dict[str, object] | None = None,
+    ) -> tuple[str, str, dict[str, str | int | bool], dict[str, str] | None]:
         try:
             addon = self._builder.build(merged_bundle)
-            result = self._service.generate_all(addon, dto_bundle=merged_bundle)
+            result = self._service.generate_all(
+                addon,
+                dto_bundle=merged_bundle,
+                field_mapping_settings=(export_settings or {}).get("field_mapping"),
+                mapping_overrides=(export_settings or {}).get("mapping_overrides"),
+            )
         except Exception as exc:  # pragma: no cover - defensive runtime guard
             error = {
                 "code": "preview-generation-failed",

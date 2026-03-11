@@ -70,6 +70,40 @@ def test_generate_all_consumes_dto_context_for_validation() -> None:
     assert "malformed-dilution-scheme" in {issue.code for issue in result.issues}
 
 
+def test_generate_all_applies_mapping_overrides_for_cross_file_mode() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [{"key": "assay:1", "protocol_type": "A  ", "xml_name": "a"}],
+            "analytes": [{"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"}],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    baseline = service.generate_all(addon)
+    assert "assay-cross-file-mismatch" in {issue.code for issue in baseline.issues}
+
+    overridden = service.generate_all(
+        addon,
+        mapping_overrides={"assay_mapping": {"cross_file_match": {"mode": "normalized"}}},
+    )
+    assert "assay-cross-file-mismatch" not in {issue.code for issue in overridden.issues}
+
+
+def test_generate_all_applies_mapping_overrides_for_protocol_defaults() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload({"method_id": "M", "method_version": "1", "assays": [], "analytes": [], "units": []})
+
+    result = service.generate_all(
+        addon,
+        mapping_overrides={"protocol_defaults": {"method_information": {"DisplayName": "Configured Name"}}},
+    )
+
+    assert result.protocol_json["MethodInformation"]["DisplayName"] == "Configured Name"
+
+
 def test_dto_bundle_builder_ignores_non_mapping_source_metadata_values() -> None:
     service = GenerationService()
     addon = service.import_from_gui_payload(

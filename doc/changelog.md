@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- Added Admin submenu items for runtime mapping configuration: `Configure Cross-file Match Rules` (supports `exact` / `normalized` / `alias_map` / `explicit_key`) and `Configure Protocol Defaults` (JSON patch merged into `protocol_defaults`) persisted in `export_settings.mapping_overrides`.
 - Added assay authoring guidance in Assays and Manual Entry views clarifying linkage semantics between `ProtocolFile AssayInformation[].Type`, `ProtocolFile AssayInformation[].DisplayName`, and `Analytes.xml Assay.Name`, including immediate mismatch warnings against active `assay_mapping.cross_file_match.mode`.
 - Added workbook-template Dilutions parser support for alias headers (`Dilution Name`, `Dilution Buffer 1 Ratio`, `Dilution Buffer 2 Ratio`, `Dilution Buffer 3 Ratio`) and metadata export of `buffer1_ratio`/`buffer2_ratio`/`buffer3_ratio` with synthesized legacy `ratio` compatibility.
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
@@ -10,6 +11,7 @@
 ### Changed
 - Field Mapping templates are now execution-effective during validation/export: enabled rows from the active template are applied to generated `ProtocolFile.json` and `Analytes.xml` before final serialization, with deterministic last-write-wins conflict handling and warning/report visibility for applied vs skipped rows.
 - Changed cross-file linkage validation so `alias_map` mode is now actively enforced in runtime assay matching (in addition to exact/normalized), and mismatch diagnostics now include actionable remediation text for fixing Type/XML-name linkage or switching modes.
+- Validation, preview, and export pipelines now apply optional runtime `mapping_overrides` (cross-file rules and protocol defaults) on top of `config/mapping.v1.yaml`, with config-schema validation and automatic rollback after each generation call.
 
 ### Fixed
 - Fixed manual-entry analyte assay dropdown sourcing to read Kit Components `Assay Abbreviation` (column index 3) instead of `Parameter Set Name`, while preserving first-seen, non-empty deduplication semantics for dropdown options.

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from contextlib import contextmanager
+import copy
 import json
 import re
 import shutil
@@ -92,81 +94,83 @@ class GenerationService:
         *,
         dto_bundle: InputDTOBundle | None = None,
         field_mapping_settings: dict[str, Any] | None = None,
+        mapping_overrides: dict[str, Any] | None = None,
         xsd_path: str | Path = "AddOn.xsd",
         protocol_schema_path: str | Path = "protocol.schema.json",
     ) -> GenerationResult:
-        self.resolver.assign_ids(addon)
-        staged_issues: list[tuple[str, ValidationIssue]] = []
+        with self._temporary_mapping_overrides(mapping_overrides):
+            self.resolver.assign_ids(addon)
+            staged_issues: list[tuple[str, ValidationIssue]] = []
 
-        # Phase 1: structural/domain validation.
-        staged_issues.extend(("domain", issue) for issue in validate_domain(addon).issues.issues)
-        staged_issues.extend(("domain", issue) for issue in validate_dto_bundle(dto_bundle or self._dto_bundle_from_addon(addon)).issues.issues)
+            # Phase 1: structural/domain validation.
+            staged_issues.extend(("domain", issue) for issue in validate_domain(addon).issues.issues)
+            staged_issues.extend(("domain", issue) for issue in validate_dto_bundle(dto_bundle or self._dto_bundle_from_addon(addon)).issues.issues)
 
-        # Phase 2: unit/linkage validation.
-        staged_issues.extend(("linkage", issue) for issue in self.resolver.validate_cross_file_linkage(addon))
+            # Phase 2: unit/linkage validation.
+            staged_issues.extend(("linkage", issue) for issue in self.resolver.validate_cross_file_linkage(addon))
 
-        xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
-        protocol_result = self.generate_protocol_json(addon)
-        mapping_result = apply_field_mappings(
-            protocol_json=protocol_result.payload,
-            analytes_xml=xml_result.xml_content,
-            dto_bundle=dto_bundle,
-            field_mapping_settings=field_mapping_settings,
-        )
-        protocol_json = mapping_result.protocol_json
-        analytes_xml = mapping_result.analytes_xml
-        # Phase 3: projection/schema/cross-file validation.
-        mapped_xml_validation = validate_xml_against_xsd(analytes_xml, xsd_path)
-        staged_issues.extend(("projection", issue) for issue in mapped_xml_validation.issues.issues)
-        for warning in mapping_result.report.get("warnings", []):
-            staged_issues.append(
-                (
-                    "projection",
-                    ValidationIssue(
-                        code="field-mapping-warning",
-                        message=str(warning),
-                        path="field_mapping",
-                        source_location="field_mapping",
-                        severity="warning",
-                    ),
-                )
+            xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
+            protocol_result = self.generate_protocol_json(addon)
+            mapping_result = apply_field_mappings(
+                protocol_json=protocol_result.payload,
+                analytes_xml=xml_result.xml_content,
+                dto_bundle=dto_bundle,
+                field_mapping_settings=field_mapping_settings,
             )
-        method_info = protocol_json.get("MethodInformation", {}) if isinstance(protocol_json.get("MethodInformation"), dict) else {}
-        if not str(method_info.get("Id") or "").strip() or not str(method_info.get("Version") or "").strip():
-            staged_issues.append(
-                (
-                    "projection",
-                    ValidationIssue(
-                        code="missing-required-method-identity-after-merge",
-                        message="MethodInformation.Id and MethodInformation.Version are required after merge resolution",
-                        path="MethodInformation",
-                        entity_keys=((addon.method.key,) if addon.method else ()),
-                        source_location="ProtocolFile.json/MethodInformation",
-                    ),
+            protocol_json = mapping_result.protocol_json
+            analytes_xml = mapping_result.analytes_xml
+            # Phase 3: projection/schema/cross-file validation.
+            mapped_xml_validation = validate_xml_against_xsd(analytes_xml, xsd_path)
+            staged_issues.extend(("projection", issue) for issue in mapped_xml_validation.issues.issues)
+            for warning in mapping_result.report.get("warnings", []):
+                staged_issues.append(
+                    (
+                        "projection",
+                        ValidationIssue(
+                            code="field-mapping-warning",
+                            message=str(warning),
+                            path="field_mapping",
+                            source_location="field_mapping",
+                            severity="warning",
+                        ),
+                    )
                 )
+            method_info = protocol_json.get("MethodInformation", {}) if isinstance(protocol_json.get("MethodInformation"), dict) else {}
+            if not str(method_info.get("Id") or "").strip() or not str(method_info.get("Version") or "").strip():
+                staged_issues.append(
+                    (
+                        "projection",
+                        ValidationIssue(
+                            code="missing-required-method-identity-after-merge",
+                            message="MethodInformation.Id and MethodInformation.Version are required after merge resolution",
+                            path="MethodInformation",
+                            entity_keys=((addon.method.key,) if addon.method else ()),
+                            source_location="ProtocolFile.json/MethodInformation",
+                        ),
+                    )
+                )
+            cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(analytes_xml))
+            staged_issues.extend(("projection", issue) for issue in cross_file.issues.issues)
+
+            protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
+            staged_issues.extend(("projection", issue) for issue in protocol_schema_result.issues.issues)
+
+            sorted_issues = self._sort_issues(staged_issues)
+
+            warnings = [i for i in sorted_issues if i.severity.value == "warning"]
+            errors = [i for i in sorted_issues if i.severity.value == "error"]
+            return GenerationResult(
+                addon_model=addon,
+                protocol_json=protocol_json,
+                analytes_xml_string=analytes_xml,
+                issues=errors,
+                warnings=warnings,
+                resolved_mapping_snapshot=copy.deepcopy(self.mapping.raw),
+                merge_report=protocol_result.merge_report,
+                unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
+                conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
+                field_mapping_report=mapping_result.report,
             )
-        cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(analytes_xml))
-        staged_issues.extend(("projection", issue) for issue in cross_file.issues.issues)
-
-        protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
-        staged_issues.extend(("projection", issue) for issue in protocol_schema_result.issues.issues)
-
-        sorted_issues = self._sort_issues(staged_issues)
-
-        warnings = [i for i in sorted_issues if i.severity.value == "warning"]
-        errors = [i for i in sorted_issues if i.severity.value == "error"]
-        return GenerationResult(
-            addon_model=addon,
-            protocol_json=protocol_json,
-            analytes_xml_string=analytes_xml,
-            issues=errors,
-            warnings=warnings,
-            resolved_mapping_snapshot=self.mapping.raw,
-            merge_report=protocol_result.merge_report,
-            unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
-            conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
-            field_mapping_report=mapping_result.report,
-        )
 
     def _sort_issues(self, staged_issues: list[tuple[str, ValidationIssue]]) -> list[ValidationIssue]:
         severity_priority = {"error": 0, "warning": 1, "info": 2}
@@ -219,12 +223,14 @@ class GenerationService:
         collision_policy: str = "error",
         include_metadata: bool = True,
         field_mapping_settings: dict[str, Any] | None = None,
+        mapping_overrides: dict[str, Any] | None = None,
         xsd_path: str | Path = "AddOn.xsd",
         protocol_schema_path: str | Path = "protocol.schema.json",
     ) -> PackageBuildResult:
         result = self.generate_all(
             addon,
             field_mapping_settings=field_mapping_settings,
+            mapping_overrides=mapping_overrides,
             xsd_path=xsd_path,
             protocol_schema_path=protocol_schema_path,
         )
@@ -287,6 +293,34 @@ class GenerationService:
             if not candidate.exists():
                 return candidate
             counter += 1
+
+    @contextmanager
+    def _temporary_mapping_overrides(self, overrides: dict[str, Any] | None):
+        if not overrides:
+            yield
+            return
+
+        original_raw = copy.deepcopy(self.mapping.raw)
+        merged = copy.deepcopy(original_raw)
+        self._deep_merge(merged, overrides)
+
+        from addon_generator.mapping.config_loader import validate_mapping_config
+
+        validated = validate_mapping_config(merged)
+        self.mapping.raw.clear()
+        self.mapping.raw.update(validated.raw)
+        try:
+            yield
+        finally:
+            self.mapping.raw.clear()
+            self.mapping.raw.update(original_raw)
+
+    def _deep_merge(self, destination: dict[str, Any], patch: dict[str, Any]) -> None:
+        for key, value in patch.items():
+            if isinstance(value, dict) and isinstance(destination.get(key), dict):
+                self._deep_merge(destination[key], value)
+                continue
+            destination[key] = copy.deepcopy(value)
 
 
 def fragments_from_protocol_payload(payload: dict[str, Any]) -> dict[str, Any]:

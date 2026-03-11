@@ -36,8 +36,14 @@ class ExportService:
     ) -> ExportResult:
         destination = str(Path(destination_folder))
         field_mapping_settings = (export_settings or {}).get("field_mapping")
+        mapping_overrides = (export_settings or {}).get("mapping_overrides")
         addon = self._builder.build(merged_bundle)
-        validation = self._service.generate_all(addon, dto_bundle=merged_bundle, field_mapping_settings=field_mapping_settings)
+        validation = self._service.generate_all(
+            addon,
+            dto_bundle=merged_bundle,
+            field_mapping_settings=field_mapping_settings,
+            mapping_overrides=mapping_overrides,
+        )
         if validation.issues:
             return ExportResult(
                 status="failure",
@@ -51,6 +57,7 @@ class ExportService:
                 destination_root=Path(destination_folder),
                 overwrite=overwrite,
                 field_mapping_settings=field_mapping_settings,
+                mapping_overrides=mapping_overrides,
             )
         except Exception as exc:
             return ExportResult(
