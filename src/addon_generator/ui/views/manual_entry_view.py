@@ -182,6 +182,7 @@ class ManualEntryView(QWidget):
 
     def _ensure_dropdown_cell(self, table: QTableWidget, row: int, col: int, options: list[str]) -> None:
         existing = self._cell_text(table, row, col)
+        table.takeItem(row, col)
         combo = table.cellWidget(row, col)
         if not isinstance(combo, QComboBox):
             combo = QComboBox(table)

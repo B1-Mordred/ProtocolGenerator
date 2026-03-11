@@ -7,6 +7,7 @@
 
 
 ### Fixed
+- Fixed manual data-entry dropdown rendering where selected combo values could appear overlaid/double-drawn; combo-backed table cells now clear stale `QTableWidgetItem` text before editor installation in Kit Components, Analytes, and Sample Prep tabs.
 - Fixed merge recomputation to carry `sample_prep_steps` and `dilution_schemes` from imported bundles into effective editor state, so recovered drafts repopulate Sample Prep/Dilutions instead of appearing empty after restore/save cycles.
 - Fixed `Save Status` draft metadata persistence to always write the actual selected save path and an ISO `last_saved_at` timestamp into `draft_state`, preventing recoveries from pointing at stale filenames when users save to renamed files (for example `2addon_status_draft.json`).
 - Fixed workbook-template Basics identity extraction for real AddOn workbooks so `Kit Series`, `(Basic) Kit Name`, `Kit Product Number`, `AddOn Series`, `AddOn Product Name`, and `AddOn Product Number` are mapped into method metadata used to prefill manual data-entry basics fields.
