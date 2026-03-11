@@ -7,6 +7,7 @@
 
 
 ### Fixed
+- Fixed workbook-template Basics kit-component import for sparse XLSX rows where Product Number / Type / Container Type are intentionally provided once then left blank on following rows; parser now fills these fields down so imported Kit Components keep correct metadata in manual entry.
 - Fixed manual-entry workbook backfill for imported data: Kit Components no longer inject internal assay keys into the `Parameter Set Number` column when source values are blank, and Dilutions now display human-readable dilution labels (for example `1+2`) instead of internal keys like `dilution:1+2`.
 - Fixed manual-entry dilution-table backfill mapping to prefer display label/name over internal dilution keys, so imported rows render human-readable values (for example `1+2` instead of `dilution:1+2`) while DTO/domain keys remain unchanged.
 - Fixed workbook-template Dilutions header alias matching to canonicalize labels (trim/lowercase/`_`+`-` to spaces and collapsed whitespace) before lookup, so spacing variants like `Dilution Buffer 2  Ratio` and compact `Buffer1/2/3 Ratio` map reliably and still synthesize legacy `ratio` metadata from buffer ratios.

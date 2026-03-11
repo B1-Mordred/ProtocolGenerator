@@ -422,6 +422,17 @@ def test_real_world_workbook_populates_manual_entry_identity_fields() -> None:
     assert bundle.dilution_schemes[0].metadata["buffer2_ratio"] == ""
 
 
+def test_user_workbook_fills_down_component_metadata_for_sparse_rows() -> None:
+    pytest.importorskip("openpyxl")
+
+    bundle = ExcelImporter().import_workbook_bundle(Path("tests/AddOn_Input_92111_v03.xlsx"))
+
+    assay_by_key = {assay.key: assay for assay in bundle.assays}
+
+    assert assay_by_key["92913-XT"].metadata["product_number"] == "92046/N2/XT2"
+    assert assay_by_key["92913-XT"].metadata["type"] == "Internal Standard"
+    assert assay_by_key["92913-XT"].metadata["container_type"] == "BG 50mL"
+
 def test_user_workbook_addon_input_92111_v03_imports_successfully() -> None:
     pytest.importorskip("openpyxl")
 
