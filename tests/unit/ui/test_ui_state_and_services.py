@@ -63,6 +63,38 @@ def test_merge_service_applies_structured_overrides_and_conflict_summary() -> No
     assert "total" in app_state.import_state.conflict_summary
 
 
+def test_merge_service_preserves_imported_sample_prep_and_dilutions_without_overrides() -> None:
+    app_state = AppState()
+    app_state.import_state.bundles = [
+        InputDTOBundle(
+            source_type="gui",
+            sample_prep_steps=[
+                SamplePrepStepInputDTO(
+                    key="sample-prep-1",
+                    label="Pipette (1000)",
+                    metadata={"source": "Urine", "destination": "96 Well filter plates", "volume": "100"},
+                )
+            ],
+            dilution_schemes=[
+                DilutionSchemeInputDTO(
+                    key="1+2",
+                    label="1+2",
+                    metadata={"buffer1_ratio": "100", "buffer2_ratio": "", "buffer3_ratio": ""},
+                )
+            ],
+        )
+    ]
+
+    merged = MergeServiceAdapter().recompute(app_state)
+
+    assert len(merged.sample_prep_steps) == 1
+    assert merged.sample_prep_steps[0].label == "Pipette (1000)"
+    assert len(merged.dilution_schemes) == 1
+    assert merged.dilution_schemes[0].label == "1+2"
+    assert len(app_state.editor_state.effective_values["sample_prep_steps"]) == 1
+    assert len(app_state.editor_state.effective_values["dilution_schemes"]) == 1
+
+
 def test_draft_service_save_and_load_roundtrip(tmp_path: Path) -> None:
     app_state = AppState()
     app_state.editor_state.manual_overrides["method.method_version"] = "2"

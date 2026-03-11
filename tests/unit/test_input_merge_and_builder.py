@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
-from addon_generator.input_models.dtos import InputDTOBundle, MethodInputDTO
+from addon_generator.input_models.dtos import DilutionSchemeInputDTO, InputDTOBundle, MethodInputDTO, SamplePrepStepInputDTO
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.input_merge_service import InputMergeService
 
@@ -77,3 +77,18 @@ def test_merge_service_treats_empty_optional_text_as_none() -> None:
     assert merged.method is not None
     assert merged.method.display_name is None
     assert not any(item["path"] == "method.display_name" for item in report["conflicts"])
+
+
+def test_merge_service_includes_sample_prep_and_dilutions_from_input_bundles() -> None:
+    gui_bundle = InputDTOBundle(
+        source_type="gui",
+        sample_prep_steps=[SamplePrepStepInputDTO(key="sp1", label="Mix", metadata={"source": "A"})],
+        dilution_schemes=[DilutionSchemeInputDTO(key="d1", label="1+2", metadata={"buffer1_ratio": "50"})],
+    )
+
+    merged, _report = InputMergeService().merge([gui_bundle])
+
+    assert len(merged.sample_prep_steps) == 1
+    assert merged.sample_prep_steps[0].key == "sp1"
+    assert len(merged.dilution_schemes) == 1
+    assert merged.dilution_schemes[0].key == "d1"
