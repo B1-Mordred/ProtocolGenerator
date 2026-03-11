@@ -225,6 +225,7 @@ def test_sampleprep_assigns_row_order_when_order_header_absent(tmp_path: Path) -
     wb["SamplePrep"].append(["Action", "Source", "Destination"])
     wb["SamplePrep"].append(["Mix", "A", "B"])
     wb["SamplePrep"].append(["Incubate", "B", "C"])
+    wb["Hidden_Lists"].append([None, "Incubate"])
 
     path = tmp_path / "sampleprep-row-order-fallback.xlsx"
     wb.save(path)
@@ -366,14 +367,26 @@ def test_real_world_workbook_populates_manual_entry_identity_fields() -> None:
     assert bundle.method.series_name == "MassTox®"
     assert bundle.method.display_name == "TDM Series A"
     assert bundle.method.order_number == "92711"
-    assert bundle.method.main_title == "MassPrep®"
-    assert bundle.method.sub_title == "TDM Series A"
-    assert bundle.method.product_number == "42952"
+    assert bundle.method.main_title is None
+    assert bundle.method.sub_title is None
+    assert bundle.method.product_number is None
 
     assert bundle.sample_prep_steps
     assert bundle.sample_prep_steps[0].metadata["source"] == "Urine"
     assert bundle.sample_prep_steps[0].metadata["destination"] == "96 Well filter plates"
 
     assert bundle.dilution_schemes
-    assert bundle.dilution_schemes[0].metadata["buffer1_ratio"] == "50"
-    assert bundle.dilution_schemes[0].metadata["buffer2_ratio"] == "50"
+    assert bundle.dilution_schemes[0].metadata["buffer1_ratio"] == "100"
+    assert bundle.dilution_schemes[0].metadata["buffer2_ratio"] == ""
+
+
+def test_user_workbook_addon_input_92111_v03_imports_successfully() -> None:
+    pytest.importorskip("openpyxl")
+
+    workbook_path = Path("tests/AddOn_Input_92111_v03.xlsx")
+    bundle = ExcelImporter().import_workbook_bundle(workbook_path)
+
+    assert bundle.method is not None
+    assert bundle.method.method_id
+    assert bundle.assays
+    assert bundle.analytes

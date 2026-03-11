@@ -59,7 +59,7 @@ class ExcelWorkbookParser:
         diagnostics: list[ImportDiagnostic] = []
         sheet_names = self._sheet_lookup(workbook.sheetnames)
 
-        vocab = self._extract_vocab(workbook[sheet_names["hidden_lists"]]) if "hidden_lists" in sheet_names else {}
+        vocab = self._extract_vocab(workbook[sheet_names["hiddenlists"]]) if "hiddenlists" in sheet_names else {}
 
         basics = parse_basics_sheet(workbook[sheet_names["basics"]], diagnostics=diagnostics) if "basics" in sheet_names else None
         assay_lookup_by_parameter_set = basics.assay_reference_lookup if basics is not None else {}

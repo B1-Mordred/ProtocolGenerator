@@ -39,7 +39,7 @@ def parse_analytes_sheet(
         parameter_set = _text(row[headers["parameter_set"]].value)
         assay_key = _text(row[headers["assay_key"]].value) if "assay_key" in headers else ""
         if not assay_key and parameter_set:
-            assay_key = parameter_set_lookup.get(_identity_token(parameter_set), "")
+            assay_key = _lookup_assay_key(parameter_set_lookup, parameter_set)
         if not any((analyte_name, unit_name, parameter_set, assay_key)):
             continue
 
@@ -95,10 +95,17 @@ def parse_analytes_sheet(
 
 
 def _find_header(rows: list[Any]) -> tuple[int | None, dict[str, int]]:
+    analyte_aliases = ("analyte", "analyte name")
+    unit_aliases = ("unit", "unit of measurement")
+    parameter_set_aliases = ("parameter set",)
+
     for idx, row in enumerate(rows, start=1):
         labels = {_text(c.value).casefold(): i for i, c in enumerate(row) if _text(c.value)}
-        if "analyte" in labels and "unit" in labels and "parameter set" in labels:
-            mapped = {"analyte": labels["analyte"], "unit": labels["unit"], "parameter_set": labels["parameter set"]}
+        analyte_col = next((labels[name] for name in analyte_aliases if name in labels), None)
+        unit_col = next((labels[name] for name in unit_aliases if name in labels), None)
+        parameter_set_col = next((labels[name] for name in parameter_set_aliases if name in labels), None)
+        if analyte_col is not None and unit_col is not None and parameter_set_col is not None:
+            mapped = {"analyte": analyte_col, "unit": unit_col, "parameter_set": parameter_set_col}
             if "assay key" in labels:
                 mapped["assay_key"] = labels["assay key"]
             return idx, mapped
@@ -114,3 +121,13 @@ def _text(value: Any) -> str:
 
 def _identity_token(value: str) -> str:
     return value.strip().casefold()
+
+
+def _lookup_assay_key(parameter_set_lookup: dict[str, str], parameter_set: str) -> str:
+    direct = parameter_set_lookup.get(_identity_token(parameter_set), "")
+    if direct:
+        return direct
+    trimmed = parameter_set.split(" in ", maxsplit=1)[0].strip()
+    if trimmed:
+        return parameter_set_lookup.get(_identity_token(trimmed), "")
+    return ""

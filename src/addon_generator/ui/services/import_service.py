@@ -1,14 +1,29 @@
 from __future__ import annotations
 
+import logging
+
 from addon_generator.domain.issues import ValidationIssue
 from addon_generator.importers import ExcelImporter, XmlImporter
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.ui.models.issue_view_model import IssueViewModel
 
 
+LOGGER = logging.getLogger(__name__)
+
+
 class ImportService:
     def load_excel(self, path: str) -> tuple[InputDTOBundle, dict[str, list[dict[str, str]]], list[IssueViewModel]]:
+        LOGGER.info("Starting Excel import from %s", path)
         bundle = ExcelImporter().import_workbook_bundle(path)
+        LOGGER.info(
+            "Excel import succeeded from %s (assays=%d analytes=%d units=%d sample_prep_steps=%d dilutions=%d)",
+            path,
+            len(bundle.assays),
+            len(bundle.analytes),
+            len(bundle.units),
+            len(bundle.sample_prep_steps),
+            len(bundle.dilution_schemes),
+        )
         return bundle, self._coerce_provenance(bundle), []
 
     def load_xml(self, path: str) -> tuple[InputDTOBundle, dict[str, list[dict[str, str]]], list[IssueViewModel]]:
