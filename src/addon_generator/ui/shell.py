@@ -375,7 +375,7 @@ class MainShell(QMainWindow):
 
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
-        self._populate_manual_entry_from_bundle(self._last_merged_bundle)
+        self._populate_manual_entry_from_bundle(self._last_merged_bundle, assay_source_bundle=bundle)
         self._mark_dirty(reason="excel_import")
         self.import_review_view.refresh_table()
         self.main_stack.setCurrentIndex(1)
@@ -398,7 +398,7 @@ class MainShell(QMainWindow):
         self.show_data_review()
         self._refresh_status()
 
-    def _populate_manual_entry_from_bundle(self, bundle) -> None:
+    def _populate_manual_entry_from_bundle(self, bundle, *, assay_source_bundle=None) -> None:
         method = bundle.method
         basics = {
             "kit_series": str(method.series_name or "") if method else "",
@@ -411,7 +411,8 @@ class MainShell(QMainWindow):
         self.manual_entry_view.set_basics_values(basics)
 
         assay_rows = []
-        for assay in bundle.assays:
+        assays = assay_source_bundle.assays if assay_source_bundle is not None else bundle.assays
+        for assay in assays:
             meta = dict(assay.metadata or {})
             assay_rows.append(
                 {

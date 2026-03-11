@@ -764,6 +764,125 @@ def test_shell_import_excel_shows_manual_entry_with_imported_values(qapp):
     assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-42"
 
 
+def test_shell_import_excel_manual_entry_uses_raw_bundle_assays_when_merge_collapses_duplicates(qapp):
+    class _ImportServiceWithRepeatedRows(_ImportService):
+        def load_excel(self, path):
+            bundle = InputDTOBundle(
+                source_type="excel",
+                method=MethodInputDTO(key="m", method_id="M-1", method_version="1", series_name="Series-42"),
+                assays=[
+                    AssayInputDTO(
+                        key="assay:shared",
+                        protocol_type="Reagent",
+                        protocol_display_name="Calibrator A",
+                        xml_name="BASIC Kit",
+                        metadata={
+                            "product_number": "PN-1",
+                            "component_name": "Calibrator A",
+                            "parameter_set_number": "",
+                            "parameter_set_name": "BASIC Kit",
+                            "type": "Reagent",
+                            "container_type": "Vial",
+                        },
+                    ),
+                    AssayInputDTO(
+                        key="assay:shared",
+                        protocol_type="Reagent",
+                        protocol_display_name="Control B",
+                        xml_name="BASIC Kit",
+                        metadata={
+                            "product_number": "PN-2",
+                            "component_name": "Control B",
+                            "parameter_set_number": "",
+                            "parameter_set_name": "BASIC Kit",
+                            "type": "Reagent",
+                            "container_type": "Vial",
+                        },
+                    ),
+                ],
+            )
+            return bundle, {}, []
+
+    class _MergeServiceCollapsingAssays(_MergeService):
+        def recompute(self, app_state):
+            imported = app_state.import_state.bundles[0]
+            return InputDTOBundle(
+                source_type=imported.source_type,
+                method=imported.method,
+                assays=imported.assays[:1],
+                analytes=imported.analytes,
+                units=imported.units,
+                sample_prep_steps=imported.sample_prep_steps,
+                dilution_schemes=imported.dilution_schemes,
+            )
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportServiceWithRepeatedRows(),
+        merge_service=_MergeServiceCollapsingAssays(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=_DraftService(),
+    )
+    shell.app_state.editor_state.export_settings["excel_path"] = "dummy.xlsx"
+
+    shell.import_excel()
+
+    assert len(shell.app_state.import_state.bundles[0].assays) == 2
+    assert len(shell._last_merged_bundle.assays) == 1
+    assert shell.manual_entry_view.assays_table.rowCount() == 2
+    assert shell.manual_entry_view.assays_table.item(0, 1).text() == "Calibrator A"
+    assert shell.manual_entry_view.assays_table.item(1, 1).text() == "Control B"
+
+
+def test_shell_restore_draft_fixture_preserves_repeated_parameter_set_assay_rows(qapp, monkeypatch):
+    draft_fixture = Path("tests/addon_status_draft_import2.json")
+
+    shell = MainShell(
+        app_state=AppState(),
+        import_service=_ImportService(),
+        merge_service=_MergeService(),
+        validation_service=_ValidationService([]),
+        preview_service=_PreviewService(),
+        export_service=_ExportService(),
+        draft_service=DraftService(),
+    )
+
+    monkeypatch.setattr(QFileDialog, "getOpenFileName", staticmethod(lambda *args, **kwargs: (str(draft_fixture), "")))
+
+    shell.restore_draft()
+
+    recovered_bundle = shell.app_state.import_state.bundles[0]
+    reagent_assays = [
+        assay
+        for assay in recovered_bundle.assays
+        if (assay.metadata or {}).get("parameter_set_number", "") == "" and (assay.metadata or {}).get("type") == "Reagent"
+    ]
+
+    assert len(recovered_bundle.assays) == 10
+    assert len(reagent_assays) == 4
+    assert shell.manual_entry_view.assays_table.rowCount() == 10
+
+    saved_path = draft_fixture.parent / "_tmp_roundtrip_import2.json"
+    monkeypatch.setattr(QFileDialog, "getSaveFileName", staticmethod(lambda *args, **kwargs: (str(saved_path), "")))
+    try:
+        shell.save_draft()
+        roundtrip_payload = json.loads(saved_path.read_text(encoding="utf-8"))
+        roundtrip_assays = roundtrip_payload["import_state"]["bundles"][0]["assays"]
+        roundtrip_reagents = [
+            assay
+            for assay in roundtrip_assays
+            if assay.get("metadata", {}).get("parameter_set_number", "") == "" and assay.get("metadata", {}).get("type") == "Reagent"
+        ]
+
+        assert len(roundtrip_assays) == 10
+        assert len(roundtrip_reagents) == 4
+    finally:
+        if saved_path.exists():
+            saved_path.unlink()
+
+
 def test_shell_import_xml_prompts_for_file_when_setting_missing(qapp, monkeypatch):
     shell = MainShell(
         app_state=AppState(),
