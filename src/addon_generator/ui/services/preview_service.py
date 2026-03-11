@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import copy
 import json
 from datetime import datetime
 
 from addon_generator.config.rule_pack_loader import mapping_path_for_rule_pack
+from addon_generator.domain.models import MethodModel
 from addon_generator.input_models.dtos import InputDTOBundle
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.generation_service import GenerationService
@@ -40,7 +42,7 @@ class PreviewService:
                     "message": "Preview generation failed: unable to build addon model",
                 }
             try:
-                analytes_xml = service.generate_analytes_xml(addon)
+                analytes_xml = self._fallback_analytes_xml(service, addon)
             except Exception as exc:  # pragma: no cover - defensive runtime guard
                 error = {
                     "code": "preview-generation-failed",
@@ -54,6 +56,17 @@ class PreviewService:
         validation_ok = not bool(result.issues)
         summary = self._build_summary(addon=addon, validation_ok=validation_ok)
         return json.dumps(result.protocol_json, indent=2, sort_keys=True), result.analytes_xml_string, summary, None
+
+    def _fallback_analytes_xml(self, service: GenerationService, addon: object) -> str:
+        try:
+            return service.generate_analytes_xml(addon)
+        except ValueError as exc:
+            if "AddonModel.method is required" not in str(exc):
+                raise
+        fallback_addon = copy.deepcopy(addon)
+        if getattr(fallback_addon, "method", None) is None:
+            fallback_addon.method = MethodModel(key="method:preview-fallback", method_id="", method_version="")
+        return service.generate_analytes_xml(fallback_addon)
 
     def _build_summary(self, *, addon: object, validation_ok: bool) -> dict[str, str | int | bool]:
         timestamp = datetime.now().isoformat(timespec="seconds")

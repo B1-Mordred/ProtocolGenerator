@@ -484,6 +484,42 @@ def test_preview_service_falls_back_to_analytes_xml_when_protocol_projection_fai
     assert summary["export_readiness"] is False
 
 
+def test_preview_service_falls_back_to_analytes_xml_when_method_is_missing(monkeypatch) -> None:
+    from addon_generator.ui.services.preview_service import PreviewService
+
+    class _Addon:
+        def __init__(self):
+            self.method = None
+            self.assays = [object()]
+            self.analytes = [object()]
+            self.sample_prep_steps = []
+            self.dilution_schemes = []
+
+    svc = PreviewService()
+    addon = _Addon()
+    monkeypatch.setattr(svc._builder, "build", lambda bundle: addon)
+
+    class _GenService:
+        def generate_all(self, addon, dto_bundle=None, field_mapping_settings=None, mapping_overrides=None):
+            raise ValueError("projection failed")
+
+        def generate_analytes_xml(self, addon):
+            if addon.method is None:
+                raise ValueError("AddonModel.method is required")
+            return "<AddOn><MethodId/></AddOn>"
+
+    monkeypatch.setattr(svc, "_service_for_settings", lambda export_settings: _GenService())
+
+    protocol, analytes, summary, failure = svc.generate(InputDTOBundle(source_type="excel"))
+
+    assert failure is None
+    assert protocol == ""
+    assert analytes == "<AddOn><MethodId/></AddOn>"
+    assert summary["method_id"] == ""
+    assert summary["method_version"] == ""
+    assert summary["validation_status"] == "invalid"
+
+
 def test_preview_and_export_keep_default_ruleset_assay_grouping_for_manual_analytes(tmp_path: Path) -> None:
     import xml.etree.ElementTree as ET
 

@@ -901,6 +901,8 @@ class MainShell(QMainWindow):
     def _switch_section(self, index: int) -> None:
         self.app_state.editor_state.selected_section_index = index
         self.stack.setCurrentIndex(index)
+        if index == 7 and self.app_state.preview_state.stale:
+            self.run_preview()
 
     def _on_import_review_state_changed(self) -> None:
         if self.app_state.import_state.bundles:
