@@ -12,6 +12,12 @@ IDENTITY_LABELS = {
     "method version": "method_version",
     "method display name": "display_name",
     "display name": "display_name",
+    "kit series": "series_name",
+    "(basic) kit name": "display_name",
+    "kit product number": "order_number",
+    "addon series": "main_title",
+    "addon product name": "sub_title",
+    "addon product number": "product_number",
 }
 
 COMPONENT_HEADERS = {"assay key": "key", "protocol type": "protocol_type", "protocol display name": "protocol_display_name", "xml assay name": "xml_name"}
@@ -30,6 +36,7 @@ KIT_COMPONENT_HEADERS = {
 class BasicsParseResult:
     method: MethodInputDTO
     assays: list[AssayInputDTO]
+    assay_reference_lookup: dict[str, str]
 
 
 def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> BasicsParseResult:
@@ -37,15 +44,19 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
     rows = list(sheet.iter_rows())
 
     for row_idx, row in enumerate(rows, start=1):
-        label = _text(row[0].value).casefold() if row else ""
+        label = _normalize_label(row[0].value) if row else ""
         if label in IDENTITY_LABELS:
             identity[IDENTITY_LABELS[label]] = _text(row[1].value) if len(row) > 1 else ""
 
     method_id = identity.get("method_id", "")
     method_version = identity.get("method_version", "")
-    if not method_id:
+    has_addon_identity = any(
+        identity.get(key)
+        for key in ("series_name", "display_name", "order_number", "main_title", "sub_title", "product_number")
+    )
+    if not method_id and not has_addon_identity:
         diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Method Id is required", sheet=sheet.title, column="Method Id"))
-    if not method_version:
+    if not method_version and not has_addon_identity:
         diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Method Version is required", sheet=sheet.title, column="Method Version"))
 
     header_row_idx, header_map = _find_component_header_row(rows)
@@ -120,8 +131,41 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                 )
             )
 
-    method = MethodInputDTO(key=f"method:{method_id or 'unknown'}", method_id=method_id, method_version=method_version, display_name=identity.get("display_name") or None)
-    return BasicsParseResult(method=method, assays=assays)
+    fallback_method_id = method_id or identity.get("order_number") or identity.get("product_number") or "unknown"
+    fallback_method_version = method_version or "1.0"
+    method = MethodInputDTO(
+        key=f"method:{fallback_method_id}",
+        method_id=fallback_method_id,
+        method_version=fallback_method_version,
+        display_name=identity.get("display_name") or None,
+        main_title=identity.get("main_title") or None,
+        sub_title=identity.get("sub_title") or None,
+        order_number=identity.get("order_number") or None,
+        series_name=identity.get("series_name") or None,
+        product_number=identity.get("product_number") or None,
+    )
+    return BasicsParseResult(method=method, assays=assays, assay_reference_lookup=_build_assay_reference_lookup(assays))
+
+
+def _build_assay_reference_lookup(assays: list[AssayInputDTO]) -> dict[str, str]:
+    lookup: dict[str, str] = {}
+    for assay in assays:
+        key = assay.key.strip()
+        if not key:
+            continue
+        candidates = {
+            key,
+            str((assay.metadata or {}).get("parameter_set_number") or "").strip(),
+            str((assay.metadata or {}).get("parameter_set_name") or "").strip(),
+            str((assay.metadata or {}).get("component_name") or "").strip(),
+            str((assay.metadata or {}).get("assay_abbreviation") or "").strip(),
+            str(assay.protocol_display_name or "").strip(),
+            str(assay.xml_name or "").strip(),
+        }
+        for candidate in candidates:
+            if candidate:
+                lookup[candidate.casefold()] = key
+    return lookup
 
 
 def _find_component_header_row(rows: list[Any]) -> tuple[int | None, dict[str, int]]:
@@ -150,6 +194,10 @@ def _text(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def _normalize_label(value: Any) -> str:
+    return _text(value).rstrip(":").casefold()
 
 
 def _identity_token(value: str) -> str:
