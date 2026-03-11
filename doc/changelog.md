@@ -6,6 +6,9 @@
 - Added workbook-template Sample Prep parser enhancements for header aliases (`Volume [uL]/[ul]`, `Duration [sec]`, `Force [rpm]`), row-order fallback when `Order` is absent, standardized downstream metadata keys (`order`, `action`, `source`, `destination`, `volume`, `duration`, `force`), and `Hidden_Lists.Actions` vocabulary fallback when `SamplePrepAction` is not provided; expanded unit tests accordingly.
 
 
+### Changed
+- Field Mapping templates are now execution-effective during validation/export: enabled rows from the active template are applied to generated `ProtocolFile.json` and `Analytes.xml` before final serialization, with deterministic last-write-wins conflict handling and warning/report visibility for applied vs skipped rows.
+
 ### Fixed
 - Fixed manual-entry analyte assay dropdown sourcing to read Kit Components `Assay Abbreviation` (column index 3) instead of `Parameter Set Name`, while preserving first-seen, non-empty deduplication semantics for dropdown options.
 - Fixed `InputMergeService` assay deduplication to use a composite assay identity (`key` + component metadata) instead of key-only matching, so same-key rows for different kit components survive merge while true same-row conflicts are still reported.

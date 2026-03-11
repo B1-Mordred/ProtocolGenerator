@@ -16,6 +16,7 @@ class ValidationSummary:
     grouped_issues: dict[str, list[IssueViewModel]]
     severity_counts: dict[str, int]
     category_counts: dict[str, int]
+    field_mapping_report: dict[str, object]
     export_blocked: bool
 
 
@@ -24,9 +25,10 @@ class ValidationService:
         self._builder = CanonicalModelBuilder()
         self._service = GenerationService()
 
-    def validate(self, merged_bundle: InputDTOBundle) -> tuple[object, ValidationSummary]:
+    def validate(self, merged_bundle: InputDTOBundle, *, export_settings: dict[str, object] | None = None) -> tuple[object, ValidationSummary]:
         addon = self._builder.build(merged_bundle)
-        result = self._service.generate_all(addon, dto_bundle=merged_bundle)
+        field_mapping_settings = (export_settings or {}).get("field_mapping")
+        result = self._service.generate_all(addon, dto_bundle=merged_bundle, field_mapping_settings=field_mapping_settings)
         issues = [self._to_issue_view_model(issue) for issue in result.issues + result.warnings]
 
         grouped_issues: dict[str, list[IssueViewModel]] = defaultdict(list)
@@ -43,6 +45,7 @@ class ValidationService:
             grouped_issues=dict(grouped_issues),
             severity_counts=severity_counts,
             category_counts=category_counts,
+            field_mapping_report=result.field_mapping_report,
             export_blocked=export_blocked,
         )
         return addon, summary

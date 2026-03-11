@@ -254,3 +254,13 @@ Fix:
   ]
 }
 ```
+
+## Field Mapping now affects export output
+
+Field Mapping templates in **Admin → Field Mapping** are now applied during validation/export (not just preview text).
+
+- Only **enabled rows** from the **active template** run.
+- Supported execution targets include `ProtocolFile.json` (`MethodInformation.Id`, `MethodInformation.Version`, analyte names) and `Analytes.xml` analyte/unit names.
+- If multiple enabled rows map to the same output field, the exporter uses **last-write-wins** deterministically and emits a validation warning entry.
+- Validation status now reports how many mapping rows were **applied** vs **skipped**.
+

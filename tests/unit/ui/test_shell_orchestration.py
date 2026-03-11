@@ -82,7 +82,7 @@ class _ValidationService:
     def __init__(self, issues):
         self._issues = issues
 
-    def validate(self, merged):
+    def validate(self, merged, *, export_settings=None):
         grouped = {}
         category_counts = {}
         severity_counts = {"error": 0, "warning": 0, "info": 0}
@@ -95,6 +95,7 @@ class _ValidationService:
             grouped_issues=grouped,
             severity_counts=severity_counts,
             category_counts=category_counts,
+            field_mapping_report={},
             export_blocked=severity_counts.get("error", 0) > 0,
         )
 
@@ -109,7 +110,7 @@ class _ExportService:
         self.called = False
         self.result = result or ExportResult(status="success", written_paths=[])
 
-    def export(self, merged, *, destination_folder, overwrite=False):
+    def export(self, merged, *, destination_folder, overwrite=False, export_settings=None):
         self.called = True
         self.result.destination = destination_folder
         return self.result

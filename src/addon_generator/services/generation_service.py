@@ -20,10 +20,12 @@ from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.link_resolver import LinkResolver
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
 from addon_generator.services.input_merge_service import InputMergeService
+from addon_generator.ui.services.field_mapping_execution import apply_field_mappings
 from addon_generator.validation.cross_file_validator import validate_cross_file_consistency
 from addon_generator.validation.domain_validator import validate_domain
 from addon_generator.validation.dto_validator import validate_dto_bundle
 from addon_generator.validation.protocol_schema_validator import validate_protocol_schema
+from addon_generator.validation.xsd_validator import validate_xml_against_xsd
 
 
 @dataclass(slots=True)
@@ -37,6 +39,7 @@ class GenerationResult:
     merge_report: dict[str, Any]
     unresolved_required_fields: list[str]
     conflicting_required_fields: list[str]
+    field_mapping_report: dict[str, Any]
 
 
 @dataclass(slots=True, frozen=True)
@@ -83,7 +86,15 @@ class GenerationService:
         self.resolver.assign_ids(addon)
         return generate_protocol_json(addon, self.resolver, protocol_fragments)
 
-    def generate_all(self, addon: AddonModel, *, dto_bundle: InputDTOBundle | None = None, xsd_path: str | Path = "AddOn.xsd", protocol_schema_path: str | Path = "protocol.schema.json") -> GenerationResult:
+    def generate_all(
+        self,
+        addon: AddonModel,
+        *,
+        dto_bundle: InputDTOBundle | None = None,
+        field_mapping_settings: dict[str, Any] | None = None,
+        xsd_path: str | Path = "AddOn.xsd",
+        protocol_schema_path: str | Path = "protocol.schema.json",
+    ) -> GenerationResult:
         self.resolver.assign_ids(addon)
         staged_issues: list[tuple[str, ValidationIssue]] = []
 
@@ -95,11 +106,31 @@ class GenerationService:
         staged_issues.extend(("linkage", issue) for issue in self.resolver.validate_cross_file_linkage(addon))
 
         xml_result = generate_analytes_addon_xml(addon, xsd_path=xsd_path)
-        # Phase 3: projection/schema/cross-file validation.
-        staged_issues.extend(("projection", issue) for issue in xml_result.issues.issues)
-
         protocol_result = self.generate_protocol_json(addon)
-        protocol_json = protocol_result.payload
+        mapping_result = apply_field_mappings(
+            protocol_json=protocol_result.payload,
+            analytes_xml=xml_result.xml_content,
+            dto_bundle=dto_bundle,
+            field_mapping_settings=field_mapping_settings,
+        )
+        protocol_json = mapping_result.protocol_json
+        analytes_xml = mapping_result.analytes_xml
+        # Phase 3: projection/schema/cross-file validation.
+        mapped_xml_validation = validate_xml_against_xsd(analytes_xml, xsd_path)
+        staged_issues.extend(("projection", issue) for issue in mapped_xml_validation.issues.issues)
+        for warning in mapping_result.report.get("warnings", []):
+            staged_issues.append(
+                (
+                    "projection",
+                    ValidationIssue(
+                        code="field-mapping-warning",
+                        message=str(warning),
+                        path="field_mapping",
+                        source_location="field_mapping",
+                        severity="warning",
+                    ),
+                )
+            )
         method_info = protocol_json.get("MethodInformation", {}) if isinstance(protocol_json.get("MethodInformation"), dict) else {}
         if not str(method_info.get("Id") or "").strip() or not str(method_info.get("Version") or "").strip():
             staged_issues.append(
@@ -114,7 +145,7 @@ class GenerationService:
                     ),
                 )
             )
-        cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(xml_result.xml_content))
+        cross_file = validate_cross_file_consistency(protocol_json, ET.fromstring(analytes_xml))
         staged_issues.extend(("projection", issue) for issue in cross_file.issues.issues)
 
         protocol_schema_result = validate_protocol_schema(protocol_json, schema_path=protocol_schema_path)
@@ -127,13 +158,14 @@ class GenerationService:
         return GenerationResult(
             addon_model=addon,
             protocol_json=protocol_json,
-            analytes_xml_string=xml_result.xml_content,
+            analytes_xml_string=analytes_xml,
             issues=errors,
             warnings=warnings,
             resolved_mapping_snapshot=self.mapping.raw,
             merge_report=protocol_result.merge_report,
             unresolved_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("unresolved", [])),
             conflicting_required_fields=list(protocol_result.merge_report.get("required_fields", {}).get("conflicting", [])),
+            field_mapping_report=mapping_result.report,
         )
 
     def _sort_issues(self, staged_issues: list[tuple[str, ValidationIssue]]) -> list[ValidationIssue]:
@@ -186,10 +218,16 @@ class GenerationService:
         overwrite: bool = False,
         collision_policy: str = "error",
         include_metadata: bool = True,
+        field_mapping_settings: dict[str, Any] | None = None,
         xsd_path: str | Path = "AddOn.xsd",
         protocol_schema_path: str | Path = "protocol.schema.json",
     ) -> PackageBuildResult:
-        result = self.generate_all(addon, xsd_path=xsd_path, protocol_schema_path=protocol_schema_path)
+        result = self.generate_all(
+            addon,
+            field_mapping_settings=field_mapping_settings,
+            xsd_path=xsd_path,
+            protocol_schema_path=protocol_schema_path,
+        )
         package_name = self._package_name_for(addon)
         destination_root_path = Path(destination_root)
         destination_root_path.mkdir(parents=True, exist_ok=True)
