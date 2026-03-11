@@ -1,0 +1,40 @@
+profile_marker: high-throughput
+mapping_path: config/mapping.v1.yaml
+method_defaults:
+  DisplayName: High Throughput Panel
+  MainTitle: HT Main
+  SubTitle: HT Sub
+  OrderNumber: HT-001
+  MaximumNumberOfSamples: 96
+  MaximumNumberOfProcessingCycles: 4
+  MaximumNumberOfAssays: 8
+  SamplesLayoutType: SAMPLES_LAYOUT_SPLIT
+  MethodInformationType: REGULAR
+assay_defaults:
+  - product_number: PN-HT
+    component_name: Throughput Component
+    parameter_set_number: PS-HT
+    assay_abbreviation: HTP
+    parameter_set_name: HTP Kit
+    type: Liquid
+    container_type: Bottle
+loading_processing_templates:
+  LoadingWorkflowSteps:
+    - StepType: LoadMfxCarriers
+      StepParameters:
+        BarcodeMask: HT*
+        FullFilename: ht-load.dat
+  ProcessingWorkflowSteps:
+    - GroupDisplayName: HT Group
+      GroupIndex: 0
+      GroupSteps:
+        - StepIndex: 0
+          StepType: UnloadHeaterShaker
+          StaticDurationInSeconds: 10
+          DynamicDurationInSeconds: 5
+          StepParameters:
+            KeepGripperTools: false
+high_risk_fields:
+  - path: assays.type
+    lock: true
+    reason: High throughput pack requires liquid assay typing.

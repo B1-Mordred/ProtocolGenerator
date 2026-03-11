@@ -21,6 +21,7 @@ from PySide6.QtWidgets import (
     QToolBar,
 )
 
+from addon_generator.config.rule_pack_loader import DEFAULT_PACK_NAME, RulePack, list_rule_packs, load_rule_pack
 from addon_generator.__about__ import (
     __app_name__,
     __config_schema_version__,
@@ -98,6 +99,7 @@ class MainShell(QMainWindow):
         self.export_service = export_service or ExportService()
         self.draft_service = draft_service or DraftService()
         self.update_service = update_service or UpdateService()
+        self._active_rule_pack: RulePack = load_rule_pack(DEFAULT_PACK_NAME)
 
         self.setWindowTitle(__app_name__)
         self._last_merged_bundle = None
@@ -151,8 +153,14 @@ class MainShell(QMainWindow):
             self,
             on_manual_selected=self.show_manual_entry,
             on_excel_selected=self.import_excel,
+            on_rule_pack_changed=self.set_rule_pack,
+            available_rule_packs=list_rule_packs(),
         )
-        self.manual_entry_view = ManualEntryView(self, on_data_changed=self._on_manual_data_changed)
+        self.manual_entry_view = ManualEntryView(
+            self,
+            on_data_changed=self._on_manual_data_changed,
+            selected_mapping_path=self._active_rule_pack.mapping_path,
+        )
         self._apply_admin_dropdown_settings()
 
         self.main_stack.addWidget(self.entry_home_view)
@@ -191,6 +199,7 @@ class MainShell(QMainWindow):
         self.validation_view.issues.issue_navigation_requested.connect(self._on_issue_selected)
 
         self.sidebar.setCurrentRow(self.app_state.editor_state.selected_section_index)
+        self.set_rule_pack(DEFAULT_PACK_NAME)
         self._refresh_status()
 
     def _build_help_menu(self) -> QMenu:
@@ -253,6 +262,21 @@ class MainShell(QMainWindow):
         protocol_defaults_action = QAction("Configure Protocol Defaults", self)
         protocol_defaults_action.triggered.connect(self.configure_protocol_defaults)
         admin_menu.addAction(protocol_defaults_action)
+
+    def set_rule_pack(self, pack_name: str) -> None:
+        selected = (pack_name or DEFAULT_PACK_NAME).strip() or DEFAULT_PACK_NAME
+        self._active_rule_pack = load_rule_pack(selected)
+        self.app_state.editor_state.export_settings["selected_rule_pack"] = self._active_rule_pack.name
+        self.manual_entry_view.set_mapping_path(self._active_rule_pack.mapping_path)
+        self.manual_entry_view.apply_rule_pack(self._active_rule_pack)
+        self.entry_home_view.set_selected_rule_pack(self._active_rule_pack.name)
+
+    def _rule_pack_payload_templates(self) -> dict[str, object]:
+        templates = self._active_rule_pack.loading_processing_templates
+        return {
+            "LoadingWorkflowSteps": list(templates.get("LoadingWorkflowSteps") or []),
+            "ProcessingWorkflowSteps": list(templates.get("ProcessingWorkflowSteps") or []),
+        }
 
     def show_manual_entry(self) -> None:
         current_bundle = self._current_merged_bundle()
@@ -491,6 +515,7 @@ class MainShell(QMainWindow):
         payload = self.manual_entry_view.payload()
         method = payload["method"]
         current_method = self._current_merged_bundle().method if self._current_merged_bundle() else None
+        rule_pack_templates = self._rule_pack_payload_templates()
         bundle = map_gui_payload_to_bundle(
             {
                 "method_id": method.get("method_id", "") or (current_method.method_id if current_method else ""),
@@ -505,6 +530,8 @@ class MainShell(QMainWindow):
                 },
                 "assays": payload["assays"],
                 "analytes": payload["analytes"],
+                "LoadingWorkflowSteps": rule_pack_templates["LoadingWorkflowSteps"],
+                "ProcessingWorkflowSteps": rule_pack_templates["ProcessingWorkflowSteps"],
             }
         )
         bundle.sample_prep_steps = [

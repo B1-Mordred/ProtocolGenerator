@@ -19,7 +19,15 @@ def qapp():
 
 def test_data_entry_home_buttons_trigger_callbacks(qapp) -> None:
     calls: list[str] = []
-    view = DataEntryHomeView(on_manual_selected=lambda: calls.append("manual"), on_excel_selected=lambda: calls.append("excel"))
+    packs: list[str] = []
+    view = DataEntryHomeView(
+        on_manual_selected=lambda: calls.append("manual"),
+        on_excel_selected=lambda: calls.append("excel"),
+        on_rule_pack_changed=lambda value: packs.append(value),
+        available_rule_packs=["default", "high_throughput"],
+    )
+
+    view.rule_pack_combo.setCurrentText("high_throughput")
 
     for button in view.findChildren(QPushButton):
         if button.text() == "Enter Data Manually":
@@ -28,6 +36,7 @@ def test_data_entry_home_buttons_trigger_callbacks(qapp) -> None:
             button.click()
 
     assert calls == ["manual", "excel"]
+    assert packs and packs[-1] == "high_throughput"
 
 
 def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
@@ -290,3 +299,16 @@ def test_manual_entry_shows_assay_linkage_guidance_and_warning_on_mismatch(qapp)
 
     assert view.linkage_warning_label.isHidden() is False
     assert "Set XML assay name equal to Type or change matching mode to alias_map/normalized." in view.linkage_warning_label.text()
+
+
+def test_manual_entry_rule_pack_locks_high_risk_fields(qapp) -> None:
+    from addon_generator.config.rule_pack_loader import load_rule_pack
+
+    view = ManualEntryView()
+    view.apply_rule_pack(load_rule_pack("default"))
+
+    type_combo = view.assays_table.cellWidget(0, 5)
+    set_name_item = view.assays_table.item(0, 4)
+    assert isinstance(type_combo, QComboBox)
+    assert type_combo.isEnabled() is False
+    assert set_name_item is not None

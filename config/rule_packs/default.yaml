@@ -1,0 +1,59 @@
+profile_marker: default
+mapping_path: config/mapping.v1.yaml
+method_defaults:
+  DisplayName: Default Method
+  MainTitle: Default Main
+  SubTitle: Default Sub
+  OrderNumber: O-1
+  MaximumNumberOfSamples: 1
+  MaximumNumberOfProcessingCycles: 1
+  MaximumNumberOfAssays: 1
+  SamplesLayoutType: SAMPLES_LAYOUT_SPLIT
+  MethodInformationType: REGULAR
+assay_defaults:
+  - product_number: PN-DEFAULT
+    component_name: Default Component
+    parameter_set_number: PS-DEFAULT
+    assay_abbreviation: BASIC
+    parameter_set_name: BASIC Kit
+    type: Solid
+    container_type: Tube
+loading_processing_templates:
+  LoadingWorkflowSteps:
+    - StepType: LoadMfxCarriers
+      StepParameters:
+        BarcodeMask: "*"
+        FullFilename: default.dat
+        RequiredPlates:
+          - LabwareType: Carrier
+            DisplayName: Default Plate
+            ArticleNumber: ART-1
+            BarcodeMask: "*"
+            FullFilename: plate.dat
+            IsReusable: false
+            PlateControlType: DWP
+        RequiredTipRacks:
+          - LabwareType: Rack
+            DisplayName: Default Rack
+            ArticleNumber: ART-2
+            BarcodeMask: "*"
+            FullFilename: rack.dat
+  ProcessingWorkflowSteps:
+    - GroupDisplayName: Default Group
+      GroupIndex: 0
+      GroupSteps:
+        - StepIndex: 0
+          StepType: UnloadHeaterShaker
+          StaticDurationInSeconds: 0
+          DynamicDurationInSeconds: 0
+          StepParameters:
+            KeepGripperTools: false
+            StaticDurationInSeconds: 0
+            DynamicDurationInSeconds: 0
+high_risk_fields:
+  - path: assays.type
+    lock: true
+    reason: Cross-file assay matching depends on assay type.
+  - path: assays.parameter_set_name
+    lock: true
+    reason: XML assay name linkage is derived from parameter set naming.

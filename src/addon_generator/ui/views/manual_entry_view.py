@@ -18,6 +18,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from addon_generator.config.rule_pack_loader import RulePack
 from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.normalizers import normalize_for_matching
 
@@ -55,9 +56,17 @@ class ManualEntryView(QWidget):
         },
     }
 
-    def __init__(self, parent=None, *, on_data_changed: Callable[[], None] | None = None) -> None:
+    def __init__(
+        self,
+        parent=None,
+        *,
+        on_data_changed: Callable[[], None] | None = None,
+        selected_mapping_path: str = "config/mapping.v1.yaml",
+    ) -> None:
         super().__init__(parent)
         self._on_data_changed = on_data_changed
+        self._selected_mapping_path = selected_mapping_path
+        self._locked_assay_columns: set[int] = set()
         self._suspend_data_changed = False
         root = QVBoxLayout(self)
         root.addWidget(QLabel("Enter AddOn data manually. Changes are autosaved as you type."))
@@ -227,6 +236,8 @@ class ManualEntryView(QWidget):
                 combo.addItem(existing)
             combo.setCurrentText(existing)
         combo.blockSignals(False)
+        if table is self.assays_table and col in self._locked_assay_columns:
+            combo.setEnabled(False)
 
     def _append_row(self, table: QTableWidget) -> None:
         table.insertRow(table.rowCount())
@@ -255,7 +266,7 @@ class ManualEntryView(QWidget):
 
     def _cross_file_match_settings(self) -> tuple[str, dict[str, str]]:
         try:
-            config = load_mapping_config("config/mapping.v1.yaml")
+            config = load_mapping_config(self._selected_mapping_path)
             cross_file = config.raw.get("assay_mapping", {}).get("cross_file_match", {})
             mode = str(cross_file.get("mode", "exact"))
             alias_map = cross_file.get("alias_map", {})
@@ -361,6 +372,45 @@ class ManualEntryView(QWidget):
             table.setColumnWidth(index, target_width)
 
 
+
+
+
+    def apply_rule_pack(self, rule_pack: RulePack) -> None:
+        method_defaults = rule_pack.method_defaults
+        basics = {
+            "kit_name": str(method_defaults.get("DisplayName") or ""),
+            "kit_product_number": str(method_defaults.get("OrderNumber") or ""),
+            "addon_series": str(method_defaults.get("MainTitle") or ""),
+            "addon_product_name": str(method_defaults.get("SubTitle") or ""),
+            "kit_series": str(method_defaults.get("SeriesName") or ""),
+            "addon_product_number": str(method_defaults.get("ProductNumber") or ""),
+        }
+        self.set_basics_values(basics)
+        self.set_assays_rows(rule_pack.assay_defaults or [])
+
+        lock_columns: set[int] = set()
+        column_map = {
+            "assays.parameter_set_name": 4,
+            "assays.type": 5,
+            "assays.container_type": 6,
+        }
+        for field in rule_pack.high_risk_fields:
+            if not bool(field.get("lock", False)):
+                continue
+            path = str(field.get("path") or "").strip()
+            if path in column_map:
+                lock_columns.add(column_map[path])
+        self._locked_assay_columns = lock_columns
+
+        for row in range(self.assays_table.rowCount()):
+            for col in self._locked_assay_columns:
+                combo = self.assays_table.cellWidget(row, col)
+                if isinstance(combo, QComboBox):
+                    combo.setEnabled(False)
+
+    def set_mapping_path(self, mapping_path: str) -> None:
+        self._selected_mapping_path = mapping_path
+        self._update_linkage_warning()
 
     def set_basics_values(self, values: dict[str, str]) -> None:
         self._set_data_change_suspended(True)

@@ -144,3 +144,36 @@ def test_ui_flow_import_review_edit_and_stale_preview_lifecycle(monkeypatch) -> 
     sample_vm.update_field(step_id, "destination", "Tube D")
     assert app_state.preview_state.stale is True
     assert app_state.validation_state.stale is True
+
+
+def test_ui_flow_rule_pack_minimal_manual_identity_yields_near_complete_protocol() -> None:
+    from addon_generator.config.rule_pack_loader import load_rule_pack
+    from addon_generator.services.generation_service import GenerationService
+
+    pack = load_rule_pack("default")
+    payload = {"method": {"kit_name": pack.method_defaults.get("DisplayName", "")}, "assays": pack.assay_defaults, "analytes": []}
+    bundle_payload = {
+        "method_id": "PACK-METHOD-1",
+        "method_version": "1",
+        "MethodInformation": {
+            "DisplayName": payload["method"].get("kit_name", "")
+        },
+        "assays": payload["assays"],
+        "analytes": payload["analytes"],
+        "LoadingWorkflowSteps": pack.loading_processing_templates.get("LoadingWorkflowSteps", []),
+        "ProcessingWorkflowSteps": pack.loading_processing_templates.get("ProcessingWorkflowSteps", []),
+    }
+
+    from addon_generator.importers.gui_mapper import map_gui_payload_to_bundle
+    from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
+
+    merged = map_gui_payload_to_bundle(bundle_payload)
+    addon = CanonicalModelBuilder().build(merged)
+    result = GenerationService(mapping_path=pack.mapping_path).generate_all(addon, dto_bundle=merged)
+
+    assert result.protocol_json.get("MethodInformation", {}).get("Id") == "PACK-METHOD-1"
+    assert result.protocol_json.get("MethodInformation", {}).get("Version") == "1"
+    assert result.protocol_json.get("LoadingWorkflowSteps")
+    assert result.protocol_json.get("ProcessingWorkflowSteps")
+    assert result.protocol_json.get("AssayInformation")
+    assert len(result.unresolved_required_fields) <= 2
