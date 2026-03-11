@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- Added a schema-driven **Required by schema** checklist in wizard validation/preview flows that enumerates required top-level sections plus required `MethodInformation` and `AssayInformation[0]` fields, surfaces source-precedence winners (`gui`/`import`/`default`/`built-in`), and blocks export messaging when required values are unresolved or fallback-only.
 - Added assay authoring guidance in Assays and Manual Entry views clarifying linkage semantics between `ProtocolFile AssayInformation[].Type`, `ProtocolFile AssayInformation[].DisplayName`, and `Analytes.xml Assay.Name`, including immediate mismatch warnings against active `assay_mapping.cross_file_match.mode`.
 - Added workbook-template Dilutions parser support for alias headers (`Dilution Name`, `Dilution Buffer 1 Ratio`, `Dilution Buffer 2 Ratio`, `Dilution Buffer 3 Ratio`) and metadata export of `buffer1_ratio`/`buffer2_ratio`/`buffer3_ratio` with synthesized legacy `ratio` compatibility.
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).

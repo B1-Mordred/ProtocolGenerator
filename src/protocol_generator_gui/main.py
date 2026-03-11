@@ -22,12 +22,14 @@ from protocol_generator_gui.wizard_logic import (
     assay_analyte_integrity_warnings,
     build_field_tooltip,
     build_import_conflicts,
+    build_required_by_schema_checklist,
     build_output_preview,
     can_progress,
     categorize_schema_fields,
     make_step_help,
     summarize_progress,
     validate_method_editor,
+    required_checklist_blockers,
 )
 
 logger = logging.getLogger(__name__)
@@ -521,7 +523,18 @@ class ProtocolWizardApp(tk.Tk):
         for warning in analyte_warnings:
             self.validation_text.insert(tk.END, f"- {warning}\n")
 
-        output_preview = build_output_preview(data, "<preview unavailable>", self.wizard_state.export_target, [] if allowed else [reason])
+        checklist = build_required_by_schema_checklist(self.schema, payload, self.wizard_state.imported_payload)
+        self.validation_text.insert(tk.END, "\nRequired by schema\n")
+        for item in checklist:
+            self.validation_text.insert(
+                tk.END,
+                f"- {item.path}: source={item.source} resolved={'yes' if item.resolved else 'no'} fallback_only={'yes' if item.fallback_only else 'no'}\n",
+            )
+
+        preview_blockers = required_checklist_blockers(checklist)
+        blockers = [] if allowed else [reason]
+        blockers.extend(preview_blockers)
+        output_preview = build_output_preview(data, "<preview unavailable>", self.wizard_state.export_target, blockers)
         self.output_text.delete("1.0", tk.END)
         self.output_text.insert(tk.END, "ProtocolFile.json preview\n")
         self.output_text.insert(tk.END, output_preview["ProtocolFile.json"][:1000] + "\n")
