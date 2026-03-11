@@ -1,0 +1,1774 @@
+{
+	"MethodInformation": {
+		"Id": "Beta Therapeutic Drug Monitoring",
+		"DisplayName": "Beta Therapeutic Drug Monitoring",
+		"Version": "1.2",
+		"MaximumNumberOfProcessingCycles": 2,
+		"MainTitle": "Beta Therapeutic Drug Monitoring",
+		"SubTitle": "Automated Sample Preparation",
+		"OrderNumber": "92111",
+		"MaximumNumberOfSamples": 192,
+		"MaximumNumberOfAssays": 7,
+		"SamplesLayoutType": "SAMPLES_LAYOUT_COMBINED"
+	},
+	"AssayInformation": [
+		{
+			"Type": "NL1XT",
+			"DisplayName": "NL1XT",
+			"MinimumNumberOfPatientSamplesOnFirstPlate": 1,
+			"StopPreparationWithFailedCalibrator": false,
+			"StopPreparationWithFailedControl": false,
+			"ValidityOfCalibrationInDays": 1,
+			"DilutionFactors": [
+				{
+					"DilutionFactor": "1+1.5",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 99,
+					"DispensationVolumeEluate": 96,
+					"DispensationVolumeDilutionBuffer1": 144,
+					"DispensationVolumeDilutionBuffer2": 0,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+2",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 83,
+					"DispensationVolumeEluate": 80,
+					"DispensationVolumeDilutionBuffer1": 160,
+					"DispensationVolumeDilutionBuffer2": 0,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+3",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 63,
+					"DispensationVolumeEluate": 60,
+					"DispensationVolumeDilutionBuffer1": 180,
+					"DispensationVolumeDilutionBuffer2": 0,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+4",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 51,
+					"DispensationVolumeEluate": 48,
+					"DispensationVolumeDilutionBuffer1": 96,
+					"DispensationVolumeDilutionBuffer2": 96,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+5",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 43,
+					"DispensationVolumeEluate": 40,
+					"DispensationVolumeDilutionBuffer1": 100,
+					"DispensationVolumeDilutionBuffer2": 100,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+6",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 38,
+					"DispensationVolumeEluate": 35,
+					"DispensationVolumeDilutionBuffer1": 105,
+					"DispensationVolumeDilutionBuffer2": 105,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+7",
+					"IsUsed": true,
+					"AspirationVolumeEluate": 33,
+					"DispensationVolumeEluate": 30,
+					"DispensationVolumeDilutionBuffer1": 105,
+					"DispensationVolumeDilutionBuffer2": 105,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+8",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 30,
+					"DispensationVolumeEluate": 27,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+9",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 27,
+					"DispensationVolumeEluate": 24,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				}
+			],
+			"CalibratorLayoutRules": [
+				{
+					"Level": 0,
+					"DisplayName": "Calibrator Blank",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 1,
+					"DisplayName": "Calibrator Level 1",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Calibrator Level 2",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 3,
+					"DisplayName": "Calibrator Level 3",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			],
+			"ControlLayoutRules": [
+				{
+					"Level": 1,
+					"DisplayName": "Control Level I",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Control Level II",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			]
+		},
+		{
+			"Type": "NL2XT2",
+			"DisplayName": "NL2XT2",
+			"MinimumNumberOfPatientSamplesOnFirstPlate": 5,
+			"StopPreparationWithFailedCalibrator": false,
+			"StopPreparationWithFailedControl": false,
+			"ValidityOfCalibrationInDays": 5,
+			"DilutionFactors": [
+				{
+					"DilutionFactor": "1+1.5",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 99,
+					"DispensationVolumeEluate": 96,
+					"DispensationVolumeDilutionBuffer1": 144,
+					"DispensationVolumeDilutionBuffer2": 0,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+2",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 83,
+					"DispensationVolumeEluate": 80,
+					"DispensationVolumeDilutionBuffer1": 160,
+					"DispensationVolumeDilutionBuffer2": 0,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+3",
+					"IsUsed": true,
+					"AspirationVolumeEluate": 63,
+					"DispensationVolumeEluate": 60,
+					"DispensationVolumeDilutionBuffer1": 180,
+					"DispensationVolumeDilutionBuffer2": 0,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+4",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 51,
+					"DispensationVolumeEluate": 48,
+					"DispensationVolumeDilutionBuffer1": 96,
+					"DispensationVolumeDilutionBuffer2": 96,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+5",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 43,
+					"DispensationVolumeEluate": 40,
+					"DispensationVolumeDilutionBuffer1": 100,
+					"DispensationVolumeDilutionBuffer2": 100,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+6",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 38,
+					"DispensationVolumeEluate": 35,
+					"DispensationVolumeDilutionBuffer1": 105,
+					"DispensationVolumeDilutionBuffer2": 105,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+7",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 33,
+					"DispensationVolumeEluate": 30,
+					"DispensationVolumeDilutionBuffer1": 105,
+					"DispensationVolumeDilutionBuffer2": 105,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+8",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 30,
+					"DispensationVolumeEluate": 27,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+9",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 27,
+					"DispensationVolumeEluate": 24,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				}
+			],
+			"CalibratorLayoutRules": [
+				{
+					"Level": 0,
+					"DisplayName": "Calibrator Blank",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 1,
+					"DisplayName": "Calibrator Level 1",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Calibrator Level 2",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 3,
+					"DisplayName": "Calibrator Level 3",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			],
+			"ControlLayoutRules": [
+				{
+					"Level": 1,
+					"DisplayName": "Control Level I",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Control Level II",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			]
+		},
+		{
+			"Type": "AEDXT",
+			"DisplayName": "AEDXT",
+			"MinimumNumberOfPatientSamplesOnFirstPlate": 5,
+			"StopPreparationWithFailedCalibrator": false,
+			"StopPreparationWithFailedControl": false,
+			"ValidityOfCalibrationInDays": 5,
+			"DilutionFactors": [
+				{
+					"DilutionFactor": "1+9",
+					"IsUsed": true,
+					"AspirationVolumeEluate": 27,
+					"DispensationVolumeEluate": 24,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				}
+			],
+			"CalibratorLayoutRules": [
+				{
+					"Level": 0,
+					"DisplayName": "Calibrator Blank",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 1,
+					"DisplayName": "Calibrator Level 1",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Calibrator Level 2",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 3,
+					"DisplayName": "Calibrator Level 3",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			],
+			"ControlLayoutRules": [
+				{
+					"Level": 1,
+					"DisplayName": "Control Level I",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Control Level II",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			]
+		},
+		{
+			"Type": "Antiarrhythmika",
+			"DisplayName": "Antiarrhythmika",
+			"MinimumNumberOfPatientSamplesOnFirstPlate": 5,
+			"StopPreparationWithFailedCalibrator": false,
+			"StopPreparationWithFailedControl": false,
+			"ValidityOfCalibrationInDays": 5,
+			"DilutionFactors": [
+				{
+					"DilutionFactor": "1+7",
+					"IsUsed": true,
+					"AspirationVolumeEluate": 213,
+					"DispensationVolumeEluate": 210,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 210,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+8",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 30,
+					"DispensationVolumeEluate": 72,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+9",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 27,
+					"DispensationVolumeEluate": 24,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 216,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+19",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 15,
+					"DispensationVolumeEluate": 12,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 228,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+29",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 13,
+					"DispensationVolumeEluate": 10,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 290,
+					"DispensationVolumeDilutionBuffer3": 0
+				},
+				{
+					"DilutionFactor": "1+49",
+					"IsUsed": false,
+					"AspirationVolumeEluate": 13,
+					"DispensationVolumeEluate": 10,
+					"DispensationVolumeDilutionBuffer1": 0,
+					"DispensationVolumeDilutionBuffer2": 490,
+					"DispensationVolumeDilutionBuffer3": 0
+				}
+			],
+			"CalibratorLayoutRules": [
+				{
+					"Level": 0,
+					"DisplayName": "Calibrator Blank",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 1,
+					"DisplayName": "Calibrator Level 1",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Calibrator Level 2",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 3,
+					"DisplayName": "Calibrator Level 3",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			],
+			"ControlLayoutRules": [
+				{
+					"Level": 1,
+					"DisplayName": "Control Level I",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				},
+				{
+					"Level": 2,
+					"DisplayName": "Control Level II",
+					"PrependToPatientSamples": true,
+					"AppendToPatientSamples": false,
+					"FrequencyOfInterspersal": 0,
+					"OffsetOfInterspersal": 0
+				}
+			]
+		}
+	],
+	"LoadingWorkflowSteps": [
+		{
+			"StepType": "LoadCounterweight",
+			"StepParameters": {
+				"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+				"AspirationLiquidClassName": "HighVolumeFilter_Counterweight_92111_beta_DispenseJet_Part",
+				"RequiredCounterweightPlates": [
+					{
+						"StackPosition": 0,
+						"LabwareType": "CounterweightPlate",
+						"DisplayName": "Counterweight Plate 96 Deep Well Plate",
+						"ArticleNumber": "92056",
+						"BarcodeMask": "^(FixedMfxCarrier_2_0_Barcode01|92056)",
+						"PlateControlType": "DeepWellPlate",
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\92056_01-DeepWellPlate.rck"
+					},
+					{
+						"StackPosition": 1,
+						"LabwareType": "CounterweightPlate",
+						"DisplayName": "Counterweight Plate 96 Deep Well Plate",
+						"ArticleNumber": "92056",
+						"BarcodeMask": "^(FixedMfxCarrier_2_1_Barcode01|92056)",
+						"PlateControlType": "DeepWellPlate",
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\92056_01-DeepWellPlate.rck"
+					}
+				],
+				"RequiredCounterweightWater": {
+					"LabwareType": "CounterweightWater",
+					"DisplayName": "Reservoir Plate",
+					"ArticleNumber": "J0701",
+					"BarcodeMask": "CwWater",
+					"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\CSsamplePrep\\MassSTAR\\MfxCarriers\\ReservoirPlate.rck",
+					"RequiredVolume": 30000
+				}
+			}
+		},
+		{
+			"StepType": "LoadMfxCarriers",
+			"StepParameters": {
+				"BarcodeMask": "APE*****",
+				"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\CSsamplePrep\\MassSTAR\\MfxCarriers\\MFX_CAR_3TipBC_2MTP.tml",
+				"RequiredPlates": [
+					{
+						"LabwareType": "DWP1",
+						"IsReusable": false,
+						"DisplayName": "96 Deep Well Plate",
+						"ArticleNumber": "92056",
+						"BarcodeMask": "^(Track1[2,8]_Barcode04|92056)",
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\92056_01-DeepWellPlate.rck"
+					},
+					{
+						"LabwareType": "DWP2",
+						"IsReusable": false,
+						"DisplayName": "96 Deep Well Plate",
+						"ArticleNumber": "92056",
+						"BarcodeMask": "^(Track1[2,8]_Barcode05|92056)",
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\92056_01-DeepWellPlate.rck"
+					}
+				],
+				"RequiredTipRacks": [
+					{
+						"LabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"DisplayName": "High Volume CO-RE II® Filter Tips",
+						"ArticleNumber": "235905",
+						"BarcodeMask": "^(Track1[2,8]_Barcode0[3]|235905)",
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\CSsamplePrep\\MassSTAR\\MfxCarriers\\Tips\\HTF.rck"
+					},
+					{
+						"LabwareType": "STANDARD_VOLUME_FILTER_TIP",
+						"DisplayName": "Standard Volume CO-RE II® Filter Tips",
+						"ArticleNumber": "235903",
+						"BarcodeMask": "^(Track1[2,8]_Barcode0[1-2]|235903)",
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\CSsamplePrep\\MassSTAR\\MfxCarriers\\Tips\\STF.rck"
+					}
+				]
+			}
+		},
+		{
+			"StepType": "LoadReagentCarrier",
+			"StepParameters": {
+				"BarcodeMask": "R28*****",
+				"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\CSsamplePrep\\MassSTAR\\ReagentCarrier\\ReagentCarrier_new.tml",
+				"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+				"AspirationLiquidClassName": "HighVolumeFilter_Counterweight_92111_beta_DispenseJet_Part",
+				"RequiredReagents": [
+					{
+						"LabwareType": "ExtractionBuffer",
+						"BottleType": "Small",
+						"DisplayName": "Extraction Buffer",
+						"ArticleNumber": "92005",
+						"BarcodeMask": "^(Track9_Barcode(0[5,7,9]|11)|AL\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 4,
+						"SafetyFactor": 10,
+						"ToleranceFactor": 5,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\Glass_Bottle_7ml.rck",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							},
+							{
+								"Type": "NL2XT2"
+							},
+							{
+								"Type": "AEDXT"
+							},
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"LabwareType": "PrecipitationReagent",
+						"BottleType": "Medium",
+						"DisplayName": "Precipitation Reagent",
+						"ArticleNumber": "92003",
+						"BarcodeMask": "^(Track9_Barcode(1[0,2])|35\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 4,
+						"SafetyFactor": 10,
+						"ToleranceFactor": 5,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\Glass_Bottle_50ml.rck",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							},
+							{
+								"Type": "NL2XT2"
+							},
+							{
+								"Type": "AEDXT"
+							},
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"LabwareType": "DilutionBuffer1",
+						"BottleType": "Medium",
+						"DisplayName": "Dilution Buffer 1",
+						"ArticleNumber": "92007",
+						"BarcodeMask": "^(Track9_Barcode(0[2,4])|LP\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 4,
+						"SafetyFactor": 10,
+						"ToleranceFactor": 5,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\Glass_Bottle_50ml.rck",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							},
+							{
+								"Type": "NL2XT2"
+							},
+							{
+								"Type": "AEDXT"
+							},
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"LabwareType": "DilutionBuffer2",
+						"BottleType": "Medium",
+						"DisplayName": "Dilution Buffer 2",
+						"ArticleNumber": "92008",
+						"BarcodeMask": "^(Track9_Barcode(0[6,8])|X6\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 4,
+						"SafetyFactor": 10,
+						"ToleranceFactor": 5,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\Glass_Bottle_50ml.rck",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							},
+							{
+								"Type": "NL2XT2"
+							},
+							{
+								"Type": "AEDXT"
+							},
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					}
+				]
+			}
+		},
+		{
+			"StepType": "LoadCalibratorAndControlCarrier",
+			"StepParameters": {
+				"BarcodeMask": "S02*****",
+				"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\CSsamplePrep\\MassSTAR\\CalibratorAndControlCarrier\\CalibratorAndControlCarrier.rck",
+				"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+				"AspirationLiquidClassName": "HighVolumeFilter_Counterweight_92111_beta_DispenseJet_Part",
+				"RequiredCalibrators": [
+					{
+						"Level": 0,
+						"BarcodeMask": "^(Track1_Barcode01|Z9\\d{4})",
+						"DisplayName": "Calibrator Blank",
+						"ArticleNumber": "92028/0/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode02|EF\\d{4})",
+						"DisplayName": "Calibrator Level 1",
+						"ArticleNumber": "92028/1/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode03|XT\\d{4})",
+						"DisplayName": "Calibrator Level 2",
+						"ArticleNumber": "92028/2/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"Level": 3,
+						"BarcodeMask": "^(Track1_Barcode04|LY\\d{4})",
+						"DisplayName": "Calibrator Level 3",
+						"ArticleNumber": "92028/3/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"Level": 0,
+						"BarcodeMask": "^(Track1_Barcode05|98\\d{4})",
+						"DisplayName": "Calibrator Blank",
+						"ArticleNumber": "92026/0/XT2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode06|ET\\d{4})",
+						"DisplayName": "Calibrator Level 1",
+						"ArticleNumber": "92026/1/XT2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode07|B1\\d{4})",
+						"DisplayName": "Calibrator Level 2",
+						"ArticleNumber": "92026/2/XT2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"Level": 3,
+						"BarcodeMask": "^(Track1_Barcode08|XC\\d{4})",
+						"DisplayName": "Calibrator Level 3",
+						"ArticleNumber": "92026/3/XT2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"Level": 0,
+						"BarcodeMask": "^(Track1_Barcode09|0B\\d{4})",
+						"DisplayName": "Calibrator Blank",
+						"ArticleNumber": "92025/0/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode10|QF\\d{4})",
+						"DisplayName": "Calibrator Level 1",
+						"ArticleNumber": "92025/1/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode11|C3\\d{4})",
+						"DisplayName": "Calibrator Level 2",
+						"ArticleNumber": "92025/2/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"Level": 3,
+						"BarcodeMask": "^(Track1_Barcode12|GR\\d{4})",
+						"DisplayName": "Calibrator Level 3",
+						"ArticleNumber": "92025/3/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"Level": 0,
+						"BarcodeMask": "^(Track1_Barcode13|BJ\\d{4})",
+						"DisplayName": "Calibrator Blank",
+						"ArticleNumber": "92052/0",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode14|YA\\d{4})",
+						"DisplayName": "Calibrator Level 1",
+						"ArticleNumber": "92052/1",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode15|9Q\\d{4})",
+						"DisplayName": "Calibrator Level 2",
+						"ArticleNumber": "92052/2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"Level": 3,
+						"BarcodeMask": "^(Track1_Barcode16|SH\\d{4})",
+						"DisplayName": "Calibrator Level 3",
+						"ArticleNumber": "92052/3",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					}
+				],
+				"RequiredControls": [
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode17|IS\\d{4})",
+						"DisplayName": "Control Level I",
+						"ArticleNumber": "0211/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode18|1K\\d{4})",
+						"DisplayName": "Control Level II",
+						"ArticleNumber": "0212/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode19|HF\\d{4})",
+						"DisplayName": "Control Level I",
+						"ArticleNumber": "0228/XT2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode20|NM\\d{4})",
+						"DisplayName": "Control Level II",
+						"ArticleNumber": "0229/XT2",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode21|LB\\d{4})",
+						"DisplayName": "Control Level I",
+						"ArticleNumber": "0250/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode22|3R\\d{4})",
+						"DisplayName": "Control Level II",
+						"ArticleNumber": "0251/XT",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"Level": 1,
+						"BarcodeMask": "^(Track1_Barcode23|P7\\d{4})",
+						"DisplayName": "Control Level I",
+						"ArticleNumber": "0265",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					},
+					{
+						"Level": 2,
+						"BarcodeMask": "^(Track1_Barcode24|YD\\d{4})",
+						"DisplayName": "Control Level II",
+						"ArticleNumber": "0266",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\KABE_Tube.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					}
+				],
+				"RequiredReagents": [
+					{
+						"LabwareType": "NL1XT_InternalStandard",
+						"DisplayName": "Internal Standard",
+						"ArticleNumber": "92046/NL1/XT",
+						"BarcodeMask": "^(Track1_Barcode25|IP\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\GlassVial_13_100.ctr",
+						"Assays": [
+							{
+								"Type": "NL1XT"
+							}
+						]
+					},
+					{
+						"LabwareType": "NL2XT2_InternalStandard",
+						"DisplayName": "Internal Standard",
+						"ArticleNumber": "92046/NL2/XT2",
+						"BarcodeMask": "^(Track1_Barcode26|G1\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\GlassVial_13_100.ctr",
+						"Assays": [
+							{
+								"Type": "NL2XT2"
+							}
+						]
+					},
+					{
+						"LabwareType": "AEDXT_InternalStandard",
+						"DisplayName": "Internal Standard",
+						"ArticleNumber": "92546/XT",
+						"BarcodeMask": "^(Track1_Barcode27|TF\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\GlassVial_13_100.ctr",
+						"Assays": [
+							{
+								"Type": "AEDXT"
+							}
+						]
+					},
+					{
+						"LabwareType": "Antiarrhythmika_InternalStandard",
+						"DisplayName": "Internal Standard",
+						"ArticleNumber": "92746",
+						"BarcodeMask": "^(Track1_Barcode28|VQ\\d{4})",
+						"MinimumNumberOfContainers": 1,
+						"MaximumNumberOfContainers": 1,
+						"FullFilename": "C:\\Program Files (x86)\\HAMILTON\\LabWare\\Chromsystems_MassSTAR\\92111-TDM_Series_A\\GlassVial_13_100.ctr",
+						"Assays": [
+							{
+								"Type": "Antiarrhythmika"
+							}
+						]
+					}
+				]
+			}
+		}
+	],
+	"ProcessingWorkflowSteps": [
+		{
+			"GroupDisplayName": "Pipetting of Samples/Calibrators/Controls",
+			"GroupIndex": 0,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "SingleTransfer",
+					"StepParameters": {
+						"TipLabwareType": "STANDARD_VOLUME_FILTER_TIP",
+						"AspirationLiquidClassName": "StandardVolumeFilter_SerumPlasma_92111_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "StandardVolumeFilter_SerumPlasma_92111_beta_DispenseJet_Part",
+						"SourceLabwareType": "Tube",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE"
+						],
+						"TargetLabwareType": "DWP1",
+						"TargetLabwareUseState": "AVAILABLE",
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							},
+							{
+								"AssayType": "NL2XT2",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							},
+							{
+								"AssayType": "AEDXT",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							}
+						],
+						"Density": 1027,
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 2,
+						"DispensationLiquidFollowing": true,
+						"DispensationSubmergeDepth": 0,
+						"DispensationHeight": 10000,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"MixingSteps": [
+							{
+								"MixingLiquidClassName": "StandardVolumeFilter_Water_beta_DispenseSurface_Part_Mixing",
+								"MixingAspirationHeight": 70,
+								"MixingDispensationHeight": 30,
+								"MixingVolume": 700,
+								"MixingCycles": 2,
+								"WaitingTimeAfterMixing": 5,
+								"MixingLiquidFollowing": true
+							}
+						]
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "SingleTransfer",
+					"StepParameters": {
+						"TipLabwareType": "STANDARD_VOLUME_FILTER_TIP",
+						"AspirationLiquidClassName": "StandardVolumeFilter_SerumPlasma_92111_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "StandardVolumeFilter_SerumPlasma_92111_beta_DispenseJet_Part",
+						"SourceLabwareType": "Tube",
+						"SampleTypes": [
+							"PATIENT_SAMPLE"
+						],
+						"TargetLabwareType": "DWP1",
+						"TargetLabwareUseState": "AVAILABLE",
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							},
+							{
+								"AssayType": "NL2XT2",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							},
+							{
+								"AssayType": "AEDXT",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"AspirationVolume": 53,
+								"DispensationVolume": 50
+							}
+						],
+						"Density": 1057,
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 2,
+						"DispensationLiquidFollowing": true,
+						"DispensationSubmergeDepth": 0,
+						"DispensationHeight": 10000,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"MixingSteps": [
+							{
+								"MixingLiquidClassName": "StandardVolumeFilter_Water_beta_DispenseSurface_Part_Mixing",
+								"MixingAspirationHeight": 70,
+								"MixingDispensationHeight": 30,
+								"MixingVolume": 700,
+								"MixingCycles": 2,
+								"WaitingTimeAfterMixing": 5,
+								"MixingLiquidFollowing": true
+							}
+						]
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Pipetting of Extraction Buffer",
+			"GroupIndex": 1,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 4,
+						"AspirationLiquidClassName": "HighVolumeFilter_ExtractionBuffer_92005_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_ExtractionBuffer_92005_beta_DispenseJet_Part",
+						"SourceLabwareType": "ExtractionBuffer",
+						"TargetLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"DispensationVolume": 25
+							},
+							{
+								"AssayType": "NL2XT2",
+								"DispensationVolume": 25
+							},
+							{
+								"AssayType": "AEDXT",
+								"DispensationVolume": 25
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"DispensationVolume": 25
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Shaking Extraction",
+			"GroupIndex": 2,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "StartHeaterShaker",
+					"StepParameters": {
+						"LabwareType": "DWP1",
+						"Time": 120,
+						"Speed": 600,
+						"Temperature": 25,
+						"MaximumTemperature": 30,
+						"KeepGripperTools": true
+					},
+					"StaticDurationInSeconds": 130,
+					"DynamicDurationInSeconds": 0
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "UnloadHeaterShaker",
+					"StepParameters": {
+						"KeepGripperTools": false
+					},
+					"StaticDurationInSeconds": 120,
+					"DynamicDurationInSeconds": 0
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Pipetting of Internal Standard",
+			"GroupIndex": 3,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 4,
+						"AspirationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"SourceLabwareType": "NL1XT_InternalStandard",
+						"TargetLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"DispensationVolume": 16
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 4,
+						"AspirationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"SourceLabwareType": "NL2XT2_InternalStandard",
+						"TargetLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL2XT2",
+								"DispensationVolume": 16
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				},
+				{
+					"StepIndex": 2,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 4,
+						"AspirationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"SourceLabwareType": "AEDXT_InternalStandard",
+						"TargetLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "AEDXT",
+								"DispensationVolume": 16
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				},
+				{
+					"StepIndex": 3,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 4,
+						"AspirationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_Water_beta_DispenseJet_Part",
+						"SourceLabwareType": "Antiarrhythmika_InternalStandard",
+						"TargetLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "Antiarrhythmika",
+								"DispensationVolume": 16
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Pipetting of Precipitation Reagent",
+			"GroupIndex": 4,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 4,
+						"AspirationLiquidClassName": "HighVolumeFilter_PrecipitationReagent_92003_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_PrecipitationReagent_92003_beta_DispenseJet_Part",
+						"SourceLabwareType": "PrecipitationReagent",
+						"TargetLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"DispensationVolume": 234
+							},
+							{
+								"AssayType": "NL2XT2",
+								"DispensationVolume": 234
+							},
+							{
+								"AssayType": "AEDXT",
+								"DispensationVolume": 234
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"DispensationVolume": 234
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Shaking and pipetting of counterweight",
+			"GroupIndex": 5,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "StartHeaterShaker",
+					"StepParameters": {
+						"LabwareType": "DWP1",
+						"Time": 30,
+						"Speed": 1000,
+						"Temperature": 25,
+						"MaximumTemperature": 30,
+						"KeepGripperTools": false
+					},
+					"StaticDurationInSeconds": 40,
+					"DynamicDurationInSeconds": 0
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "CounterweightTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"AspirationLiquidClassName": "HighVolumeFilter_Counterweight_92111_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_Counterweight_92111_beta_DispenseJet_Part",
+						"SourceLabwareType": "CounterweightWater",
+						"TargetLabwareType": "CounterweightPlate",
+						"ReferenceLabwareType": "DWP1",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Centrifugation",
+			"GroupIndex": 6,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "StartCentrifuge",
+					"StepParameters": {
+						"Time": 300,
+						"Speed": 2000,
+						"Acceleration": 3000,
+						"Deceleration": 4000,
+						"KeepGripperTools": true,
+						"Plates": [
+							{
+								"LabwareType": "DWP1",
+								"StackPosition": 0
+							}
+						],
+						"CounterweightPlates": [
+							{
+								"LabwareType": "CounterweightPlate",
+								"StackPosition": 0
+							}
+						]
+					},
+					"StaticDurationInSeconds": 310,
+					"DynamicDurationInSeconds": 0
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "UnloadCentrifuge",
+					"StepParameters": {
+						"KeepGripperTools": false
+					},
+					"StaticDurationInSeconds": 320,
+					"DynamicDurationInSeconds": 0
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Dilution of Eluates",
+			"GroupIndex": 7,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "SingleTransfer",
+					"StepParameters": {
+						"TipLabwareType": "STANDARD_VOLUME_FILTER_TIP",
+						"AspirationLiquidClassName": "StandardVolumeFilter_Supernatant_92111_beta_DispenseJet_Empty",
+						"DispensationLiquidClassName": "StandardVolumeFilter_Supernatant_92111_beta_DispenseJet_Empty",
+						"SourceLabwareType": "DWP1",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"TargetLabwareType": "DWP2",
+						"TargetLabwareUseState": "AVAILABLE",
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"AspirationVolume": 0,
+								"DispensationVolumeFactorParameterName": "DispensationVolumeEluate"
+							},
+							{
+								"AssayType": "NL2XT2",
+								"AspirationVolume": 0,
+								"DispensationVolumeFactorParameterName": "DispensationVolumeEluate"
+							},
+							{
+								"AssayType": "AEDXT",
+								"AspirationVolume": 0,
+								"DispensationVolumeFactorParameterName": "DispensationVolumeEluate"
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"AspirationVolume": 0,
+								"DispensationVolumeFactorParameterName": "DispensationVolumeEluate"
+							}
+						],
+						"Density": 1057,
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationLiquidFollowing": true,
+						"AspirationMixingType": 0,
+						"DispensationLiquidFollowing": true,
+						"DispensationSubmergeDepth": 2,
+						"DispensationHeight": 10000,
+						"DispensationCapacitiveLldSensitivity": 0
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 2,
+						"AspirationLiquidClassName": "HighVolumeFilter_DilutionBuffer1_92007_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_DilutionBuffer1_92007_beta_DispenseJet_Part",
+						"SourceLabwareType": "DilutionBuffer1",
+						"TargetLabwareType": "DWP2",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer1"
+							},
+							{
+								"AssayType": "NL2XT2",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer1"
+							},
+							{
+								"AssayType": "AEDXT",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer1"
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer1"
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				},
+				{
+					"StepIndex": 2,
+					"StepType": "AliquotTransfer",
+					"StepParameters": {
+						"TipLabwareType": "HIGH_VOLUME_FILTER_TIP",
+						"MaximumNumberOfUsedChannels": 2,
+						"AspirationLiquidClassName": "HighVolumeFilter_DilutionBuffer2_92008_beta_DispenseJet_Part",
+						"DispensationLiquidClassName": "HighVolumeFilter_DilutionBuffer2_92008_beta_DispenseJet_Part",
+						"SourceLabwareType": "DilutionBuffer2",
+						"TargetLabwareType": "DWP2",
+						"SampleTypes": [
+							"CALIBRATOR_SAMPLE",
+							"CONTROL_SAMPLE",
+							"PATIENT_SAMPLE"
+						],
+						"AssaySpecificParameters": [
+							{
+								"AssayType": "NL1XT",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer2"
+							},
+							{
+								"AssayType": "NL2XT2",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer2"
+							},
+							{
+								"AssayType": "AEDXT",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer2"
+							},
+							{
+								"AssayType": "Antiarrhythmika",
+								"DispensationVolumeFactorParameterName": "DispensationVolumeDilutionBuffer2"
+							}
+						],
+						"Density": 988,
+						"TargetLabwareUseState": "IN_USE",
+						"AspirationCapacitiveLldSensitivity": 5,
+						"AspirationSubmergeDepth": 2000,
+						"AspirationMixingCycles": 0,
+						"PreAliquotVolume": 50,
+						"PostAliquotVolume": 50,
+						"DispensationLiquidFollowing": true,
+						"DispensationCapacitiveLldSensitivity": 0,
+						"DispensationHeight": 10000,
+						"MinimizeZMove": true
+					},
+					"StaticDurationInSeconds": 30,
+					"DynamicDurationInSeconds": 3
+				}
+			]
+		},
+		{
+			"GroupDisplayName": "Shaking Dilution",
+			"GroupIndex": 8,
+			"GroupSteps": [
+				{
+					"StepIndex": 0,
+					"StepType": "StartHeaterShaker",
+					"StepParameters": {
+						"LabwareType": "DWP2",
+						"Time": 30,
+						"Speed": 1400,
+						"Temperature": 25,
+						"MaximumTemperature": 30,
+						"KeepGripperTools": true
+					},
+					"StaticDurationInSeconds": 40,
+					"DynamicDurationInSeconds": 0
+				},
+				{
+					"StepIndex": 1,
+					"StepType": "UnloadHeaterShaker",
+					"StepParameters": {
+						"KeepGripperTools": false
+					},
+					"StaticDurationInSeconds": 50,
+					"DynamicDurationInSeconds": 0
+				}
+			]
+		}
+	]
+}
