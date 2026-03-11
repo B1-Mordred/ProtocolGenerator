@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import logging
 from typing import Any
 
 from addon_generator.domain.models import normalize_assay_identity_fields
@@ -32,6 +33,9 @@ KIT_COMPONENT_HEADERS = {
 }
 
 FILL_DOWN_METADATA_FIELDS = ("product_number", "type", "container_type")
+
+
+LOGGER = logging.getLogger(__name__)
 
 
 @dataclass(slots=True)
@@ -87,6 +91,28 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
             assay_type = _value(row, header_map, "type")
             container_type = _value(row, header_map, "container_type")
 
+            raw_component_values = (
+                key,
+                protocol,
+                display,
+                xml_name,
+                product_number,
+                component_name,
+                parameter_set_number,
+                assay_abbreviation,
+                parameter_set_name,
+                assay_type,
+                container_type,
+            )
+            if not any(raw_component_values):
+                if assays:
+                    LOGGER.debug(
+                        "Basics parser reached end of component table at row %d (first fully empty component row after parsed data).",
+                        row_idx,
+                    )
+                    break
+                continue
+
             for field_name in FILL_DOWN_METADATA_FIELDS:
                 current_value = {
                     "product_number": product_number,
@@ -105,9 +131,6 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                     assay_type = inherited_value
                 elif field_name == "container_type":
                     container_type = inherited_value
-
-            if not any((key, protocol, display, xml_name, product_number, component_name, parameter_set_number, assay_abbreviation, parameter_set_name, assay_type, container_type)):
-                continue
 
             if not key:
                 key = parameter_set_number or component_name
