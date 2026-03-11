@@ -74,6 +74,9 @@
 ## 2026-03-10
 
 ### Fixed
+- Fixed Output Preview fallback behavior so `Analytes.xml` preview still renders when Protocol projection raises ambiguity errors (for example multiple assays normalizing to the same Protocol `Type`); preview now falls back to analytes-only generation instead of returning a full preview failure.
+
+### Fixed
 - Fixed workbook-template `Basics` identity parsing to read label/value pairs in two-column strides across each row (including G/H AddOn fields), preserving overwrite precedence for repeated labels and ensuring `MethodInputDTO` AddOn fields (`main_title`, `sub_title`, `product_number`) map from `AddOn Series`, `AddOn Product Name`, and `AddOn Product Number`.
 
 ### Fixed
