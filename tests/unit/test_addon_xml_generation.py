@@ -11,7 +11,7 @@ from addon_generator.services.generation_service import GenerationService
 def test_generate_analytes_xml_matches_expected_shape() -> None:
     addon = AddonModel(
         method=MethodModel(key="method:k", method_id="M-100", method_version="2.0", product_number="PN-100"),
-        assays=[AssayModel(key="assay:chem", protocol_type="CHEM", xml_name="CHEM")],
+        assays=[AssayModel(key="assay:chem", protocol_type="CHEM", xml_name="CHEM", metadata={"assay_abbreviation": "CHEM"})],
         analytes=[AnalyteModel(key="analyte:glu", name="Glucose", assay_key="assay:chem", assay_information_type="CHEM")],
         units=[AnalyteUnitModel(key="unit:mgdl", name="mg/dL", analyte_key="analyte:glu")],
     )
@@ -32,6 +32,35 @@ def test_generate_analytes_xml_matches_expected_shape() -> None:
     assert result.issues.has_errors() is False
 
 
+
+
+def test_generate_analytes_xml_skips_assays_without_abbreviation() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="method:k", method_id="M-100", method_version="2.0", product_number="PN-100"),
+        assays=[
+            AssayModel(key="assay:chem", protocol_type="CHEM", xml_name="CHEM", metadata={"assay_abbreviation": "CHEM"}),
+            AssayModel(key="assay:immuno", protocol_type="IMM", xml_name="IMM", metadata={"assay_abbreviation": ""}),
+        ],
+        analytes=[
+            AnalyteModel(key="analyte:glu", name="Glucose", assay_key="assay:chem", assay_information_type="CHEM"),
+            AnalyteModel(key="analyte:tsh", name="TSH", assay_key="assay:immuno", assay_information_type="IMM"),
+        ],
+        units=[
+            AnalyteUnitModel(key="unit:mgdl", name="mg/dL", analyte_key="analyte:glu"),
+            AnalyteUnitModel(key="unit:uiu", name="uIU/mL", analyte_key="analyte:tsh"),
+        ],
+    )
+    assign_deterministic_ids(addon)
+
+    result = generate_analytes_addon_xml(addon, xsd_path="AddOn.xsd")
+    root = ET.fromstring(result.xml_content)
+
+    assay_names = [assay.findtext("Name") for assay in root.findall("./Assays/Assay")]
+    analyte_names = [analyte.findtext("Name") for analyte in root.findall("./Assays/Assay/Analytes/Analyte")]
+
+    assert assay_names == ["CHEM"]
+    assert analyte_names == ["Glucose"]
+
 def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_with_units() -> None:
     service = GenerationService()
     addon = service.import_from_gui_payload(
@@ -44,6 +73,7 @@ def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_w
                     "protocol_type": "CHEM",
                     "protocol_display_name": "Chemistry",
                     "xml_name": "Chemistry",
+                    "assay_abbreviation": "CHEM",
                 }
             ],
             "analytes": [
@@ -63,7 +93,7 @@ def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_w
         assay.findtext("Name"): [item.findtext("Name") for item in assay.findall("./Analytes/Analyte")]
         for assay in assays
     }
-    assert grouped_analytes == {"Chemistry": ["Glucose", "Lactate"], "REFLEX Panel": ["Potassium", "Sodium"]}
+    assert grouped_analytes == {"Chemistry": ["Glucose", "Lactate"]}
 
     linked_units = {
         analyte.findtext("Name"): [unit.findtext("Name") for unit in analyte.findall("./AnalyteUnits/AnalyteUnit")]
@@ -73,6 +103,4 @@ def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_w
     assert linked_units == {
         "Glucose": ["mg/dL"],
         "Lactate": ["mmol/L"],
-        "Potassium": ["mmol/L"],
-        "Sodium": ["mEq/L"],
     }
