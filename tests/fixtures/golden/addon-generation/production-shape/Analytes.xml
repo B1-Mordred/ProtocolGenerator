@@ -25,19 +25,19 @@
       </Analytes>
     </Assay>
     <Assay>
-      <Id>1</Id>
+      <Id>0</Id>
       <Name>Immuno</Name>
       <AddOnRef>0</AddOnRef>
       <Analytes>
         <Analyte>
-          <Id>1</Id>
+          <Id>0</Id>
           <Name>TSH</Name>
           <AssayRef>1</AssayRef>
           <AnalyteUnits>
             <AnalyteUnit>
-              <Id>1</Id>
+              <Id>0</Id>
               <Name>uIU/mL</Name>
-              <AnalyteRef>1</AnalyteRef>
+              <AnalyteRef>0</AnalyteRef>
             </AnalyteUnit>
           </AnalyteUnits>
           <AssayInformationType>IMM</AssayInformationType>
