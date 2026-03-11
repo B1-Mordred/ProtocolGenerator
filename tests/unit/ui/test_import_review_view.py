@@ -32,6 +32,9 @@ def test_import_review_view_filters_and_navigates(qapp) -> None:
         merge_service=MergeServiceAdapter(),
         navigate_to_owner=lambda payload: jumped.update(payload),
     )
+    assert view.filter_box.currentText() == "Action Required"
+
+    view.filter_box.setCurrentText("All")
     assert view.table.rowCount() >= 1
 
     view.filter_box.setCurrentText("Overrides")
@@ -67,6 +70,7 @@ def test_import_review_view_resolution_updates_effective_and_navigation(qapp) ->
         on_state_changed=lambda: changed.append("changed"),
     )
 
+    view.filter_box.setCurrentText("All")
     paths = [view._rows[idx].path for idx in range(view.table.rowCount())]
     assert "method.method_id" in paths
 
@@ -90,3 +94,21 @@ def test_import_review_view_resolution_updates_effective_and_navigation(qapp) ->
     view.jump_btn.click()
     assert jumped["section_index"] == 0
     assert jumped["entity"] == "method"
+
+
+def test_import_review_accept_default_button_clears_override(qapp) -> None:
+    state = AppState()
+    state.import_state.bundles = [InputDTOBundle(source_type="excel", method=MethodInputDTO(key="m1", method_id="M-1", method_version="1"))]
+    merge = MergeServiceAdapter()
+    merge.recompute(state)
+    state.editor_state.set_override("method.method_id", "MANUAL")
+    merge.recompute(state)
+
+    view = ImportReviewView(app_state=state, merge_service=merge)
+    view.filter_box.setCurrentText("All")
+    target_idx = next(i for i, row in enumerate(view._rows) if row.path == "method.method_id")
+    view.table.selectRow(target_idx)
+    view.accept_default_btn.click()
+
+    assert "method.method_id" not in state.editor_state.manual_overrides
+    assert state.import_state.review_resolutions["method.method_id"] == "accepted_default"
