@@ -709,6 +709,8 @@ def test_shell_import_excel_shows_manual_entry_with_imported_values(qapp):
     shell.import_excel()
 
     assert shell.main_stack.currentIndex() == 1
+    assert len(shell.app_state.import_state.bundles[0].assays) == 1
+    assert shell.app_state.import_state.bundles[0].method.series_name == "Series-42"
     assert shell.manual_entry_view.basics_fields["kit_series"].text() == "Series-42"
     assert shell.manual_entry_view.basics_fields["kit_product_number"].text() == "KIT-42"
     assert shell.manual_entry_view.basics_fields["addon_product_number"].text() == "ADDON-42"

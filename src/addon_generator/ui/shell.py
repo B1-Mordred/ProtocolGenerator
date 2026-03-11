@@ -333,10 +333,10 @@ class MainShell(QMainWindow):
         bundle, provenance, issues = self.import_service.load_excel(source_path)
         self.app_state.import_state.replace(bundles=[bundle], provenance=provenance, issues=issues)
         self._last_merged_bundle = self.merge_service.recompute(self.app_state)
-        self._populate_manual_entry_from_bundle(bundle)
+        self._populate_manual_entry_from_bundle(self._last_merged_bundle)
         self._mark_dirty(reason="excel_import")
         self.import_review_view.refresh_table()
-        self.show_manual_entry()
+        self.main_stack.setCurrentIndex(1)
         self._refresh_status()
 
     def import_xml(self) -> None:
