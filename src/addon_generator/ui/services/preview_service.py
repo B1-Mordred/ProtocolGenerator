@@ -23,24 +23,41 @@ class PreviewService:
         *,
         export_settings: dict[str, object] | None = None,
     ) -> tuple[str, str, dict[str, str | int | bool], dict[str, str] | None]:
+        addon = None
+        service = self._service_for_settings(export_settings)
         try:
             addon = self._builder.build(merged_bundle)
-            result = self._service_for_settings(export_settings).generate_all(
+            result = service.generate_all(
                 addon,
                 dto_bundle=merged_bundle,
                 field_mapping_settings=(export_settings or {}).get("field_mapping"),
                 mapping_overrides=(export_settings or {}).get("mapping_overrides"),
             )
-        except Exception as exc:  # pragma: no cover - defensive runtime guard
-            error = {
-                "code": "preview-generation-failed",
-                "message": f"Preview generation failed: {exc}",
-            }
-            return "", "", {}, error
+        except Exception:
+            if addon is None:
+                return "", "", {}, {
+                    "code": "preview-generation-failed",
+                    "message": "Preview generation failed: unable to build addon model",
+                }
+            try:
+                analytes_xml = service.generate_analytes_xml(addon)
+            except Exception as exc:  # pragma: no cover - defensive runtime guard
+                error = {
+                    "code": "preview-generation-failed",
+                    "message": f"Preview generation failed: {exc}",
+                }
+                return "", "", {}, error
 
-        timestamp = datetime.now().isoformat(timespec="seconds")
+            fallback_summary = self._build_summary(addon=addon, validation_ok=False)
+            return "", analytes_xml, fallback_summary, None
+
         validation_ok = not bool(result.issues)
-        summary = {
+        summary = self._build_summary(addon=addon, validation_ok=validation_ok)
+        return json.dumps(result.protocol_json, indent=2, sort_keys=True), result.analytes_xml_string, summary, None
+
+    def _build_summary(self, *, addon: object, validation_ok: bool) -> dict[str, str | int | bool]:
+        timestamp = datetime.now().isoformat(timespec="seconds")
+        return {
             "method_id": addon.method.method_id if addon.method else "",
             "method_version": addon.method.method_version if addon.method else "",
             "assay_count": len(addon.assays),
@@ -51,4 +68,3 @@ class PreviewService:
             "preview_timestamp": timestamp,
             "export_readiness": validation_ok,
         }
-        return json.dumps(result.protocol_json, indent=2, sort_keys=True), result.analytes_xml_string, summary, None

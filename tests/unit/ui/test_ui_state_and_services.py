@@ -448,6 +448,42 @@ def test_preview_service_returns_clean_failure(monkeypatch) -> None:
     assert "Preview generation failed" in failure["message"]
 
 
+def test_preview_service_falls_back_to_analytes_xml_when_protocol_projection_fails(monkeypatch) -> None:
+    from addon_generator.ui.services.preview_service import PreviewService
+
+    class _Addon:
+        def __init__(self):
+            self.method = type("M", (), {"method_id": "MID", "method_version": "9"})()
+            self.assays = [object()]
+            self.analytes = [object(), object()]
+            self.sample_prep_steps = []
+            self.dilution_schemes = []
+
+    svc = PreviewService()
+    addon = _Addon()
+    monkeypatch.setattr(svc._builder, "build", lambda bundle: addon)
+
+    class _GenService:
+        def generate_all(self, addon, dto_bundle=None, field_mapping_settings=None, mapping_overrides=None):
+            raise ValueError("Ambiguous assay projection")
+
+        def generate_analytes_xml(self, addon):
+            return "<AddOn/>"
+
+    monkeypatch.setattr(svc, "_service_for_settings", lambda export_settings: _GenService())
+
+    protocol, analytes, summary, failure = svc.generate(InputDTOBundle(source_type="excel"))
+
+    assert failure is None
+    assert protocol == ""
+    assert analytes == "<AddOn/>"
+    assert summary["method_id"] == "MID"
+    assert summary["assay_count"] == 1
+    assert summary["analyte_count"] == 2
+    assert summary["validation_status"] == "invalid"
+    assert summary["export_readiness"] is False
+
+
 def test_preview_and_export_keep_default_ruleset_assay_grouping_for_manual_analytes(tmp_path: Path) -> None:
     import xml.etree.ElementTree as ET
 
