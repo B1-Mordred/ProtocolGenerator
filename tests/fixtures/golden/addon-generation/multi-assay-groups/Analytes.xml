@@ -1,4 +1,3 @@
-<?xml version='1.0' encoding='utf-8'?>
 <AddOn>
   <Id>0</Id>
   <MethodId>M-2A</MethodId>
@@ -24,19 +23,19 @@
       </Analytes>
     </Assay>
     <Assay>
-      <Id>1</Id>
+      <Id>0</Id>
       <Name>IMM</Name>
       <AddOnRef>0</AddOnRef>
       <Analytes>
         <Analyte>
-          <Id>1</Id>
+          <Id>0</Id>
           <Name>TSH</Name>
-          <AssayRef>1</AssayRef>
+          <AssayRef>0</AssayRef>
           <AnalyteUnits>
             <AnalyteUnit>
-              <Id>1</Id>
+              <Id>0</Id>
               <Name>uIU/mL</Name>
-              <AnalyteRef>1</AnalyteRef>
+              <AnalyteRef>0</AnalyteRef>
             </AnalyteUnit>
           </AnalyteUnits>
         </Analyte>
