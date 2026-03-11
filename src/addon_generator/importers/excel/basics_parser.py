@@ -44,9 +44,12 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
     rows = list(sheet.iter_rows())
 
     for row_idx, row in enumerate(rows, start=1):
-        label = _normalize_label(row[0].value) if row else ""
-        if label in IDENTITY_LABELS:
-            identity[IDENTITY_LABELS[label]] = _text(row[1].value) if len(row) > 1 else ""
+        for pair_start in range(0, len(row), 2):
+            if pair_start + 1 >= len(row):
+                continue
+            label = _normalize_label(row[pair_start].value)
+            if label in IDENTITY_LABELS:
+                identity[IDENTITY_LABELS[label]] = _text(row[pair_start + 1].value)
 
     method_id = identity.get("method_id", "")
     method_version = identity.get("method_version", "")
