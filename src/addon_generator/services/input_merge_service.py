@@ -6,8 +6,10 @@ from typing import Any
 from addon_generator.input_models.dtos import (
     AnalyteInputDTO,
     AssayInputDTO,
+    DilutionSchemeInputDTO,
     InputDTOBundle,
     MethodInputDTO,
+    SamplePrepStepInputDTO,
     UnitInputDTO,
 )
 from addon_generator.services.canonical_normalizer import normalize_optional_text, normalize_text, normalize_value
@@ -46,6 +48,8 @@ class InputMergeService:
         assays = self._merge_keyed(by_priority, "assays", conflicts)
         analytes = self._merge_keyed(by_priority, "analytes", conflicts)
         units = self._merge_keyed(by_priority, "units", conflicts)
+        sample_prep_steps = self._merge_keyed(by_priority, "sample_prep_steps", conflicts)
+        dilution_schemes = self._merge_keyed(by_priority, "dilution_schemes", conflicts)
 
         merged = InputDTOBundle(
             source_type="default",
@@ -54,6 +58,8 @@ class InputMergeService:
             assays=assays,
             analytes=analytes,
             units=units,
+            sample_prep_steps=sample_prep_steps,
+            dilution_schemes=dilution_schemes,
             method_information_overrides=self._merge_dicts(by_priority, "method_information_overrides", conflicts, "method_information"),
             assay_fragments=self._concat(by_priority, "assay_fragments"),
             loading_fragments=self._concat(by_priority, "loading_fragments"),
@@ -114,6 +120,22 @@ class InputMergeService:
                     metadata=normalize_value(item.metadata) or {},
                 )
                 for item in bundle.units
+            ],
+            sample_prep_steps=[
+                SamplePrepStepInputDTO(
+                    key=normalize_text(item.key),
+                    label=normalize_text(item.label),
+                    metadata=normalize_value(item.metadata) or {},
+                )
+                for item in bundle.sample_prep_steps
+            ],
+            dilution_schemes=[
+                DilutionSchemeInputDTO(
+                    key=normalize_text(item.key),
+                    label=normalize_text(item.label),
+                    metadata=normalize_value(item.metadata) or {},
+                )
+                for item in bundle.dilution_schemes
             ],
             method_information_overrides=normalize_value(bundle.method_information_overrides) or {},
             assay_fragments=normalize_value(bundle.assay_fragments) or [],
