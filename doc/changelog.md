@@ -8,6 +8,7 @@
 
 ### Fixed
 - Fixed manual-entry workbook backfill for imported data: Kit Components no longer inject internal assay keys into the `Parameter Set Number` column when source values are blank, and Dilutions now display human-readable dilution labels (for example `1+2`) instead of internal keys like `dilution:1+2`.
+- Fixed manual-entry dilution-table backfill mapping to prefer display label/name over internal dilution keys, so imported rows render human-readable values (for example `1+2` instead of `dilution:1+2`) while DTO/domain keys remain unchanged.
 - Fixed workbook-template Dilutions header alias matching to canonicalize labels (trim/lowercase/`_`+`-` to spaces and collapsed whitespace) before lookup, so spacing variants like `Dilution Buffer 2  Ratio` and compact `Buffer1/2/3 Ratio` map reliably and still synthesize legacy `ratio` metadata from buffer ratios.
 - Fixed Excel import stability and transparency issues in the PySide6 shell: imports now report structured workbook diagnostics in a failure dialog, write import start/success/failure log entries, clear cached `excel_path` after failures so retry reopens the native file dialog, and handle empty Basics protocol-type cells without crashing (restoring successful import for `tests/AddOn_Input_92111_v03.xlsx`).
 - Fixed manual data-entry dropdown rendering where selected combo values could appear overlaid/double-drawn; combo-backed table cells now clear stale `QTableWidgetItem` text before editor installation in Kit Components, Analytes, and Sample Prep tabs.
