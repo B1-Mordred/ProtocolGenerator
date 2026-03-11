@@ -21,6 +21,7 @@ from addon_generator.importers import ExcelImporter, XmlImporter, map_gui_payloa
 from addon_generator.mapping.config_loader import load_mapping_config
 from addon_generator.mapping.link_resolver import LinkResolver
 from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
+from addon_generator.services.default_derivation_service import DefaultDerivationService
 from addon_generator.services.input_merge_service import InputMergeService
 from addon_generator.ui.services.field_mapping_execution import apply_field_mappings
 from addon_generator.validation.cross_file_validator import validate_cross_file_consistency
@@ -61,6 +62,7 @@ class GenerationService:
         self.resolver = LinkResolver(self.mapping)
         self.merge_service = InputMergeService()
         self.builder = CanonicalModelBuilder()
+        self.derivation_service = DefaultDerivationService()
 
     def import_from_excel(self, path: str) -> AddonModel:
         bundle = ExcelImporter().import_workbook_bundle(path)
@@ -85,8 +87,10 @@ class GenerationService:
         return generate_analytes_addon_xml(addon, xsd_path=xsd_path).xml_content
 
     def generate_protocol_json(self, addon: AddonModel, protocol_fragments: dict[str, Any] | None = None):
-        self.resolver.assign_ids(addon)
-        return generate_protocol_json(addon, self.resolver, protocol_fragments)
+        derived_overrides = self.derivation_service.derive_protocol_defaults(addon)
+        with self._temporary_mapping_overrides(derived_overrides):
+            self.resolver.assign_ids(addon)
+            return generate_protocol_json(addon, self.resolver, protocol_fragments)
 
     def generate_all(
         self,
@@ -98,7 +102,12 @@ class GenerationService:
         xsd_path: str | Path = "AddOn.xsd",
         protocol_schema_path: str | Path = "protocol.schema.json",
     ) -> GenerationResult:
-        with self._temporary_mapping_overrides(mapping_overrides):
+        derived_overrides = self.derivation_service.derive_protocol_defaults(addon)
+        merged_overrides = copy.deepcopy(derived_overrides)
+        if mapping_overrides:
+            self._deep_merge(merged_overrides, mapping_overrides)
+
+        with self._temporary_mapping_overrides(merged_overrides):
             self.resolver.assign_ids(addon)
             staged_issues: list[tuple[str, ValidationIssue]] = []
 

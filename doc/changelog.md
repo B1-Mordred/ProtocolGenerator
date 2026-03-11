@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- Added deterministic protocol-default derivation from canonical manual/import metadata via `DefaultDerivationService`, including inferred assay-information defaults, per-assay processing group templates, and optional assay-family loading-step templates merged into generation before final section resolution.
 - Added Admin submenu items for runtime mapping configuration: `Configure Cross-file Match Rules` (supports `exact` / `normalized` / `alias_map` / `explicit_key`) and `Configure Protocol Defaults` (JSON patch merged into `protocol_defaults`) persisted in `export_settings.mapping_overrides`.
 - Added a schema-driven **Required by schema** checklist in wizard validation/preview flows that enumerates required top-level sections plus required `MethodInformation` and `AssayInformation[0]` fields, surfaces source-precedence winners (`gui`/`import`/`default`/`built-in`), and blocks export messaging when required values are unresolved or fallback-only.
 - Added assay authoring guidance in Assays and Manual Entry views clarifying linkage semantics between `ProtocolFile AssayInformation[].Type`, `ProtocolFile AssayInformation[].DisplayName`, and `Analytes.xml Assay.Name`, including immediate mismatch warnings against active `assay_mapping.cross_file_match.mode`.
@@ -182,6 +183,7 @@
 ## Unreleased
 
 ### Added
+- Added deterministic protocol-default derivation from canonical manual/import metadata via `DefaultDerivationService`, including inferred assay-information defaults, per-assay processing group templates, and optional assay-family loading-step templates merged into generation before final section resolution.
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 
 ### Changed
@@ -267,6 +269,7 @@
 ## Unreleased
 
 ### Added
+- Added deterministic protocol-default derivation from canonical manual/import metadata via `DefaultDerivationService`, including inferred assay-information defaults, per-assay processing group templates, and optional assay-family loading-step templates merged into generation before final section resolution.
 - Added an Admin → Field Mapping view with template management and expression-based target mappings for `Analytes.xml`, `AddOn.xml`, and `ProtocolFile.json` fields (supports input/default/custom/concat source expressions).
 
 ### Changed

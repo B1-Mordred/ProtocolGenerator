@@ -104,6 +104,87 @@ def test_generate_all_applies_mapping_overrides_for_protocol_defaults() -> None:
     assert result.protocol_json["MethodInformation"]["DisplayName"] == "Configured Name"
 
 
+def test_generate_all_derives_protocol_defaults_from_manual_metadata() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [
+                {
+                    "key": "assay:1",
+                    "protocol_type": "Immuno",
+                    "protocol_display_name": "Calibrator Assay",
+                    "xml_name": "Immuno",
+                    "metadata": {
+                        "component_name": "Calibrator A",
+                        "parameter_set_number": "PS-01",
+                        "type": "Calibrator",
+                        "container_type": "Vial",
+                    },
+                }
+            ],
+            "analytes": [
+                {
+                    "key": "analyte:1",
+                    "name": "AN1",
+                    "assay_key": "assay:1",
+                    "assay_information_type": "Immunology",
+                }
+            ],
+            "units": [{"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"}],
+        }
+    )
+
+    result = service.generate_all(addon)
+
+    assert result.protocol_json["AssayInformation"][0]["StopPreparationWithFailedCalibrator"] is True
+    assert result.resolved_mapping_snapshot["protocol_defaults"]["loading_workflow_steps"][0]["StepParameters"]["FullFilename"] == "immuno-loading-template"
+    assert result.resolved_mapping_snapshot["protocol_defaults"]["processing_workflow_steps"][0]["GroupDisplayName"] == "Calibrator Assay"
+
+
+def test_generate_all_user_overrides_take_precedence_over_derived_defaults() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [
+                {
+                    "key": "assay:1",
+                    "protocol_type": "Immuno",
+                    "xml_name": "Immuno",
+                    "metadata": {
+                        "component_name": "Calibrator A",
+                        "parameter_set_number": "PS-01",
+                        "type": "Calibrator",
+                        "container_type": "Vial",
+                    },
+                }
+            ],
+            "analytes": [],
+            "units": [],
+        }
+    )
+
+    result = service.generate_all(
+        addon,
+        mapping_overrides={
+            "protocol_defaults": {
+                "processing_workflow_steps": [
+                    {
+                        "GroupDisplayName": "Manual Override",
+                        "GroupIndex": 0,
+                        "GroupSteps": [],
+                    }
+                ]
+            }
+        },
+    )
+
+    assert result.resolved_mapping_snapshot["protocol_defaults"]["processing_workflow_steps"][0]["GroupDisplayName"] == "Manual Override"
+
+
 def test_dto_bundle_builder_ignores_non_mapping_source_metadata_values() -> None:
     service = GenerationService()
     addon = service.import_from_gui_payload(
