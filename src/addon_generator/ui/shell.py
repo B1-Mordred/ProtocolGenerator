@@ -598,11 +598,12 @@ class MainShell(QMainWindow):
         merged = self._current_merged_bundle()
         if merged is None:
             return
-        _addon, summary = self.validation_service.validate(merged)
+        _addon, summary = self.validation_service.validate(merged, export_settings=self.app_state.editor_state.export_settings)
         self.app_state.validation_state.issues = summary.issues
         self.app_state.validation_state.grouped_issues = summary.grouped_issues
         self.app_state.validation_state.severity_counts = summary.severity_counts
         self.app_state.validation_state.category_counts = summary.category_counts
+        self.app_state.validation_state.field_mapping_report = summary.field_mapping_report
         self.app_state.validation_state.export_blocked = summary.export_blocked
         self.app_state.validation_state.last_validated_at = datetime.now()
         self.app_state.validation_state.stale = False
@@ -674,7 +675,12 @@ class MainShell(QMainWindow):
         overwrite = self.export_view.overwrite.isChecked()
         self.app_state.editor_state.export_settings["destination_folder"] = destination
         self.app_state.editor_state.export_settings["overwrite"] = overwrite
-        result = self.export_service.export(merged, destination_folder=destination, overwrite=overwrite)
+        result = self.export_service.export(
+            merged,
+            destination_folder=destination,
+            overwrite=overwrite,
+            export_settings=self.app_state.editor_state.export_settings,
+        )
         self.export_view.set_export_result(result)
         self._refresh_status()
 

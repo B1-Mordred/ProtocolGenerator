@@ -26,10 +26,18 @@ class ExportService:
         self._builder = CanonicalModelBuilder()
         self._service = GenerationService()
 
-    def export(self, merged_bundle: InputDTOBundle, *, destination_folder: str, overwrite: bool = False) -> ExportResult:
+    def export(
+        self,
+        merged_bundle: InputDTOBundle,
+        *,
+        destination_folder: str,
+        overwrite: bool = False,
+        export_settings: dict[str, object] | None = None,
+    ) -> ExportResult:
         destination = str(Path(destination_folder))
+        field_mapping_settings = (export_settings or {}).get("field_mapping")
         addon = self._builder.build(merged_bundle)
-        validation = self._service.generate_all(addon, dto_bundle=merged_bundle)
+        validation = self._service.generate_all(addon, dto_bundle=merged_bundle, field_mapping_settings=field_mapping_settings)
         if validation.issues:
             return ExportResult(
                 status="failure",
@@ -38,7 +46,12 @@ class ExportService:
             )
 
         try:
-            package = self._service.build_package(addon, destination_root=Path(destination_folder), overwrite=overwrite)
+            package = self._service.build_package(
+                addon,
+                destination_root=Path(destination_folder),
+                overwrite=overwrite,
+                field_mapping_settings=field_mapping_settings,
+            )
         except Exception as exc:
             return ExportResult(
                 status="failure",

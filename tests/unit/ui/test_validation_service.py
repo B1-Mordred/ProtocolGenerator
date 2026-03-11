@@ -15,7 +15,7 @@ class _GenerationService:
         self._issues = issues
         self._warnings = warnings
 
-    def generate_all(self, addon, *, dto_bundle=None):
+    def generate_all(self, addon, *, dto_bundle=None, field_mapping_settings=None):
         return GenerationResult(
             addon_model=object(),
             protocol_json={},
@@ -26,6 +26,7 @@ class _GenerationService:
             merge_report={},
             unresolved_required_fields=[],
             conflicting_required_fields=[],
+            field_mapping_report={"applied": [{"row": 0}], "skipped": [{"row": 1}]},
         )
 
 
@@ -55,6 +56,7 @@ def test_validation_service_assigns_required_categories_and_navigation_targets()
     assert summary.category_counts["Warnings"] == 1
     assert summary.category_counts["Info"] == 1
     assert summary.grouped_issues["Domain Validation"][0].navigation_target == {"section_index": 0, "entity": "method", "path": "method.method_id"}
+    assert len(summary.field_mapping_report["applied"]) == 1
 
 
 def test_validation_service_derives_severity_counts_and_export_blocking() -> None:

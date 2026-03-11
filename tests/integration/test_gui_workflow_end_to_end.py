@@ -58,7 +58,7 @@ class _MergeService:
 
 
 class _ValidationService:
-    def validate(self, merged):
+    def validate(self, merged, *, export_settings=None):
         issues = [IssueViewModel(code="W-1", severity="warning", summary="Assay warning", category="Assays", entity_context="assay/A1")]
         return object(), ValidationSummary(
             issues=issues,
@@ -88,7 +88,7 @@ class _ExportService:
     def __init__(self):
         self.calls: list[tuple[str, bool]] = []
 
-    def export(self, merged, *, destination_folder, overwrite=False):
+    def export(self, merged, *, destination_folder, overwrite=False, export_settings=None):
         self.calls.append((destination_folder, overwrite))
         protocol = Path(destination_folder) / "ProtocolFile.json"
         analytes = Path(destination_folder) / "Analytes.xml"

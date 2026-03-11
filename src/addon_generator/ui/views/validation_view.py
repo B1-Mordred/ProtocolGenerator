@@ -41,12 +41,17 @@ class ValidationView(QWidget):
         self.issues.issue_selected.connect(self.set_selected_issue)
 
     def set_validation_state(self, validation_state: ValidationState) -> None:
+        mapping_report = getattr(validation_state, "field_mapping_report", {}) or {}
+        applied_count = len(mapping_report.get("applied", [])) if isinstance(mapping_report, dict) else 0
+        skipped_count = len(mapping_report.get("skipped", [])) if isinstance(mapping_report, dict) else 0
         if validation_state.stale:
             self.status_message.setText("Validation is out of date. Run validation before export.")
         elif validation_state.has_blockers:
-            self.status_message.setText("Export blocked: validation errors must be resolved.")
+            self.status_message.setText(
+                f"Export blocked: validation errors must be resolved. Field mappings applied={applied_count}, skipped={skipped_count}."
+            )
         else:
-            self.status_message.setText("Validation current: export is allowed.")
+            self.status_message.setText(f"Validation current: export is allowed. Field mappings applied={applied_count}, skipped={skipped_count}.")
 
     def set_selected_issue(self, issue: IssueViewModel) -> None:
         nav = issue.navigation_target or self.issues._navigation_target_for_issue(issue)

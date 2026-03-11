@@ -82,6 +82,48 @@ def test_generation_pipeline_reproducible_merged_output() -> None:
     assert run1.payload["MethodInformation"]["SubTitle"] == "Imported Sub"
 
 
+def test_generation_pipeline_applies_field_mapping_template_to_exported_artifacts() -> None:
+    service = GenerationService()
+    payload = {
+        "method_id": "M-MAP",
+        "method_version": "1.0",
+        "assays": [{"key": "assay:1", "protocol_type": "A", "xml_name": "A"}],
+        "analytes": [
+            {"key": "analyte:1", "name": "GLU", "assay_key": "assay:1"},
+            {"key": "analyte:2", "name": "TSH", "assay_key": "assay:1"},
+        ],
+        "units": [
+            {"key": "unit:1", "name": "mg/dL", "analyte_key": "analyte:1"},
+            {"key": "unit:2", "name": "uIU/mL", "analyte_key": "analyte:2"},
+        ],
+    }
+    addon = service.import_from_gui_payload(payload)
+    # Rebuild DTO bundle from addon to mirror export-time execution context.
+    dto_bundle = service._dto_bundle_from_addon(addon)
+    if dto_bundle.method:
+        dto_bundle.method.product_number = "PX-9"
+        dto_bundle.method.product_name = "Mapped Kit"
+
+    result = service.generate_all(
+        addon,
+        dto_bundle=dto_bundle,
+        field_mapping_settings={
+            "active_template": "Default",
+            "templates": {
+                "Default": [
+                    {"enabled": True, "target": "ProtocolFile.json:MethodInformation.Id", "expression": "default:Mapped-Method"},
+                    {"enabled": True, "target": "Analytes.xml:Assays[].Analytes[].Analyte.Name", "expression": "concat(input:analytes[].name, default:-M)"},
+                ]
+            },
+        },
+    )
+
+    assert result.protocol_json["MethodInformation"]["Id"] == "Mapped-Method"
+    names = [node.text for node in ET.fromstring(result.analytes_xml_string).findall("./Assays/Assay/Analytes/Analyte/Name")]
+    assert names == ["GLU-M", "TSH-M"]
+    assert len(result.field_mapping_report.get("applied", [])) == 2
+
+
 
 def test_generation_pipeline_reports_ambiguity_errors() -> None:
     service = GenerationService()
