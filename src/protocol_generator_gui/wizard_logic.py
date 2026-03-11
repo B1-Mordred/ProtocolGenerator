@@ -107,6 +107,12 @@ class RequiredFieldStatus:
     resolved: bool
     fallback_only: bool
     value: Any = None
+    classification: str = "user-required"
+    fallback_source: str | None = None
+    conflict_sources: tuple[str, ...] = ()
+    imported_candidate: Any = None
+    default_candidate: Any = None
+    built_in_candidate: Any = None
 
 
 def validate_method_editor(method_information: dict[str, Any]) -> list[str]:
@@ -257,8 +263,12 @@ def build_required_by_schema_checklist(
     schema: dict[str, Any],
     payload: dict[str, Any],
     imported_payload: dict[str, Any] | None = None,
+    merge_report: dict[str, Any] | None = None,
 ) -> list[RequiredFieldStatus]:
     imported_payload = imported_payload or {}
+    merge_report = merge_report or {}
+    required_conflicts = set(merge_report.get("required_fields", {}).get("conflicting", []))
+    provenance_entries = {entry.get("path"): entry for entry in merge_report.get("field_provenance", []) if isinstance(entry, dict)}
     built_in_values = {
         "ProcessingWorkflowSteps": [{"GroupDisplayName": "Default Group", "GroupIndex": 0}],
         "ProcessingWorkflowSteps[0].GroupDisplayName": "Default Group",
@@ -270,6 +280,13 @@ def build_required_by_schema_checklist(
         source = "unresolved"
         value = None
         fallback_only = False
+        fallback_source = None
+        conflict_sources: tuple[str, ...] = ()
+        default_value = None
+        built_in_value = built_in_values.get(path)
+        provenance = provenance_entries.get(path, {})
+        if isinstance(provenance.get("conflict_sources"), list):
+            conflict_sources = tuple(str(item) for item in provenance["conflict_sources"])
         if _is_populated(current_value):
             source = "gui"
             value = current_value
@@ -277,7 +294,6 @@ def build_required_by_schema_checklist(
             source = "import"
             value = imported_value
         else:
-            default_value = None
             if path.startswith("MethodInformation."):
                 field = path.split(".", 1)[1]
                 default_value = schema.get("$defs", {}).get("MethodInformation", {}).get("properties", {}).get(field, {}).get("default")
@@ -290,23 +306,75 @@ def build_required_by_schema_checklist(
                 source = "default"
                 value = default_value
                 fallback_only = True
+                fallback_source = "schema default"
             elif _is_populated(built_in_values.get(path)):
                 source = "built-in"
                 value = built_in_values[path]
                 fallback_only = True
-        checklist.append(RequiredFieldStatus(path=path, source=source, resolved=source != "unresolved", fallback_only=fallback_only, value=value))
+                fallback_source = "wizard built-in"
+
+        conflict_required = path in required_conflicts
+        if not conflict_required and _is_populated(current_value) and _is_populated(imported_value) and current_value != imported_value:
+            conflict_required = True
+            if not conflict_sources:
+                conflict_sources = ("import",)
+
+        classification = "user-required"
+        if conflict_required:
+            classification = "conflict-required"
+            resolved = False
+        elif source == "unresolved":
+            resolved = False
+        else:
+            resolved = True
+            classification = "auto-resolved" if source in {"import", "default", "built-in"} else "user-required"
+
+        checklist.append(
+            RequiredFieldStatus(
+                path=path,
+                source=source,
+                resolved=resolved,
+                fallback_only=fallback_only,
+                value=value,
+                classification=classification,
+                fallback_source=fallback_source,
+                conflict_sources=conflict_sources,
+                imported_candidate=imported_value,
+                default_candidate=default_value,
+                built_in_candidate=built_in_value,
+            )
+        )
     return checklist
 
 
 def required_checklist_blockers(checklist: list[RequiredFieldStatus]) -> list[str]:
-    unresolved = [item.path for item in checklist if not item.resolved]
+    unresolved = [item.path for item in checklist if item.classification == "user-required" and not item.resolved]
+    conflict_required = [item.path for item in checklist if item.classification == "conflict-required"]
     fallback_only = [item.path for item in checklist if item.fallback_only]
     blockers: list[str] = []
     if unresolved:
         blockers.append(f"Unresolved required schema fields: {', '.join(unresolved)}")
+    if conflict_required:
+        blockers.append(f"Manual conflict resolution required: {', '.join(conflict_required)}")
     if fallback_only:
         blockers.append(f"Fallback-only required fields: {', '.join(fallback_only)}")
     return blockers
+
+
+def minimal_intervention_items(checklist: list[RequiredFieldStatus], enabled: bool = True) -> list[RequiredFieldStatus]:
+    if not enabled:
+        return list(checklist)
+    return [item for item in checklist if item.classification in {"user-required", "conflict-required"}]
+
+
+def apply_checklist_action(item: RequiredFieldStatus, action: str) -> tuple[bool, Any]:
+    if action == "accept_imported" and _is_populated(item.imported_candidate):
+        return True, item.imported_candidate
+    if action == "accept_default" and _is_populated(item.default_candidate):
+        return True, item.default_candidate
+    if action == "accept_default" and _is_populated(item.built_in_candidate):
+        return True, item.built_in_candidate
+    return False, None
 
 
 def gui_payload_to_canonical_dto(payload: dict[str, Any]) -> dict[str, Any]:

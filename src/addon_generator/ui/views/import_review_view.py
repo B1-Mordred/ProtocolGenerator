@@ -42,12 +42,13 @@ class ImportReviewView(QWidget):
         left = QVBoxLayout()
         self.filter_box = QComboBox(self)
         self.filter_box.addItems([item.value for item in ImportReviewFilter])
+        self.filter_box.setCurrentText(ImportReviewFilter.ACTION_REQUIRED.value)
         self.filter_box.currentTextChanged.connect(self.refresh_table)
         left.addWidget(self.filter_box)
 
         self.table = QTableWidget(self)
-        self.table.setColumnCount(7)
-        self.table.setHorizontalHeaderLabels(["Entity", "Field", "Imported", "Effective", "Source", "Override", "Conflict"])
+        self.table.setColumnCount(8)
+        self.table.setHorizontalHeaderLabels(["Entity", "Field", "Imported", "Effective", "Source", "Class", "Override", "Conflict"])
         self.table.itemSelectionChanged.connect(self._update_detail_panel)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.ResizeToContents)
         self.table.horizontalHeader().setStretchLastSection(True)
@@ -55,16 +56,18 @@ class ImportReviewView(QWidget):
 
         action_row = QHBoxLayout()
         self.accept_btn = QPushButton("Accept Imported", self)
+        self.accept_default_btn = QPushButton("Accept Default", self)
         self.keep_btn = QPushButton("Keep Override", self)
         self.revert_btn = QPushButton("Revert Default", self)
         self.clear_btn = QPushButton("Clear Override", self)
         self.jump_btn = QPushButton("Go To Owner", self)
         self.accept_btn.clicked.connect(lambda: self._apply_resolution("accept"))
+        self.accept_default_btn.clicked.connect(lambda: self._apply_resolution("accept_default"))
         self.keep_btn.clicked.connect(lambda: self._apply_resolution("keep"))
         self.revert_btn.clicked.connect(lambda: self._apply_resolution("revert"))
         self.clear_btn.clicked.connect(lambda: self._apply_resolution("clear"))
         self.jump_btn.clicked.connect(self._jump_to_owner)
-        for button in (self.accept_btn, self.keep_btn, self.revert_btn, self.clear_btn, self.jump_btn):
+        for button in (self.accept_btn, self.accept_default_btn, self.keep_btn, self.revert_btn, self.clear_btn, self.jump_btn):
             action_row.addWidget(button)
         left.addLayout(action_row)
 
@@ -90,6 +93,7 @@ class ImportReviewView(QWidget):
                 row.imported_value,
                 row.effective_value,
                 row.source,
+                row.required_classification,
                 "Yes" if row.override_status else "No",
                 "Yes" if row.conflict_status else "No",
             ]
@@ -118,6 +122,8 @@ class ImportReviewView(QWidget):
                 [
                     f"Imported: {row.imported_value}",
                     f"Effective: {row.effective_value}",
+                    f"Classification: {row.required_classification}",
+                    f"Fallback: {row.fallback_hint or '(none)'}",
                     f"Override: {row.override_status}",
                     f"Resolution: {row.resolution_state}",
                     "",
@@ -136,6 +142,8 @@ class ImportReviewView(QWidget):
             return
         if action == "accept":
             self._vm.accept_imported(row.path)
+        elif action == "accept_default":
+            self._vm.accept_default(row.path)
         elif action == "keep":
             self._vm.keep_override(row.path)
         elif action == "revert":

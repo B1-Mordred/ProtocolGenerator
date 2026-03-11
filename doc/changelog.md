@@ -1,6 +1,7 @@
 ## Unreleased
 
 ### Added
+- Added Qt Import Review minimal-intervention behavior: default `Action Required` filtering for unresolved/conflict items, required-row classification (`auto-resolved` / `user-required` / `conflict-required`), inline provenance/fallback hints, and one-click `Accept Imported` / `Accept Default` actions.
 - Added deterministic protocol-default derivation from canonical manual/import metadata via `DefaultDerivationService`, including inferred assay-information defaults, per-assay processing group templates, and optional assay-family loading-step templates merged into generation before final section resolution.
 - Added Admin submenu items for runtime mapping configuration: `Configure Cross-file Match Rules` (supports `exact` / `normalized` / `alias_map` / `explicit_key`) and `Configure Protocol Defaults` (JSON patch merged into `protocol_defaults`) persisted in `export_settings.mapping_overrides`.
 - Added a schema-driven **Required by schema** checklist in wizard validation/preview flows that enumerates required top-level sections plus required `MethodInformation` and `AssayInformation[0]` fields, surfaces source-precedence winners (`gui`/`import`/`default`/`built-in`), and blocks export messaging when required values are unresolved or fallback-only.

@@ -11,6 +11,7 @@ protocol-generator-gui
 
 ## Features
 
+- Qt Import Review now defaults to an **Action Required** (minimal intervention) filter that hides auto-resolved rows and highlights unresolved (`user-required`) plus conflict-driven (`conflict-required`) rows; row details include inline provenance/fallback hints and one-click `Accept Imported` / `Accept Default` actions.
 - Validation now includes a **Required by schema** panel (also reflected in Output preview gating) that enumerates required top-level sections plus required `MethodInformation` / `AssayInformation[0]` fields from `protocol.schema.json`, reports source-precedence resolution (`gui` → `import` → `default` → `built-in`) per field, and flags unresolved/fallback-only required values as pre-export blockers.
 - Assay/manual-entry authoring UX now provides explicit inline guidance describing how `ProtocolFile.AssayInformation[].Type`, `ProtocolFile.AssayInformation[].DisplayName`, and `Analytes.xml Assay.Name` relate; manual entry now warns immediately when current values would fail linkage under the active `assay_mapping.cross_file_match.mode` and points users to remediation (`set XML assay name equal to Type` or switch to `alias_map`/`normalized`).
 - Excel import manual-entry backfill now keeps Kit Components `Parameter Set Number` blank when the workbook omits it (instead of leaking internal assay keys), and Dilutions show display labels (`1+2`) rather than internal identifiers (`dilution:1+2`).

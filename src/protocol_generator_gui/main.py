@@ -19,6 +19,7 @@ from protocol_generator_gui.persistence import DraftPersistence
 from protocol_generator_gui.validation import validate_protocol
 from protocol_generator_gui.wizard_logic import (
     WizardState,
+    apply_checklist_action,
     assay_analyte_integrity_warnings,
     build_field_tooltip,
     build_import_conflicts,
@@ -27,6 +28,7 @@ from protocol_generator_gui.wizard_logic import (
     can_progress,
     categorize_schema_fields,
     make_step_help,
+    minimal_intervention_items,
     summarize_progress,
     validate_method_editor,
     required_checklist_blockers,
@@ -401,8 +403,23 @@ class ProtocolWizardApp(tk.Tk):
         self.processing_editor.pack(fill="both", expand=True)
 
         self.wizard_state = WizardState()
-        self.import_conflict_text = tk.Text(import_preview, height=20)
-        self.import_conflict_text.pack(fill="both", expand=True, padx=8, pady=8)
+        self.minimal_intervention_mode = tk.BooleanVar(value=True)
+        self.latest_checklist: dict[str, Any] = {}
+        conflict_toolbar = ttk.Frame(import_preview)
+        conflict_toolbar.pack(fill="x", padx=8, pady=(8, 2))
+        ttk.Checkbutton(
+            conflict_toolbar,
+            text="Minimal intervention mode",
+            variable=self.minimal_intervention_mode,
+            command=self.on_change,
+        ).pack(side="left")
+        ttk.Button(conflict_toolbar, text="Accept imported", command=lambda: self._apply_selected_checklist_action("accept_imported")).pack(side="left", padx=6)
+        ttk.Button(conflict_toolbar, text="Accept default", command=lambda: self._apply_selected_checklist_action("accept_default")).pack(side="left", padx=6)
+
+        self.import_conflict_list = tk.Listbox(import_preview, height=18, exportselection=False)
+        self.import_conflict_list.pack(fill="both", expand=True, padx=8, pady=4)
+        self.import_conflict_text = tk.Text(import_preview, height=8)
+        self.import_conflict_text.pack(fill="both", expand=False, padx=8, pady=(0, 8))
 
         self.validation_text = tk.Text(validation, height=20)
         self.validation_text.pack(fill="both", expand=True, padx=8, pady=8)
@@ -484,7 +501,12 @@ class ProtocolWizardApp(tk.Tk):
             self.assay_editor.focus_field(field)
 
     def on_change(self) -> None:
-        data = self.protocol_data()
+        payload = self.collect_ui_payload()
+        context = self.generation_service.import_from_gui_payload(payload)
+        fragments = fragments_from_protocol_payload(payload)
+        generation_result = self.generation_service.generate_protocol_json(context, fragments)
+        data = generation_result.payload
+        merge_report = generation_result.merge_report
         errors = validate_protocol(self.schema, data)
         general_err = [e for e in errors if e[0].startswith("MethodInformation") or e[0].startswith("AssayInformation")]
         loading_err = [e for e in errors if e[0].startswith("LoadingWorkflowSteps")]
@@ -499,7 +521,6 @@ class ProtocolWizardApp(tk.Tk):
             logger.warning("validation_errors", extra={"event": "validation_errors", "error_count": len(errors), "errors": errors[:8]})
             self._focus_first_invalid(errors)
 
-        payload = self.collect_ui_payload()
         self.wizard_state.method_information = payload.get("MethodInformation", {})
         self.wizard_state.assays = payload.get("AssayInformation", [])
         self.wizard_state.loading_steps = payload.get("LoadingWorkflowSteps", [])
@@ -523,12 +544,15 @@ class ProtocolWizardApp(tk.Tk):
         for warning in analyte_warnings:
             self.validation_text.insert(tk.END, f"- {warning}\n")
 
-        checklist = build_required_by_schema_checklist(self.schema, payload, self.wizard_state.imported_payload)
+        checklist = build_required_by_schema_checklist(self.schema, payload, self.wizard_state.imported_payload, merge_report)
+        self.latest_checklist = {item.path: item for item in checklist}
+        self._refresh_conflict_list(checklist)
         self.validation_text.insert(tk.END, "\nRequired by schema\n")
         for item in checklist:
+            fallback = f", fallback={item.fallback_source}" if item.fallback_source else ""
             self.validation_text.insert(
                 tk.END,
-                f"- {item.path}: source={item.source} resolved={'yes' if item.resolved else 'no'} fallback_only={'yes' if item.fallback_only else 'no'}\n",
+                f"- {item.path}: class={item.classification} source={item.source}{fallback} resolved={'yes' if item.resolved else 'no'} fallback_only={'yes' if item.fallback_only else 'no'}\n",
             )
 
         preview_blockers = required_checklist_blockers(checklist)
@@ -543,6 +567,45 @@ class ProtocolWizardApp(tk.Tk):
             self.output_text.insert(tk.END, f"- {msg}\n")
 
         self.schedule_autosave()
+
+    def _refresh_conflict_list(self, checklist: list[Any]) -> None:
+        self.import_conflict_list.delete(0, tk.END)
+        visible_items = minimal_intervention_items(checklist, enabled=self.minimal_intervention_mode.get())
+        for item in visible_items:
+            fallback = f" | fallback: {item.fallback_source}" if item.fallback_source else ""
+            self.import_conflict_list.insert(
+                tk.END,
+                f"{item.path} [{item.classification}] source={item.source}{fallback}",
+            )
+
+    def _apply_selected_checklist_action(self, action: str) -> None:
+        selection = self.import_conflict_list.curselection()
+        if not selection:
+            return
+        selected_line = self.import_conflict_list.get(selection[0])
+        path = selected_line.split(" [", 1)[0]
+        item = self.latest_checklist.get(path)
+        if item is None:
+            return
+        ok, value = apply_checklist_action(item, action)
+        if not ok:
+            messagebox.showwarning("Action unavailable", f"No candidate value available for {path}")
+            return
+        self._set_field_by_path(path, value)
+        self.on_change()
+
+    def _set_field_by_path(self, path: str, value: Any) -> None:
+        if path.startswith("MethodInformation."):
+            key = path.split(".", 1)[1]
+            var = self.method_editor.vars.get(key)
+            if var is not None:
+                var.set(str(value))
+            return
+        if path.startswith("AssayInformation[0]."):
+            key = path.split(".", 1)[1]
+            var = self.assay_editor.vars.get(key)
+            if var is not None:
+                var.set(str(value))
 
     def save_as(self) -> None:
         filename = filedialog.asksaveasfilename(defaultextension=".json", filetypes=[("JSON", "*.json")])
