@@ -21,6 +21,7 @@
 - Default-ruleset manual/excel analyte assay references are now locked by regression tests for synthesized assay grouping, mixed-case/whitespace alias resolution, repeated analytes per synthesized assay group, and analyte-unit linkage parity between preview and export `Analytes.xml`.
 
 ### Fixed
+- Fixed workbook-template import dependency handling: when `openpyxl` is not installed, Excel import now raises a structured `ExcelImportValidationError` with a `missing-dependency` diagnostic instead of crashing at import time.
 - Fixed `Analytes.xml` preview/export serialization to emit `0` for all `<Id>`, `<AssayRef>`, `<AddOnRef>`, and `<AnalyteRef>` values (instead of propagating deterministic non-zero IDs in multi-assay outputs).
 - Fixed Output Preview navigation in the Qt shell to auto-regenerate stale preview artifacts when users open `Output Preview`, so latest manual/imported assays, analytes, and units appear without requiring an extra `Regenerate` click.
 - Fixed Output Preview fallback rendering so `Analytes.xml` still shows when protocol generation fails and method identity is missing; preview now synthesizes a temporary method context for analytes-only fallback instead of returning an empty analytes pane.
