@@ -27,10 +27,24 @@ class ExcelWorkbookParser:
     """Parses workbook-style addon templates into DTOs."""
 
     def parse_path(self, excel_path: str | Path) -> InputDTOBundle:
-        from openpyxl import load_workbook  # type: ignore
-        from openpyxl.utils.exceptions import InvalidFileException  # type: ignore
-
         workbook_path = Path(excel_path)
+        try:
+            from openpyxl import load_workbook  # type: ignore
+            from openpyxl.utils.exceptions import InvalidFileException  # type: ignore
+        except ModuleNotFoundError as exc:
+            if exc.name != "openpyxl":
+                raise
+            raise ExcelImportValidationError(
+                "Excel import requires the openpyxl dependency",
+                [
+                    ImportDiagnostic(
+                        rule_id="missing-dependency",
+                        message="openpyxl is required to read workbook templates",
+                        sheet="(workbook)",
+                        value={"dependency": "openpyxl", "path": str(workbook_path)},
+                    )
+                ],
+            ) from exc
         try:
             wb = load_workbook(workbook_path, data_only=True)
         except Exception as exc:

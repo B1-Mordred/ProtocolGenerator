@@ -64,6 +64,31 @@ def test_workbook_parser_maps_template_sheets_to_dtos(tmp_path) -> None:
     assert bundle.dilution_schemes[0].metadata["ratio"] == "1:2"
 
 
+
+
+def test_workbook_parser_reports_missing_openpyxl_dependency(monkeypatch, tmp_path: Path) -> None:
+    import builtins
+
+    workbook_path = tmp_path / "missing-openpyxl.xlsx"
+    workbook_path.write_bytes(b"not-a-real-workbook")
+
+    original_import = builtins.__import__
+
+    def fake_import(name, globals=None, locals=None, fromlist=(), level=0):
+        if name == "openpyxl" or name.startswith("openpyxl."):
+            raise ModuleNotFoundError("No module named 'openpyxl'", name="openpyxl")
+        return original_import(name, globals, locals, fromlist, level)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+
+    with pytest.raises(ExcelImportValidationError) as exc:
+        ExcelWorkbookParser().parse_path(workbook_path)
+
+    assert "openpyxl" in str(exc.value).lower()
+    assert [(d.rule_id, d.sheet) for d in exc.value.diagnostics] == [("missing-dependency", "(workbook)")]
+    assert exc.value.diagnostics[0].value == {"dependency": "openpyxl", "path": str(workbook_path)}
+
+
 def test_workbook_parser_reports_invalid_vocab_from_hidden_lists(tmp_path) -> None:
     openpyxl = pytest.importorskip("openpyxl")
     wb = _build_template_workbook(openpyxl)
