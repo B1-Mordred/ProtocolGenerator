@@ -100,7 +100,7 @@ def test_protocol_generator_uses_fragment_definitions_for_deterministic_workflow
     resolver.assign_ids(addon)
     payload = generate_protocol_json(addon, resolver).payload
 
-    assert payload["AssayInformation"] == [{"Type": "CHEM", "DisplayName": "Chemistry RG1"}]
+    assert payload["AssayInformation"] == [{"Type": "A"}]
     assert payload["LoadingWorkflowSteps"] == [{"StepName": "SPECIFIC"}]
     assert payload["ProcessingWorkflowSteps"] == [
         {

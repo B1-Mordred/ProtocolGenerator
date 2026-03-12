@@ -29,6 +29,7 @@ def test_generate_analytes_xml_matches_expected_shape() -> None:
     assert root.findtext("./Assays/Assay/Analytes/Analyte/Id") == "0"
     assert root.findtext("./Assays/Assay/Analytes/Analyte/AssayRef") == "0"
     assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/AnalyteRef") == "0"
+    assert root.find("./Assays/Assay/Analytes/Analyte/AssayInformationType") is None
     assert result.issues.has_errors() is False
 
 
@@ -47,7 +48,7 @@ def test_generate_analytes_xml_defaults_method_version_when_blank() -> None:
     assert root.findtext("MethodVersion") == "0.0.0.0"
 
 
-def test_generate_analytes_xml_skips_assays_without_abbreviation() -> None:
+def test_generate_analytes_xml_keeps_assays_without_abbreviation_when_analytes_linked() -> None:
     addon = AddonModel(
         method=MethodModel(key="method:k", method_id="M-100", method_version="2.0", product_number="PN-100"),
         assays=[
@@ -71,8 +72,8 @@ def test_generate_analytes_xml_skips_assays_without_abbreviation() -> None:
     assay_names = [assay.findtext("Name") for assay in root.findall("./Assays/Assay")]
     analyte_names = [analyte.findtext("Name") for analyte in root.findall("./Assays/Assay/Analytes/Analyte")]
 
-    assert assay_names == ["CHEM"]
-    assert analyte_names == ["Glucose"]
+    assert assay_names == ["CHEM", "IMM"]
+    assert analyte_names == ["Glucose", "TSH"]
 
 
 def test_generate_analytes_xml_forces_zero_ids_and_refs_for_preview_and_export() -> None:
@@ -133,7 +134,7 @@ def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_w
         assay.findtext("Name"): [item.findtext("Name") for item in assay.findall("./Analytes/Analyte")]
         for assay in assays
     }
-    assert grouped_analytes == {"Chemistry": ["Glucose", "Lactate"]}
+    assert grouped_analytes == {"chemistry": ["Glucose", "Lactate"], "REFLEX Panel": ["Potassium", "Sodium"]}
 
     linked_units = {
         analyte.findtext("Name"): [unit.findtext("Name") for unit in analyte.findall("./AnalyteUnits/AnalyteUnit")]
@@ -143,4 +144,6 @@ def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_w
     assert linked_units == {
         "Glucose": ["mg/dL"],
         "Lactate": ["mmol/L"],
+        "Potassium": ["mmol/L"],
+        "Sodium": ["mEq/L"],
     }

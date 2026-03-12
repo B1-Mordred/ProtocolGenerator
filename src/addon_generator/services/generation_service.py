@@ -188,68 +188,33 @@ class GenerationService:
             )
 
     def _normalize_assay_groups_for_analytes(self, addon: AddonModel) -> list[ValidationIssue]:
-        assays_by_key = {assay.key: assay for assay in addon.assays}
-        alias_to_key: dict[str, str] = {}
-        identity_conflicts: set[str] = set()
+        canonical_assays: list[AssayModel] = []
+        canonical_by_normalized: dict[str, str] = {}
 
-        def _register_alias(raw_value: str | None, assay_key: str) -> None:
-            normalized = normalize_for_matching(raw_value or "")
-            if not normalized:
-                return
-            existing = alias_to_key.get(normalized)
-            if existing is None:
-                alias_to_key[normalized] = assay_key
-                return
-            if existing != assay_key:
-                identity_conflicts.add(normalized)
-
-        for assay in addon.assays:
-            _register_alias(assay.key, assay.key)
-            _register_alias(assay.protocol_type, assay.key)
-            _register_alias(assay.protocol_display_name, assay.key)
-            _register_alias(assay.xml_name, assay.key)
-            for alias in assay.aliases:
-                _register_alias(alias, assay.key)
-
-        unresolved_assay_keys: set[str] = set()
         for analyte in addon.analytes:
-            if analyte.assay_key in assays_by_key:
+            raw_assay_key = str(analyte.assay_key or "").strip()
+            normalized_assay_key = normalize_for_matching(raw_assay_key)
+            if not normalized_assay_key:
                 continue
-            normalized_assay_key = normalize_for_matching(analyte.assay_key)
-            if normalized_assay_key and normalized_assay_key not in identity_conflicts and normalized_assay_key in alias_to_key:
-                analyte.assay_key = alias_to_key[normalized_assay_key]
-                continue
-            unresolved_assay_keys.add(analyte.assay_key)
 
-        synthesized: list[str] = []
-        for assay_key in sorted(unresolved_assay_keys):
-            if assay_key in assays_by_key:
-                continue
-            synthesized_assay = AssayModel(
-                key=assay_key,
-                protocol_type=assay_key,
-                protocol_display_name=assay_key,
-                xml_name=assay_key,
-                metadata={"synthesized_from_analyte": True},
-            )
-            addon.assays.append(synthesized_assay)
-            assays_by_key[assay_key] = synthesized_assay
-            synthesized.append(assay_key)
+            canonical_key = canonical_by_normalized.get(normalized_assay_key)
+            if canonical_key is None:
+                canonical_key = raw_assay_key
+                canonical_by_normalized[normalized_assay_key] = canonical_key
+                canonical_assays.append(
+                    AssayModel(
+                        key=canonical_key,
+                        protocol_type=canonical_key,
+                        protocol_display_name=canonical_key,
+                        xml_name=canonical_key,
+                        metadata={"derived_from_analyte_assay_key": True},
+                    )
+                )
 
-        if not synthesized:
-            return []
+            analyte.assay_key = canonical_key
 
-        return [
-            ValidationIssue(
-                code="assay-group-synthesized-from-analytes",
-                message="Synthesized assay groups from analyte-only assay references.",
-                path="assays",
-                severity=IssueSeverity.WARNING,
-                source=IssueSource.DOMAIN,
-                entity_keys=tuple(synthesized),
-                details={"synthesized_assay_keys": synthesized},
-            )
-        ]
+        addon.assays = canonical_assays
+        return []
 
     def _sort_issues(self, staged_issues: list[tuple[str, ValidationIssue]]) -> list[ValidationIssue]:
         severity_priority = {"error": 0, "warning": 1, "info": 2}
