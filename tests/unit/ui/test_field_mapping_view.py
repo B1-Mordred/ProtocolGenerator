@@ -110,6 +110,23 @@ def test_field_mapping_target_picker_items_have_help_tooltips(qapp) -> None:
     assert isinstance(tooltip, str) and tooltip
 
 
+@pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")
+def test_field_mapping_target_picker_exposes_locked_targets_and_exclusive_help(qapp) -> None:
+    view = FieldMappingView(app_state=AppState())
+
+    view._add_row()
+    target_widget = view.mapping_table.cellWidget(0, 1)
+    assert isinstance(target_widget, QComboBox)
+    option_values = {target_widget.itemData(i) for i in range(target_widget.count()) if target_widget.itemData(i)}
+
+    assert "Analytes.xml:MethodId" in option_values
+    assert "Analytes.xml:MethodVersion" in option_values
+    assert "Analytes.xml:Assays[].Assay.Name" in option_values
+    assert "Analytes.xml:Assays[].Assay.AssayInformationType" in option_values
+    assert "ProtocolFile.json:AssayInformation[].Type" in option_values
+    assert "exclusive" in view.expression_help.toPlainText().lower()
+
+
 
 
 @pytest.mark.skipif(not QT_AVAILABLE, reason="PySide6 Qt runtime unavailable")

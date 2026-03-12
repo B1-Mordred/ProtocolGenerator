@@ -615,3 +615,69 @@ def test_preview_and_export_keep_default_ruleset_assay_grouping_for_manual_analy
         "Chemistry": [("Glucose", ["mg/dL"]), ("Lactate", ["mmol/L"])],
         "Reflex Panel": [("Potassium", ["mmol/L"]), ("Sodium", ["mEq/L"])],
     }
+
+
+def test_preview_and_export_match_with_locked_field_mapping_targets(tmp_path: Path) -> None:
+    import xml.etree.ElementTree as ET
+
+    from addon_generator.services.canonical_model_builder import CanonicalModelBuilder
+    from addon_generator.services.generation_service import GenerationService
+
+    bundle = InputDTOBundle(
+        source_type="gui",
+        method=MethodInputDTO(key="method:m", method_id="M-BASE", method_version="1"),
+        assays=[
+            AssayInputDTO(key="assay:1", protocol_type="TypeA", protocol_display_name="Panel A", xml_name="Panel A"),
+            AssayInputDTO(key="assay:2", protocol_type="TypeB", protocol_display_name="Panel B", xml_name="Panel B"),
+        ],
+        analytes=[
+            AnalyteInputDTO(key="analyte:1", name="A1", assay_key="assay:1", assay_information_type="LegacyA"),
+            AnalyteInputDTO(key="analyte:2", name="B1", assay_key="assay:2", assay_information_type="LegacyB"),
+        ],
+    )
+    field_mapping = {
+        "active_template": "Default",
+        "templates": {
+            "Default": [
+                {"enabled": True, "target": "ProtocolFile.json:MethodInformation.Id", "expression": "default:LOCKED-ID"},
+                {"enabled": True, "target": "ProtocolFile.json:MethodInformation.Id", "expression": "default:IGNORED-ID"},
+                {"enabled": True, "target": "ProtocolFile.json:MethodInformation.Version", "expression": "default:2.5"},
+                {"enabled": True, "target": "ProtocolFile.json:AssayInformation[].Type", "expression": "default:LOCKED-TYPE"},
+                {"enabled": True, "target": "Analytes.xml:MethodId", "expression": "default:XML-ID"},
+                {"enabled": True, "target": "Analytes.xml:MethodVersion", "expression": "default:XML-V2"},
+                {"enabled": True, "target": "Analytes.xml:Assays[].Assay.Name", "expression": "default:LOCKED-PANEL"},
+                {"enabled": True, "target": "Analytes.xml:Assays[].Assay.AssayInformationType", "expression": "default:LOCKED-ASSAY-TYPE"},
+            ]
+        },
+    }
+
+    service = GenerationService()
+    addon = CanonicalModelBuilder().build(bundle)
+    preview_like = service.generate_all(addon, dto_bundle=bundle, field_mapping_settings=field_mapping)
+
+    package = service.build_package(
+        addon,
+        destination_root=tmp_path,
+        overwrite=True,
+        field_mapping_settings=field_mapping,
+    )
+    export_protocol = json.loads(package.artifacts["ProtocolFile.json"].read_text(encoding="utf-8"))
+    export_xml = package.artifacts["Analytes.xml"].read_text(encoding="utf-8")
+
+    assert preview_like.protocol_json == export_protocol
+
+    preview_root = ET.fromstring(preview_like.analytes_xml_string)
+    export_root = ET.fromstring(export_xml)
+    assert ET.tostring(preview_root, encoding="unicode") == ET.tostring(export_root, encoding="unicode")
+
+    assert export_protocol["MethodInformation"]["Id"] == "LOCKED-ID"
+    assert export_protocol["MethodInformation"]["Version"] == "2.5"
+    assert [assay["Type"] for assay in export_protocol["AssayInformation"]] == ["LOCKED-TYPE", "LOCKED-TYPE"]
+
+    assert export_root.findtext("./MethodId") == "XML-ID"
+    assert export_root.findtext("./MethodVersion") == "XML-V2"
+    assert [node.text for node in export_root.findall("./Assays/Assay/Name")] == ["LOCKED-PANEL", "LOCKED-PANEL"]
+    assert [node.text for node in export_root.findall("./Assays/Assay/AssayInformationType")] == [
+        "LOCKED-ASSAY-TYPE",
+        "LOCKED-ASSAY-TYPE",
+    ]

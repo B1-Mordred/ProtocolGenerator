@@ -39,6 +39,22 @@ class PickerOption:
 
 
 TARGET_OPTIONS = [
+    PickerOption("Method ID", "Analytes.xml:MethodId", "Writes to Analytes.xml MethodId. Active-template ownership is exclusive for this target."),
+    PickerOption(
+        "Method Version",
+        "Analytes.xml:MethodVersion",
+        "Writes to Analytes.xml MethodVersion. Active-template ownership is exclusive for this target.",
+    ),
+    PickerOption(
+        "Assay Name",
+        "Analytes.xml:Assays[].Assay.Name",
+        "Writes each assay name into Analytes.xml Assays[].Assay.Name. Active-template ownership is exclusive for this target.",
+    ),
+    PickerOption(
+        "Assay Information Type",
+        "Analytes.xml:Assays[].Assay.AssayInformationType",
+        "Writes each assay information type into Analytes.xml Assays[].Assay.AssayInformationType. Active-template ownership is exclusive for this target.",
+    ),
     PickerOption("Analyte Name", "Analytes.xml:Assays[].Analytes[].Analyte.Name", "Writes each analyte name into AddOn/Assays/Assay/Analytes/Analyte/Name."),
     PickerOption(
         "Analyte Unit",
@@ -47,8 +63,9 @@ TARGET_OPTIONS = [
     ),
     PickerOption("Method Name", "AddOn.xml:MethodInformation.MethodName", "Writes to AddOn.xml MethodInformation.MethodName."),
     PickerOption("Method ID", "AddOn.xml:MethodInformation.MethodId", "Writes to AddOn.xml MethodInformation.MethodId."),
-    PickerOption("Method ID", "ProtocolFile.json:MethodInformation.Id", "Writes to ProtocolFile.json MethodInformation.Id."),
-    PickerOption("Method Version", "ProtocolFile.json:MethodInformation.Version", "Writes to ProtocolFile.json MethodInformation.Version."),
+    PickerOption("Method ID", "ProtocolFile.json:MethodInformation.Id", "Writes to ProtocolFile.json MethodInformation.Id. Active-template ownership is exclusive for this target."),
+    PickerOption("Method Version", "ProtocolFile.json:MethodInformation.Version", "Writes to ProtocolFile.json MethodInformation.Version. Active-template ownership is exclusive for this target."),
+    PickerOption("Assay Type", "ProtocolFile.json:AssayInformation[].Type", "Writes each assay type entry into ProtocolFile.json AssayInformation[].Type. Active-template ownership is exclusive for this target."),
     PickerOption("Analyte Names", "ProtocolFile.json:AssayInformation[].Analytes[].Name", "Writes each analyte name entry into ProtocolFile.json AssayInformation[].Analytes[].Name."),
 ]
 
@@ -77,6 +94,10 @@ SOURCE_TOKEN_OPTIONS = [
 
 TARGET_OPTION_GROUPS = {
     "Analytes.xml": (
+        "Analytes.xml:MethodId",
+        "Analytes.xml:MethodVersion",
+        "Analytes.xml:Assays[].Assay.Name",
+        "Analytes.xml:Assays[].Assay.AssayInformationType",
         "Analytes.xml:Assays[].Analytes[].Analyte.Name",
         "Analytes.xml:Assays[].Analytes[].Analyte.AnalyteUnits[].AnalyteUnit.Name",
     ),
@@ -84,6 +105,7 @@ TARGET_OPTION_GROUPS = {
     "ProtocolFile.json": (
         "ProtocolFile.json:MethodInformation.Id",
         "ProtocolFile.json:MethodInformation.Version",
+        "ProtocolFile.json:AssayInformation[].Type",
         "ProtocolFile.json:AssayInformation[].Analytes[].Name",
     ),
 }
@@ -207,7 +229,8 @@ class FieldMappingView(QWidget):
             "- default:BASIC Kit\n"
             "- custom:My Value\n"
             "- concat(input:method.kit_name, default:-, custom:v1)\n"
-            "- concat(delimiter='-', input:method.kit_name, custom:v1)"
+            "- concat(delimiter='-', input:method.kit_name, custom:v1)\n\n"
+            "Locked targets are exclusive: once the active template defines one, conflicting rows are ignored."
         )
         helper_layout.addRow("Token", self.token_selector)
         helper_layout.addRow("Custom", self.custom_literal)

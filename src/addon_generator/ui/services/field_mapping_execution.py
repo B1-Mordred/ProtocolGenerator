@@ -18,6 +18,16 @@ LEGACY_TARGET_ALIASES = {
     "ProtocolFile.json:analytes[].name": "ProtocolFile.json:AssayInformation[].Analytes[].Name",
 }
 
+TARGET_LOCKED_TO_ACTIVE_TEMPLATE = {
+    "Analytes.xml:MethodId",
+    "Analytes.xml:MethodVersion",
+    "Analytes.xml:Assays[].Assay.Name",
+    "Analytes.xml:Assays[].Assay.AssayInformationType",
+    "ProtocolFile.json:MethodInformation.Id",
+    "ProtocolFile.json:MethodInformation.Version",
+    "ProtocolFile.json:AssayInformation[].Type",
+}
+
 
 @dataclass(slots=True)
 class FieldMappingExecutionResult:
@@ -40,6 +50,7 @@ def apply_field_mappings(
         "applied": [],
         "skipped": [],
         "warnings": [],
+        "ignored": [],
     }
 
     template_rows = _active_template_rows(field_mapping_settings or {})
@@ -49,6 +60,7 @@ def apply_field_mappings(
 
     context = _bundle_context(dto_bundle)
     last_writer_by_target: dict[str, int] = {}
+    active_owner_by_target: dict[str, int] = {}
 
     for index, row in enumerate(template_rows):
         if not bool(row.get("enabled", True)):
@@ -69,11 +81,28 @@ def apply_field_mappings(
             report["skipped"].append({"row": index, "reason": "no-values", "target": target})
             continue
 
+        if target in TARGET_LOCKED_TO_ACTIVE_TEMPLATE and target in active_owner_by_target:
+            owner_row = active_owner_by_target[target]
+            report["ignored"].append(
+                {
+                    "row": index,
+                    "target": target,
+                    "reason": "target-owned-by-active-template",
+                    "owner_row": owner_row,
+                }
+            )
+            report["warnings"].append(
+                f"row {index}: target '{target}' is owned by active template row {owner_row}; ignored conflicting row"
+            )
+            continue
+
         if target in last_writer_by_target:
             report["warnings"].append(
                 f"row {index}: target '{target}' already written by row {last_writer_by_target[target]}; applying last-write-wins"
             )
         last_writer_by_target[target] = index
+        if target in TARGET_LOCKED_TO_ACTIVE_TEMPLATE:
+            active_owner_by_target[target] = index
 
         applied_count, apply_warnings = _apply_target(target, values, protocol, xml_root)
         for warning in apply_warnings:
@@ -223,6 +252,36 @@ def _apply_target(target: str, values: list[str], protocol: dict[str, Any], xml_
         for idx, node in enumerate(analyte_nodes):
             node["Name"] = values[idx] if idx < len(values) else values[-1]
         return len(analyte_nodes), warnings
+    if target == "ProtocolFile.json:AssayInformation[].Type":
+        assay_nodes = [assay for assay in protocol.get("AssayInformation", []) if isinstance(assay, dict)]
+        for idx, node in enumerate(assay_nodes):
+            node["Type"] = values[idx] if idx < len(values) else values[-1]
+        return len(assay_nodes), warnings
+    if target == "Analytes.xml:MethodId":
+        method_id_node = _ensure_xml_text_node(xml_root, "MethodId")
+        method_id_node.text = values[-1]
+        if len(values) > 1:
+            warnings.append("multiple values resolved for scalar target; used last value")
+        return 1, warnings
+    if target == "Analytes.xml:MethodVersion":
+        method_version_node = _ensure_xml_text_node(xml_root, "MethodVersion")
+        method_version_node.text = values[-1]
+        if len(values) > 1:
+            warnings.append("multiple values resolved for scalar target; used last value")
+        return 1, warnings
+    if target == "Analytes.xml:Assays[].Assay.Name":
+        assay_name_nodes = xml_root.findall("./Assays/Assay/Name")
+        for idx, node in enumerate(assay_name_nodes):
+            node.text = values[idx] if idx < len(values) else values[-1]
+        return len(assay_name_nodes), warnings
+    if target == "Analytes.xml:Assays[].Assay.AssayInformationType":
+        assay_nodes = xml_root.findall("./Assays/Assay")
+        for idx, assay_node in enumerate(assay_nodes):
+            assay_info_node = assay_node.find("AssayInformationType")
+            if assay_info_node is None:
+                assay_info_node = ET.SubElement(assay_node, "AssayInformationType")
+            assay_info_node.text = values[idx] if idx < len(values) else values[-1]
+        return len(assay_nodes), warnings
     if target == "Analytes.xml:Assays[].Analytes[].Analyte.Name":
         analyte_name_nodes = xml_root.findall("./Assays/Assay/Analytes/Analyte/Name")
         for idx, node in enumerate(analyte_name_nodes):
@@ -234,6 +293,13 @@ def _apply_target(target: str, values: list[str], protocol: dict[str, Any], xml_
             node.text = values[idx] if idx < len(values) else values[-1]
         return len(unit_name_nodes), warnings
     return 0, [f"unsupported target '{target}'"]
+
+
+def _ensure_xml_text_node(xml_root: ET.Element, name: str) -> ET.Element:
+    node = xml_root.find(f"./{name}")
+    if node is None:
+        node = ET.SubElement(xml_root, name)
+    return node
 
 
 def _split_arguments(value: str) -> list[str]:
