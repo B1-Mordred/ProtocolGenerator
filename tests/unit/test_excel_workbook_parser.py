@@ -181,7 +181,8 @@ def test_workbook_parser_reports_sheet_specific_duplicate_row_diagnostics(tmp_pa
     assert diagnostics[("duplicate-row", "Analytes")].value == {
         "analyte": "GLU",
         "assay_key": "assay:chem",
-        "duplicate_key": "GLU|assay:chem",
+        "unit": "mg/dL",
+        "duplicate_key": "GLU|assay:chem|mg/dL",
     }
     assert diagnostics[("duplicate-row", "SamplePrep")].value == {
         "order": "1",
@@ -193,6 +194,24 @@ def test_workbook_parser_reports_sheet_specific_duplicate_row_diagnostics(tmp_pa
         "duplicate_key": "Std1",
     }
 
+
+
+
+def test_workbook_parser_allows_duplicate_analyte_names_when_units_differ(tmp_path: Path) -> None:
+    openpyxl = pytest.importorskip("openpyxl")
+    wb = _build_template_workbook(openpyxl)
+
+    wb["Analytes"].append(["GLU", "mmol/L", "CHEM", "assay:chem"])
+    wb["Hidden_Lists"].append(["mmol/L", "Mix"])
+
+    path = tmp_path / "duplicate-analyte-different-unit.xlsx"
+    wb.save(path)
+
+    bundle = ExcelImporter().import_workbook_bundle(path)
+
+    assert [(a.name, a.assay_key) for a in bundle.analytes] == [("GLU", "assay:chem")]
+    assert sorted(unit.name for unit in bundle.units) == ["mg/dL", "mmol/L"]
+    assert all(unit.analyte_key == "analyte:GLU" for unit in bundle.units)
 
 def test_workbook_parser_supports_case_and_spacing_variants_in_sheet_names(tmp_path) -> None:
     openpyxl = pytest.importorskip("openpyxl")

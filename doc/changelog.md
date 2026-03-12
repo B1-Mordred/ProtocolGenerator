@@ -24,6 +24,7 @@
 - Default-ruleset manual/excel analyte assay references are now locked by regression tests for synthesized assay grouping, mixed-case/whitespace alias resolution, repeated analytes per synthesized assay group, and analyte-unit linkage parity between preview and export `Analytes.xml`.
 
 ### Fixed
+- Fixed workbook-template Analytes import duplicate handling so rows with the same analyte + assay but different unit values are accepted and mapped to multiple `AnalyteUnit` records; only exact analyte+assay+unit duplicates now raise `duplicate-row` diagnostics.
 - Fixed analyte assay-information type flow for the canonical derivation rule set: Excel analytes parsing no longer maps `Parameter Set` into analyte `assay_information_type`, GUI mapping now ignores incoming `assay_information_type`, and `Analytes.xml` omits `<AssayInformationType>` output.
 - Fixed workbook-template import dependency handling: when `openpyxl` is not installed, Excel import now raises a structured `ExcelImportValidationError` with a `missing-dependency` diagnostic instead of crashing at import time.
 - Fixed `Analytes.xml` preview/export serialization to emit `0` for all `<Id>`, `<AssayRef>`, `<AddOnRef>`, and `<AnalyteRef>` values (instead of propagating deterministic non-zero IDs in multi-assay outputs).

@@ -30,7 +30,9 @@ def parse_analytes_sheet(
     known_units = {u.casefold(): u for u in vocab.get("Units", set())}
     parameter_set_lookup = assay_lookup_by_parameter_set or {}
 
-    seen_analytes: set[tuple[str, str]] = set()
+    analyte_keys_by_identity: dict[tuple[str, str], str] = {}
+    seen_analytes_without_unit: set[tuple[str, str]] = set()
+    seen_analyte_units: set[tuple[str, str, str]] = set()
 
     for row_idx in range(header_row + 1, len(rows) + 1):
         row = rows[row_idx - 1]
@@ -59,9 +61,47 @@ def parse_analytes_sheet(
             )
             continue
 
-        analyte_key = f"analyte:{analyte_name or row_idx}"
-        identity = (_identity_token(analyte_name or analyte_key), _identity_token(assay_key))
-        if identity in seen_analytes:
+        analyte_fallback_key = f"analyte:{analyte_name or row_idx}"
+        analyte_identity = (_identity_token(analyte_name or analyte_fallback_key), _identity_token(assay_key))
+        analyte_key = analyte_keys_by_identity.get(analyte_identity, analyte_fallback_key)
+
+        if analyte_identity not in analyte_keys_by_identity:
+            analyte_keys_by_identity[analyte_identity] = analyte_key
+            analytes.append(
+                AnalyteInputDTO(
+                    key=analyte_key,
+                    name=analyte_name,
+                    assay_key=assay_key,
+                    assay_information_type=None,
+                )
+            )
+
+        if unit_name:
+            normalized_unit = known_units.get(unit_name.casefold(), unit_name)
+            if known_units and unit_name.casefold() not in known_units:
+                diagnostics.append(ImportDiagnostic(rule_id="invalid-vocabulary", message="Unknown unit", sheet=sheet.title, row=row_idx, column="Unit", value=unit_name))
+            unit_identity = (*analyte_identity, _identity_token(normalized_unit))
+            if unit_identity in seen_analyte_units:
+                diagnostics.append(
+                    ImportDiagnostic(
+                        rule_id="duplicate-row",
+                        message="Duplicate analyte row",
+                        sheet=sheet.title,
+                        row=row_idx,
+                        value={
+                            "analyte": analyte_name,
+                            "assay_key": assay_key,
+                            "unit": normalized_unit,
+                            "duplicate_key": f"{analyte_name or analyte_key}|{assay_key}|{normalized_unit}",
+                        },
+                    )
+                )
+                continue
+            seen_analyte_units.add(unit_identity)
+            units.append(UnitInputDTO(key=f"{analyte_key}:unit:{row_idx}", name=normalized_unit, analyte_key=analyte_key))
+            continue
+
+        if analyte_identity in seen_analytes_without_unit:
             diagnostics.append(
                 ImportDiagnostic(
                     rule_id="duplicate-row",
@@ -76,20 +116,7 @@ def parse_analytes_sheet(
                 )
             )
             continue
-        seen_analytes.add(identity)
-        analytes.append(
-            AnalyteInputDTO(
-                key=analyte_key,
-                name=analyte_name,
-                assay_key=assay_key,
-                assay_information_type=None,
-            )
-        )
-        if unit_name:
-            normalized_unit = known_units.get(unit_name.casefold(), unit_name)
-            if known_units and unit_name.casefold() not in known_units:
-                diagnostics.append(ImportDiagnostic(rule_id="invalid-vocabulary", message="Unknown unit", sheet=sheet.title, row=row_idx, column="Unit", value=unit_name))
-            units.append(UnitInputDTO(key=f"{analyte_key}:unit", name=normalized_unit, analyte_key=analyte_key))
+        seen_analytes_without_unit.add(analyte_identity)
 
     return AnalytesParseResult(analytes, units)
 
