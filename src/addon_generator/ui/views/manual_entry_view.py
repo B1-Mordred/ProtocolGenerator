@@ -137,6 +137,7 @@ class ManualEntryView(QWidget):
             ("addon_series", "AddOn Series"),
             ("addon_product_name", "AddOn Product Name"),
             ("addon_product_number", "AddOn Product Number"),
+            ("addon_version", "AddOn Version"),
         ]
         for key, label in fields:
             line = QLineEdit(widget)
