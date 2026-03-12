@@ -150,6 +150,7 @@ def test_shell_populates_manual_kit_components_from_imported_bundle(qapp) -> Non
     assert shell.manual_entry_view.assays_table.item(0, 2).text() == "PS-1"
     assert shell.manual_entry_view.basics_fields["kit_series"].text() == "Series-1"
     assert shell.manual_entry_view.basics_fields["kit_product_number"].text() == "KIT-001"
+    assert shell.manual_entry_view.basics_fields["addon_version"].text() == "1.0"
 
     container_combo = shell.manual_entry_view.assays_table.cellWidget(0, 6)
     assert isinstance(container_combo, QComboBox)

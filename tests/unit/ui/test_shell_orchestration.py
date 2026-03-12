@@ -204,6 +204,8 @@ def test_shell_save_draft_syncs_manual_entry_into_saved_json(qapp, monkeypatch, 
         draft_service=DraftService(),
     )
 
+    shell.manual_entry_view.set_basics_values({"addon_version": "7.2"})
+
     shell.manual_entry_view.set_assays_rows(
         [
             {
@@ -244,6 +246,7 @@ def test_shell_save_draft_syncs_manual_entry_into_saved_json(qapp, monkeypatch, 
 
     assert bundle["analytes"]
     assert bundle["sample_prep_steps"]
+    assert bundle["method"]["method_version"] == "7.2"
     assert bundle["assays"][0]["metadata"]["component_name"] == "Calibrator"
 
 def test_shell_blocks_export_button_when_validation_has_blockers(qapp):
@@ -798,6 +801,7 @@ def test_shell_import_excel_shows_manual_entry_with_imported_values(qapp):
     assert shell.manual_entry_view.basics_fields["kit_series"].text() == "Series-42"
     assert shell.manual_entry_view.basics_fields["kit_product_number"].text() == "KIT-42"
     assert shell.manual_entry_view.basics_fields["addon_product_number"].text() == "ADDON-42"
+    assert shell.manual_entry_view.basics_fields["addon_version"].text() == "1"
     assert shell.manual_entry_view.assays_table.item(0, 0).text() == "PN-42"
 
 

@@ -439,6 +439,7 @@ class MainShell(QMainWindow):
             "addon_series": str(method.main_title or "") if method else "",
             "addon_product_name": str(method.sub_title or "") if method else "",
             "addon_product_number": str(method.product_number or "") if method else "",
+            "addon_version": str(method.method_version or "") if method else "",
         }
         self.manual_entry_view.set_basics_values(basics)
 
@@ -527,7 +528,7 @@ class MainShell(QMainWindow):
         bundle = map_gui_payload_to_bundle(
             {
                 "method_id": method.get("method_id", "") or (current_method.method_id if current_method else ""),
-                "method_version": method.get("method_version", "") or (current_method.method_version if current_method else ""),
+                "method_version": method.get("addon_version", "") or (current_method.method_version if current_method else ""),
                 "MethodInformation": {
                     "DisplayName": method.get("display_name", "") or method.get("kit_name", ""),
                     "SeriesName": method.get("kit_series", ""),

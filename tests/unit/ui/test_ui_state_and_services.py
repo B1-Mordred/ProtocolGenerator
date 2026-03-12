@@ -333,6 +333,7 @@ def test_draft_service_load_combined_recovery_file_merges_manual_snapshot(tmp_pa
                     "method": {
                         "addon_product_name": "TDM Series A",
                         "addon_product_number": "42952",
+                        "addon_version": "3.4",
                         "addon_series": "MassPrep®",
                         "kit_name": "TDM Series A",
                         "kit_product_number": "92711",
@@ -366,6 +367,7 @@ def test_draft_service_load_combined_recovery_file_merges_manual_snapshot(tmp_pa
     bundle = restored_state.import_state.bundles[0]
     assert bundle.method is not None
     assert bundle.method.series_name == "MassTox®"
+    assert bundle.method.method_version == "3.4"
     assert bundle.assays[0].metadata["component_name"] == "Urine"
     assert bundle.dilution_schemes[0].key == "1+2"
     assert restored_state.editor_state.export_settings["admin_kit_types"] == ["Sample", "Reagent"]

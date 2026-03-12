@@ -167,7 +167,7 @@ class DraftService:
         method_payload = snapshot.get("method", {}) if isinstance(snapshot.get("method"), dict) else {}
         gui_payload = {
             "method_id": "",
-            "method_version": "",
+            "method_version": method_payload.get("addon_version", ""),
             "MethodInformation": {
                 "DisplayName": method_payload.get("kit_name", ""),
                 "SeriesName": method_payload.get("kit_series", ""),

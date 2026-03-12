@@ -50,6 +50,7 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
 
     view.basics_fields["kit_series"].setText("KIT")
     view.basics_fields["kit_name"].setText("KIT-NAME")
+    view.basics_fields["addon_version"].setText("2.5")
 
     view.assays_table.setItem(0, 0, QTableWidgetItem("PN-1"))
     view.assays_table.setItem(0, 1, QTableWidgetItem("Component A"))
@@ -65,6 +66,7 @@ def test_manual_entry_view_initial_rows_and_payload(qapp) -> None:
     assert "display_name" not in payload["method"]
     assert payload["method"]["kit_series"] == "KIT"
     assert payload["method"]["kit_name"] == "KIT-NAME"
+    assert payload["method"]["addon_version"] == "2.5"
     assert payload["assays"][0]["product_number"] == "PN-1"
     assert payload["assays"][0]["component_name"] == "Component A"
     assert payload["assays"][0]["parameter_set_number"] == "PS-1"
@@ -79,6 +81,7 @@ def test_manual_entry_basics_fields_hide_method_identity_and_add_kit_name(qapp) 
     assert "method_version" not in view.basics_fields
     assert "display_name" not in view.basics_fields
     assert "kit_name" in view.basics_fields
+    assert "addon_version" in view.basics_fields
 
 
 def test_manual_entry_tab_order_and_kit_component_headers(qapp) -> None:

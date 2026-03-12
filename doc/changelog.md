@@ -204,6 +204,8 @@
 ### Changed
 - Changed draft actions to `Save Status` and `Recover from Draft`, both using user-selected file names/locations, and improved table column auto-sizing behavior across Import Review/Sample Prep/Dilutions/entity tables to better fit field content.
 
+- Changed manual-entry Basics and snapshot mapping to include `addon_version` (`AddOn Version`) and route it to method `method_version` during shell sync/import backfill and draft recovery payload conversion.
+
 - Fixed manual AddOn entry persistence for `Kit Series` and `Kit Product Number`; updated manual tables so `Kit Components` headers auto-size (no truncation), introduced Admin-configurable drop-down lists for `Type`, `Container Type (if Liquid)`, and analyte `Unit of Measurement`, renamed analytes column `Assay Key` to `Assay` with values sourced from Kit Components `Parameter Set Name`, and removed manual analyte entry fields `Analyte Key`/`Assay Information Type`.
 - Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
 
@@ -289,6 +291,7 @@
 
 ### Changed
 - Changed draft actions to `Save Status` and `Recover from Draft`, both using user-selected file names/locations, and improved table column auto-sizing behavior across Import Review/Sample Prep/Dilutions/entity tables to better fit field content.
+
 
 - Fixed manual AddOn entry persistence for `Kit Series` and `Kit Product Number`; updated manual tables so `Kit Components` headers auto-size (no truncation), introduced Admin-configurable drop-down lists for `Type`, `Container Type (if Liquid)`, and analyte `Unit of Measurement`, renamed analytes column `Assay Key` to `Assay` with values sourced from Kit Components `Parameter Set Name`, and removed manual analyte entry fields `Analyte Key`/`Assay Information Type`.
 - Changed manual AddOn entry tab order to `Basics` → `Kit Components` → `Dilutions` → `Analytes`, expanded Kit Components row fields to Product/Component/Parameter Set/Type/Container columns, and mapped Excel `Basics` bottom-table rows with the same headers into those Kit Components rows during import.
