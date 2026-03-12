@@ -12,6 +12,7 @@
 
 
 ### Changed
+- Changed docs to clarify Basics `AddOn Version`, MethodId/Version source precedence with `0.0.0.0` fallback, unique assay derivation from Analytes `Assay`, and current blank `AssayInformationType` output behavior.
 - Changed method identity/version projection consistency: `resolve_method_projection` now uses AddOn `product_number` for protocol/XML method IDs when available, and canonical AddOn version for method versions with blank values defaulted to `0.0.0.0`; `Analytes.xml` now emits this same method-version fallback in `<MethodVersion>`.
 - Changed canonical assay derivation to a single deterministic source: unique normalized analyte `assay_key` values (blank skipped) now define assay groups, preserve first-seen display values, and drive both `ProtocolFile.AssayInformation[].Type` and `Analytes.xml` assay names without cross-source field injection.
 - Changed `Analytes.xml` generation to remain `AddOn/Assays/Assay/Analytes` schema-compliant while mapping `MethodId` from Basics `AddOn Product Number` and using canonical AddOn version (`0.0.0.0` fallback when blank).

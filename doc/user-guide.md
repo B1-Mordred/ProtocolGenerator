@@ -226,12 +226,14 @@ Fix:
 ```json
 {
   "MethodInformation": {
-    "MethodName": "Run-042",
-    "ProtocolVersion": "1.0"
+    "Id": "AON-12345",
+    "DisplayName": "Run-042",
+    "Version": "1.0.0.0"
   },
   "AssayInformation": [
     {
-      "AssayName": "Assay-A"
+      "Type": "Chemistry",
+      "DisplayName": "Chemistry"
     }
   ],
   "LoadingWorkflowSteps": [
