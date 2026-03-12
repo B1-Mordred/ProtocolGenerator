@@ -21,10 +21,12 @@ def generate_analytes_addon_xml(addon: AddonModel, xsd_path: Path | str, output_
     if addon.method is None:
         raise ValueError("AddonModel.method is required")
 
+    method_version = str(addon.method.method_version or "").strip() or "0.0.0.0"
+
     root = ET.Element("AddOn")
     ET.SubElement(root, "Id").text = "0"
-    ET.SubElement(root, "MethodId").text = addon.method.product_number or ""
-    ET.SubElement(root, "MethodVersion").text = ""
+    ET.SubElement(root, "MethodId").text = addon.method.product_number or addon.method.method_id or ""
+    ET.SubElement(root, "MethodVersion").text = method_version
 
     assays_el = ET.SubElement(root, "Assays")
     analytes_by_assay: dict[str, list] = {}

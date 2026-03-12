@@ -138,3 +138,31 @@ def test_protocol_generator_uses_schema_valid_samples_layout_for_multi_assay() -
 
     validation = validate_protocol_schema(payload, schema_path="protocol.schema.json")
     assert validation.is_valid is True
+
+
+def test_protocol_generator_method_information_prefers_addon_product_number() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="m", method_id="MID", method_version="1.2", product_number="PN-42"),
+        assays=[AssayModel(key="a1", protocol_type="A", xml_name="A")],
+    )
+    resolver = LinkResolver(load_mapping_config("config/mapping.v1.yaml"))
+    resolver.assign_ids(addon)
+
+    payload = generate_protocol_json(addon, resolver).payload
+
+    assert payload["MethodInformation"]["Id"] == "PN-42"
+    assert payload["MethodInformation"]["Version"] == "1.2"
+
+
+def test_protocol_generator_method_information_defaults_blank_version_to_zero_version() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="m", method_id="MID", method_version="  ", product_number="PN-42"),
+        assays=[AssayModel(key="a1", protocol_type="A", xml_name="A")],
+    )
+    resolver = LinkResolver(load_mapping_config("config/mapping.v1.yaml"))
+    resolver.assign_ids(addon)
+
+    payload = generate_protocol_json(addon, resolver).payload
+
+    assert payload["MethodInformation"]["Id"] == "PN-42"
+    assert payload["MethodInformation"]["Version"] == "0.0.0.0"
