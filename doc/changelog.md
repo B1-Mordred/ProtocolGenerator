@@ -12,8 +12,9 @@
 
 
 ### Changed
+- Changed method identity/version projection consistency: `resolve_method_projection` now uses AddOn `product_number` for protocol/XML method IDs when available, and canonical AddOn version for method versions with blank values defaulted to `0.0.0.0`; `Analytes.xml` now emits this same method-version fallback in `<MethodVersion>`.
 - Changed `Analytes.xml` generation to skip writing assay/analyte records when kit-component assays have no assigned `Assay Abbreviation`.
-- Changed `Analytes.xml` generation to remain `AddOn/Assays/Assay/Analytes` schema-compliant while mapping `MethodId` from Basics `AddOn Product Number` and intentionally leaving `MethodVersion` blank.
+- Changed `Analytes.xml` generation to remain `AddOn/Assays/Assay/Analytes` schema-compliant while mapping `MethodId` from Basics `AddOn Product Number` and using canonical AddOn version (`0.0.0.0` fallback when blank).
 - Field Mapping templates are now execution-effective during validation/export: enabled rows from the active template are applied to generated `ProtocolFile.json` and `Analytes.xml` before final serialization, with deterministic last-write-wins conflict handling and warning/report visibility for applied vs skipped rows.
 - Changed cross-file linkage validation so `alias_map` mode is now actively enforced in runtime assay matching (in addition to exact/normalized), and mismatch diagnostics now include actionable remediation text for fixing Type/XML-name linkage or switching modes.
 - Validation, preview, and export pipelines now apply optional runtime `mapping_overrides` (cross-file rules and protocol defaults) on top of `config/mapping.v1.yaml`, with config-schema validation and automatic rollback after each generation call.

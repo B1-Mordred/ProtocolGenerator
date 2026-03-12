@@ -51,11 +51,15 @@ class LinkResolver:
         method = addon.method
         if method is None:
             raise ValueError("AddonModel.method is required")
+        method_product_number = str(method.product_number or "").strip()
+        method_version = str(method.method_version or "").strip() or "0.0.0.0"
+        protocol_id = method_product_number or method.method_id
+
         return ResolvedMethodProjection(
-            protocol_id=method.method_id,
-            protocol_version=method.method_version,
-            xml_method_id=method.method_id,
-            xml_method_version=method.method_version,
+            protocol_id=protocol_id,
+            protocol_version=method_version,
+            xml_method_id=protocol_id,
+            xml_method_version=method_version,
         )
 
     def resolve_assay_projection(self, assay: AssayModel) -> ResolvedAssayProjection:
