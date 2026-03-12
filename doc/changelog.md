@@ -13,7 +13,7 @@
 
 ### Changed
 - Changed method identity/version projection consistency: `resolve_method_projection` now uses AddOn `product_number` for protocol/XML method IDs when available, and canonical AddOn version for method versions with blank values defaulted to `0.0.0.0`; `Analytes.xml` now emits this same method-version fallback in `<MethodVersion>`.
-- Changed `Analytes.xml` generation to skip writing assay/analyte records when kit-component assays have no assigned `Assay Abbreviation`.
+- Changed canonical assay derivation to a single deterministic source: unique normalized analyte `assay_key` values (blank skipped) now define assay groups, preserve first-seen display values, and drive both `ProtocolFile.AssayInformation[].Type` and `Analytes.xml` assay names without cross-source field injection.
 - Changed `Analytes.xml` generation to remain `AddOn/Assays/Assay/Analytes` schema-compliant while mapping `MethodId` from Basics `AddOn Product Number` and using canonical AddOn version (`0.0.0.0` fallback when blank).
 - Field Mapping templates are now execution-effective during validation/export: enabled rows from the active template are applied to generated `ProtocolFile.json` and `Analytes.xml` before final serialization, with deterministic last-write-wins conflict handling and warning/report visibility for applied vs skipped rows.
 - Changed cross-file linkage validation so `alias_map` mode is now actively enforced in runtime assay matching (in addition to exact/normalized), and mismatch diagnostics now include actionable remediation text for fixing Type/XML-name linkage or switching modes.
@@ -22,6 +22,7 @@
 - Default-ruleset manual/excel analyte assay references are now locked by regression tests for synthesized assay grouping, mixed-case/whitespace alias resolution, repeated analytes per synthesized assay group, and analyte-unit linkage parity between preview and export `Analytes.xml`.
 
 ### Fixed
+- Fixed analyte assay-information type flow for the canonical derivation rule set: Excel analytes parsing no longer maps `Parameter Set` into analyte `assay_information_type`, GUI mapping now ignores incoming `assay_information_type`, and `Analytes.xml` omits `<AssayInformationType>` output.
 - Fixed workbook-template import dependency handling: when `openpyxl` is not installed, Excel import now raises a structured `ExcelImportValidationError` with a `missing-dependency` diagnostic instead of crashing at import time.
 - Fixed `Analytes.xml` preview/export serialization to emit `0` for all `<Id>`, `<AssayRef>`, `<AddOnRef>`, and `<AnalyteRef>` values (instead of propagating deterministic non-zero IDs in multi-assay outputs).
 - Fixed Output Preview navigation in the Qt shell to auto-regenerate stale preview artifacts when users open `Output Preview`, so latest manual/imported assays, analytes, and units appear without requiring an extra `Regenerate` click.

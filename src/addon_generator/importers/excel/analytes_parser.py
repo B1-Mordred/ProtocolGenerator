@@ -82,7 +82,7 @@ def parse_analytes_sheet(
                 key=analyte_key,
                 name=analyte_name,
                 assay_key=assay_key,
-                assay_information_type=parameter_set or None,
+                assay_information_type=None,
             )
         )
         if unit_name:

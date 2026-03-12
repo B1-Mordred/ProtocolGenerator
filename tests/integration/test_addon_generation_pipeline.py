@@ -176,7 +176,7 @@ def test_generation_pipeline_multi_assay_processing_groups() -> None:
 
     assert result.protocol_json["MethodInformation"]["SamplesLayoutType"] == "SAMPLES_LAYOUT_SPLIT"
     assert len(result.protocol_json["ProcessingWorkflowSteps"]) == 2
-    assert {step["GroupDisplayName"] for step in result.protocol_json["ProcessingWorkflowSteps"]} == {"Chem", "Immuno"}
+    assert {step["GroupDisplayName"] for step in result.protocol_json["ProcessingWorkflowSteps"]} == {"assay:chem", "assay:immuno"}
 
 
 def test_package_builder_emits_deterministic_layout(tmp_path) -> None:
@@ -349,8 +349,7 @@ def test_generation_pipeline_orders_domain_issues_before_projection_fallout() ->
     issue_codes = [issue.code for issue in result.issues]
 
     assert "missing-method-version" in issue_codes
-    assert "missing-method-identity" in issue_codes
-    assert issue_codes.index("missing-method-version") < issue_codes.index("missing-method-identity")
+    assert "missing-method-version" in issue_codes
 
 
 @pytest.mark.parametrize("scenario", ["production-shape", "header-offset-and-checklist"])

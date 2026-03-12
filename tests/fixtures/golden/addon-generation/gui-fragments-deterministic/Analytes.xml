@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <AddOn>
   <Id>0</Id>
   <MethodId>M-R</MethodId>
@@ -5,7 +6,7 @@
   <Assays>
     <Assay>
       <Id>0</Id>
-      <Name>A</Name>
+      <Name>assay:1</Name>
       <AddOnRef>0</AddOnRef>
       <Analytes>
         <Analyte>

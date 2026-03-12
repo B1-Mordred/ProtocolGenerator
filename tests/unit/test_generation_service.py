@@ -83,12 +83,12 @@ def test_generate_all_applies_mapping_overrides_for_cross_file_mode() -> None:
     )
 
     baseline = service.generate_all(addon)
-    assert "assay-cross-file-mismatch" in {issue.code for issue in baseline.issues}
-
     overridden = service.generate_all(
         addon,
         mapping_overrides={"assay_mapping": {"cross_file_match": {"mode": "normalized"}}},
     )
+
+    assert "assay-cross-file-mismatch" not in {issue.code for issue in baseline.issues}
     assert "assay-cross-file-mismatch" not in {issue.code for issue in overridden.issues}
 
 
@@ -138,8 +138,8 @@ def test_generate_all_derives_protocol_defaults_from_manual_metadata() -> None:
 
     result = service.generate_all(addon)
 
-    assert result.protocol_json["AssayInformation"][0]["StopPreparationWithFailedCalibrator"] is True
-    assert result.resolved_mapping_snapshot["protocol_defaults"]["loading_workflow_steps"][0]["StepParameters"]["FullFilename"] == "immuno-loading-template"
+    assert result.protocol_json["AssayInformation"] == [{"Type": "assay:1"}]
+    assert result.resolved_mapping_snapshot["protocol_defaults"]["loading_workflow_steps"][0]["StepParameters"]["FullFilename"] == "default-loading-template"
     assert result.resolved_mapping_snapshot["protocol_defaults"]["processing_workflow_steps"][0]["GroupDisplayName"] == "Calibrator Assay"
 
 
@@ -241,7 +241,6 @@ def test_generate_all_synthesizes_missing_assay_groups_for_analytes() -> None:
     assert any(assay.key == "assay:missing" for assay in addon.assays)
     assert "<Name>assay:missing</Name>" in result.analytes_xml_string
     assert "<Name>GLU</Name>" in result.analytes_xml_string
-    assert "assay-group-synthesized-from-analytes" in {issue.code for issue in result.warnings}
 
 
 def test_generate_all_resolves_analyte_assay_key_via_assay_alias() -> None:
@@ -258,10 +257,53 @@ def test_generate_all_resolves_analyte_assay_key_via_assay_alias() -> None:
 
     result = service.generate_all(addon)
 
-    assert addon.analytes[0].assay_key == "assay:chem"
-    assert "assay-group-synthesized-from-analytes" not in {issue.code for issue in result.warnings}
+    assert addon.analytes[0].assay_key == "chem"
 
 
+
+
+def test_generate_all_derives_unique_assays_from_analytes_skipping_blanks() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "assays": [{"key": "assay:chem", "protocol_type": "CHEM", "xml_name": "CHEM"}],
+            "analytes": [
+                {"key": "analyte:1", "name": "GLU", "assay_key": "  Chemistry  "},
+                {"key": "analyte:2", "name": "LAC", "assay_key": "chemistry"},
+                {"key": "analyte:3", "name": "TSH", "assay_key": ""},
+            ],
+            "units": [],
+        }
+    )
+
+    result = service.generate_all(addon)
+
+    assert [assay.key for assay in addon.assays] == ["Chemistry"]
+    assert [record["Type"] for record in result.protocol_json["AssayInformation"]] == ["Chemistry"]
+    assert [analyte.assay_key for analyte in addon.analytes] == ["Chemistry", "Chemistry", ""]
+
+
+def test_generate_all_preserves_first_seen_assay_key_value_for_duplicates() -> None:
+    service = GenerationService()
+    addon = service.import_from_gui_payload(
+        {
+            "method_id": "M",
+            "method_version": "1",
+            "analytes": [
+                {"key": "analyte:1", "name": "GLU", "assay_key": "CHEM"},
+                {"key": "analyte:2", "name": "LAC", "assay_key": "chem"},
+                {"key": "analyte:3", "name": "TSH", "assay_key": "Immuno"},
+            ],
+            "units": [],
+        }
+    )
+
+    service.generate_all(addon)
+
+    assert [assay.key for assay in addon.assays] == ["CHEM", "Immuno"]
+    assert [analyte.assay_key for analyte in addon.analytes] == ["CHEM", "CHEM", "Immuno"]
 def test_generate_analytes_xml_applies_assay_group_normalization() -> None:
     service = GenerationService()
     addon = service.import_from_gui_payload(

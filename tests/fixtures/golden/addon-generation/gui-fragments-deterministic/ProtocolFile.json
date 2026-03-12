@@ -1,70 +1,16 @@
 {
   "AssayInformation": [
     {
-      "CalibratorLayoutRules": [
-        {
-          "AppendToPatientSamples": false,
-          "DisplayName": "C",
-          "FrequencyOfInterspersal": 0,
-          "Level": 0,
-          "OffsetOfInterspersal": 0,
-          "PrependToPatientSamples": true
-        }
-      ],
-      "ControlLayoutRules": [
-        {
-          "AppendToPatientSamples": true,
-          "DisplayName": "K",
-          "FrequencyOfInterspersal": 0,
-          "Level": 0,
-          "OffsetOfInterspersal": 0,
-          "PrependToPatientSamples": false
-        }
-      ],
-      "DilutionFactors": [
-        {
-          "AspirationVolumeEluate": 0,
-          "DilutionFactor": "1x",
-          "DispensationVolumeDilutionBuffer1": 0,
-          "DispensationVolumeDilutionBuffer2": 0,
-          "DispensationVolumeDilutionBuffer3": 0,
-          "DispensationVolumeEluate": 0,
-          "IsUsed": true
-        }
-      ],
-      "DisplayName": "A",
-      "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
-      "StopPreparationWithFailedCalibrator": false,
-      "StopPreparationWithFailedControl": false,
-      "Type": "A",
-      "ValidDurationInDays": 0
+      "Type": "assay:1"
     }
   ],
   "LoadingWorkflowSteps": [
     {
       "StepParameters": {
         "BarcodeMask": "*",
-        "FullFilename": "file",
-        "RequiredPlates": [
-          {
-            "ArticleNumber": "A",
-            "BarcodeMask": "B",
-            "DisplayName": "D",
-            "FullFilename": "F",
-            "IsReusable": false,
-            "LabwareType": "L",
-            "PlateControlType": "DWP"
-          }
-        ],
-        "RequiredTipRacks": [
-          {
-            "ArticleNumber": "A",
-            "BarcodeMask": "B",
-            "DisplayName": "D",
-            "FullFilename": "F",
-            "LabwareType": "L"
-          }
-        ]
+        "FullFilename": "default-loading-template",
+        "RequiredPlates": [],
+        "RequiredTipRacks": []
       },
       "StepType": "LoadMfxCarriers"
     }
@@ -84,7 +30,7 @@
   },
   "ProcessingWorkflowSteps": [
     {
-      "GroupDisplayName": "Default",
+      "GroupDisplayName": "assay:1",
       "GroupIndex": 0,
       "GroupSteps": [
         {
@@ -92,6 +38,8 @@
           "StaticDurationInSeconds": 0,
           "StepIndex": 0,
           "StepParameters": {
+            "DerivedAssayType": "",
+            "DerivedContainerType": "",
             "DynamicDurationInSeconds": 0,
             "KeepGripperTools": false,
             "StaticDurationInSeconds": 0

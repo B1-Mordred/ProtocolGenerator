@@ -84,7 +84,7 @@ def map_gui_payload_to_bundle(payload: dict[str, Any]) -> InputDTOBundle:
                 key=key,
                 name=name,
                 assay_key=assay_key,
-                assay_information_type=row.get("assay_information_type"),
+                assay_information_type=None,
             )
         )
 

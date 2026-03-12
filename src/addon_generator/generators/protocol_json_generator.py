@@ -9,7 +9,6 @@ from addon_generator.domain.models import AddonModel
 from addon_generator.fragments.assembler import WorkflowAssembler
 from addon_generator.fragments.registry import FragmentResolverRegistry
 from addon_generator.mapping.link_resolver import LinkResolver
-from addon_generator.mapping.normalizers import normalize_for_matching
 
 
 @dataclass(slots=True)
@@ -58,7 +57,14 @@ class ProtocolJsonGenerator:
         imported_processing = list(protocol_fragments.get("ProcessingWorkflowSteps", [])) if protocol_fragments and isinstance(protocol_fragments.get("ProcessingWorkflowSteps"), list) and protocol_fragments.get("ProcessingWorkflowSteps") else None
 
         method, method_merge = self._merge_method_information(built_method, gui_method, imported_method, defaults.get("method_information", {}), builtin_method_defaults)
-        assay_info, assay_merge = self._resolve_section("AssayInformation", gui_assay, imported_assay, built_assay, [{"Type": "A", "DisplayName": "Assay"}])
+        assay_info = built_assay
+        assay_merge = {
+            "path": "AssayInformation",
+            "source": "generated",
+            "value": assay_info,
+            "conflict": False,
+            "conflict_sources": [],
+        }
         loading, loading_merge = self._resolve_section("LoadingWorkflowSteps", gui_loading, imported_loading, self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])), [], allow_empty=False)
         processing, processing_merge = self._resolve_section("ProcessingWorkflowSteps", gui_processing, imported_processing, self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])), [], allow_empty=False)
 
@@ -101,26 +107,14 @@ class ProtocolJsonGenerator:
 
     def _build_assay_information(self, addon: AddonModel, defaults: dict[str, Any]) -> list[dict[str, Any]]:
         assays: list[dict[str, Any]] = []
-        normalized_types: dict[str, str] = {}
-        for assay in sorted(addon.assays, key=lambda a: a.key):
+        for assay in addon.assays:
             projection = self.resolver.resolve_assay_projection(assay)
-            assay_type = projection.protocol_type or projection.xml_name
-            assay_record = dict(defaults)
-            assay_record.update({
-                "Type": assay_type,
-                "DisplayName": projection.protocol_display_name or projection.xml_name or defaults.get("DisplayName", "Assay"),
-            })
-            canonical_type = normalize_for_matching(assay_type)
-            existing = normalized_types.get(canonical_type)
-            if canonical_type and existing and existing != assay.key:
-                raise ValueError(f"Ambiguous assay projection: '{assay.key}' and '{existing}' normalize to the same Type '{assay_type}'")
-            if canonical_type:
-                normalized_types[canonical_type] = assay.key
-            assays.append(assay_record)
+            assay_type = projection.protocol_type or assay.key
+            if not self._has_value(assay_type):
+                continue
+            assays.append({"Type": assay_type})
         if not assays:
-            assay_record = dict(defaults)
-            assay_record.update({"Type": "A", "DisplayName": defaults.get("DisplayName", "Assay")})
-            assays.append(assay_record)
+            assays.append({"Type": "A"})
         return assays
 
     def _build_loading_workflow_steps(self, addon: AddonModel, defaults: list[dict[str, Any]]) -> list[dict[str, Any]]:
