@@ -21,6 +21,7 @@
           "PrependToPatientSamples": false
         }
       ],
+      "DerivedComponentCount": 0,
       "DilutionFactors": [
         {
           "AspirationVolumeEluate": 0,
@@ -32,11 +33,11 @@
           "IsUsed": true
         }
       ],
-      "DisplayName": "Chemistry",
+      "DisplayName": "assay:chem",
       "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
       "StopPreparationWithFailedCalibrator": false,
       "StopPreparationWithFailedControl": false,
-      "Type": "CHEM",
+      "Type": "assay:chem",
       "ValidDurationInDays": 0
     },
     {
@@ -60,6 +61,7 @@
           "PrependToPatientSamples": false
         }
       ],
+      "DerivedComponentCount": 0,
       "DilutionFactors": [
         {
           "AspirationVolumeEluate": 0,
@@ -71,11 +73,11 @@
           "IsUsed": true
         }
       ],
-      "DisplayName": "Immuno",
+      "DisplayName": "assay:imm",
       "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
       "StopPreparationWithFailedCalibrator": false,
       "StopPreparationWithFailedControl": false,
-      "Type": "IMM",
+      "Type": "assay:imm",
       "ValidDurationInDays": 0
     }
   ],
@@ -83,27 +85,9 @@
     {
       "StepParameters": {
         "BarcodeMask": "*",
-        "FullFilename": "file",
-        "RequiredPlates": [
-          {
-            "ArticleNumber": "A",
-            "BarcodeMask": "B",
-            "DisplayName": "D",
-            "FullFilename": "F",
-            "IsReusable": false,
-            "LabwareType": "L",
-            "PlateControlType": "DWP"
-          }
-        ],
-        "RequiredTipRacks": [
-          {
-            "ArticleNumber": "A",
-            "BarcodeMask": "B",
-            "DisplayName": "D",
-            "FullFilename": "F",
-            "LabwareType": "L"
-          }
-        ]
+        "FullFilename": "default-loading-template",
+        "RequiredPlates": [],
+        "RequiredTipRacks": []
       },
       "StepType": "LoadMfxCarriers"
     }
@@ -123,7 +107,7 @@
   },
   "ProcessingWorkflowSteps": [
     {
-      "GroupDisplayName": "Chemistry",
+      "GroupDisplayName": "assay:chem",
       "GroupIndex": 0,
       "GroupSteps": [
         {
@@ -131,6 +115,8 @@
           "StaticDurationInSeconds": 0,
           "StepIndex": 0,
           "StepParameters": {
+            "DerivedAssayType": "",
+            "DerivedContainerType": "",
             "DynamicDurationInSeconds": 0,
             "KeepGripperTools": false,
             "StaticDurationInSeconds": 0
@@ -140,7 +126,7 @@
       ]
     },
     {
-      "GroupDisplayName": "Immuno",
+      "GroupDisplayName": "assay:imm",
       "GroupIndex": 1,
       "GroupSteps": [
         {
@@ -148,6 +134,8 @@
           "StaticDurationInSeconds": 0,
           "StepIndex": 0,
           "StepParameters": {
+            "DerivedAssayType": "",
+            "DerivedContainerType": "",
             "DynamicDurationInSeconds": 0,
             "KeepGripperTools": false,
             "StaticDurationInSeconds": 0

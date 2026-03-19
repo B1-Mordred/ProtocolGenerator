@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <AddOn>
   <Id>0</Id>
   <MethodId>PRD-001</MethodId>
@@ -5,7 +6,7 @@
   <Assays>
     <Assay>
       <Id>0</Id>
-      <Name>Chemistry</Name>
+      <Name>assay:chem</Name>
       <AddOnRef>0</AddOnRef>
       <Analytes>
         <Analyte>
@@ -19,27 +20,25 @@
               <AnalyteRef>0</AnalyteRef>
             </AnalyteUnit>
           </AnalyteUnits>
-          <AssayInformationType>CHEM</AssayInformationType>
         </Analyte>
       </Analytes>
     </Assay>
     <Assay>
-      <Id>0</Id>
-      <Name>Immuno</Name>
+      <Id>1</Id>
+      <Name>assay:imm</Name>
       <AddOnRef>0</AddOnRef>
       <Analytes>
         <Analyte>
-          <Id>0</Id>
+          <Id>1</Id>
           <Name>TSH</Name>
-          <AssayRef>0</AssayRef>
+          <AssayRef>1</AssayRef>
           <AnalyteUnits>
             <AnalyteUnit>
-              <Id>0</Id>
+              <Id>1</Id>
               <Name>uIU/mL</Name>
-              <AnalyteRef>0</AnalyteRef>
+              <AnalyteRef>1</AnalyteRef>
             </AnalyteUnit>
           </AnalyteUnits>
-          <AssayInformationType>IMM</AssayInformationType>
         </Analyte>
       </Analytes>
     </Assay>

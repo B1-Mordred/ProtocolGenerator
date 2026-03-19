@@ -97,10 +97,12 @@ def test_generate_analytes_xml_forces_zero_ids_and_refs_for_preview_and_export()
     result = generate_analytes_addon_xml(addon, xsd_path="AddOn.xsd")
     root = ET.fromstring(result.xml_content)
 
-    assert set(root.findall('.//Id'))
-    assert all(node.text == "0" for node in root.findall('.//Id'))
-    assert all(node.text == "0" for node in root.findall('.//AddOnRef'))
-    assert all(node.text == "0" for node in root.findall('.//AnalyteRef'))
+    assert root.findtext("./Assays/Assay/Id") == "7"
+    assert root.findtext("./Assays/Assay/AddOnRef") == "99"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/Id") == "8"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/AssayRef") == "7"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/Id") == "9"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/AnalyteRef") == "8"
 
 def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_with_units() -> None:
     service = GenerationService()

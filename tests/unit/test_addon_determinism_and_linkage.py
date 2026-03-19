@@ -22,7 +22,7 @@ def test_method_linkage_and_ids_are_deterministic() -> None:
     root = ET.fromstring(xml)
 
     assert root.findtext("MethodId") == "PN-XYZ"
-    assert root.findtext("MethodVersion") == ""
+    assert root.findtext("MethodVersion") == "3.1"
     assert [a.xml_id for a in sorted(addon.assays, key=lambda x: x.key)] == [0, 1]
 
 

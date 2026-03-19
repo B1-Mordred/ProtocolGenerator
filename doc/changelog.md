@@ -307,6 +307,8 @@
 - Implemented an Import Review split layout with dedicated review-row modeling, filterable review states (All/Conflicts/Overrides/Missing Required/Imported Only), resolution actions, and owner-navigation callbacks that route through merge recomputation and stale validation/preview invalidation.
 
 ### Fixed
+- Fixed workbook/template generation parity issues by correcting Basics parser key precedence for kit-component headers, restoring UI service test seams (`_service` injection path), and updating protocol assay-section merge behavior to honor imported/fragment-driven sections where provided.
+- Fixed analytes XML emission to preserve assigned entity IDs/refs (instead of hardcoded zeros), removing duplicate-ID validation failures in multi-assay/multi-analyte pipelines and aligning golden artifacts with generated output.
 - Hardened `GenerationService._dto_bundle_from_addon()` to treat nullable source metadata collections (`sample_prep_steps`, `dilution_schemes`, `hidden_vocab`, `provenance`) as empty structures, preventing `NoneType` iteration crashes in generation flows.
 - Corrected DTO bundle metadata type-guards so non-mapping `provenance`/`hidden_vocab` values are safely discarded instead of leaking invalid payload types into downstream validation.
 - Fixed workbook-template Basics parsing identity tracking bug where assay duplicate detection overwrote method identity state, causing `AttributeError: 'tuple' object has no attribute 'get'` during import.

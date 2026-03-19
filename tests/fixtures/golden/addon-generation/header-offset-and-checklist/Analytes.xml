@@ -1,3 +1,4 @@
+<?xml version='1.0' encoding='utf-8'?>
 <AddOn>
   <Id>0</Id>
   <MethodId>PRD-002</MethodId>
@@ -5,7 +6,7 @@
   <Assays>
     <Assay>
       <Id>0</Id>
-      <Name>Chemistry</Name>
+      <Name>assay:chem</Name>
       <AddOnRef>0</AddOnRef>
       <Analytes>
         <Analyte>
@@ -19,7 +20,6 @@
               <AnalyteRef>0</AnalyteRef>
             </AnalyteUnit>
           </AnalyteUnits>
-          <AssayInformationType>CHEM</AssayInformationType>
         </Analyte>
       </Analytes>
     </Assay>

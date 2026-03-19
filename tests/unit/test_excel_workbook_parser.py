@@ -119,7 +119,7 @@ def test_basics_fixture_with_internal_empty_rows_does_not_truncate_component_imp
 
     bundle = ExcelImporter().import_workbook_bundle(workbook_path)
 
-    assert [assay.key for assay in bundle.assays] == ["A1", "A2"]
+    assert [assay.key for assay in bundle.assays] == ["PS-1", "PS-2"]
     assert bundle.assays[1].metadata["product_number"] == "PN-1"
     assert bundle.assays[1].metadata["type"] == "CHEM"
     assert bundle.assays[1].metadata["container_type"] == "Tube"
@@ -409,10 +409,10 @@ def test_analytes_resolve_assay_key_from_parameter_set_when_assay_key_column_abs
 
     bundle = ExcelImporter().import_workbook_bundle(path)
 
-    assert [assay.key for assay in bundle.assays] == ["CHEM", "IMM"]
+    assert [assay.key for assay in bundle.assays] == ["100", "200"]
     assert [(a.name, a.assay_key) for a in bundle.analytes] == [
-        ("GLU", "CHEM"),
-        ("TSH", "IMM"),
+        ("GLU", "100"),
+        ("TSH", "200"),
     ]
 
 
@@ -452,9 +452,9 @@ def test_analytes_parameter_set_linking_falls_back_deterministically_when_assay_
 
     bundle = ExcelImporter().import_workbook_bundle(path)
 
-    assert [assay.key for assay in bundle.assays] == ["CHEM", "200"]
+    assert [assay.key for assay in bundle.assays] == ["100", "200"]
     assert [(a.name, a.assay_key) for a in bundle.analytes] == [
-        ("GLU", "CHEM"),
+        ("GLU", "100"),
         ("TSH", "200"),
     ]
 

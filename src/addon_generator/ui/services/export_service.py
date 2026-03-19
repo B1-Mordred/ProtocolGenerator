@@ -25,9 +25,12 @@ class ExportResult:
 class ExportService:
     def __init__(self) -> None:
         self._builder = CanonicalModelBuilder()
+        self._service = GenerationService()
 
     def _service_for_settings(self, export_settings: dict[str, object] | None) -> GenerationService:
         selected_pack = str((export_settings or {}).get("selected_rule_pack") or "")
+        if not selected_pack:
+            return self._service
         return GenerationService(mapping_path=mapping_path_for_rule_pack(selected_pack or None))
 
     def export(
@@ -43,11 +46,12 @@ class ExportService:
         mapping_overrides = (export_settings or {}).get("mapping_overrides")
         addon = self._builder.build(merged_bundle)
         service = self._service_for_settings(export_settings)
+        extra_generate_kwargs = {"mapping_overrides": mapping_overrides} if mapping_overrides is not None else {}
         validation = service.generate_all(
             addon,
             dto_bundle=merged_bundle,
             field_mapping_settings=field_mapping_settings,
-            mapping_overrides=mapping_overrides,
+            **extra_generate_kwargs,
         )
         if validation.issues:
             return ExportResult(
@@ -57,12 +61,13 @@ class ExportService:
             )
 
         try:
+            extra_package_kwargs = {"mapping_overrides": mapping_overrides} if mapping_overrides is not None else {}
             package = service.build_package(
                 addon,
                 destination_root=Path(destination_folder),
                 overwrite=overwrite,
                 field_mapping_settings=field_mapping_settings,
-                mapping_overrides=mapping_overrides,
+                **extra_package_kwargs,
             )
         except Exception as exc:
             return ExportResult(
