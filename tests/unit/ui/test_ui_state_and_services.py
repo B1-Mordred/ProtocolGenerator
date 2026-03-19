@@ -612,7 +612,7 @@ def test_preview_and_export_keep_default_ruleset_assay_grouping_for_manual_analy
 
     assert _grouping(preview_like_xml) == _grouping(export_xml)
     assert _grouping(preview_like_xml) == {
-        "Chemistry": [("Glucose", ["mg/dL"]), ("Lactate", ["mmol/L"])],
+        "chemistry": [("Glucose", ["mg/dL"]), ("Lactate", ["mmol/L"])],
         "Reflex Panel": [("Potassium", ["mmol/L"]), ("Sodium", ["mEq/L"])],
     }
 

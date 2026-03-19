@@ -132,7 +132,7 @@ def parse_basics_sheet(sheet: Any, *, diagnostics: list[ImportDiagnostic]) -> Ba
                     container_type = inherited_value
 
             if not key:
-                key = assay_abbreviation or parameter_set_number or component_name
+                key = parameter_set_number or assay_abbreviation or component_name
             if not key:
                 diagnostics.append(ImportDiagnostic(rule_id="missing-required-field", message="Assay key is required", sheet=sheet.title, row=row_idx, column="Assay Key"))
                 continue

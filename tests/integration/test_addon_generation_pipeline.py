@@ -51,7 +51,7 @@ def test_excel_import_pipeline_flow_with_sheeted_layout(tmp_path) -> None:
     result = service.generate_all(addon)
 
     assert addon.method is not None and addon.method.method_id == "FX-MIN"
-    assert addon.assays[0].protocol_type == "CHEM"
+    assert addon.assays[0].protocol_type == "assay:min"
     assert addon.analytes[0].assay_key == "assay:min"
     assert addon.units[0].analyte_key == "analyte:min"
     assert result.protocol_json["MethodInformation"]["Id"] == "FX-MIN"

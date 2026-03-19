@@ -57,14 +57,7 @@ class ProtocolJsonGenerator:
         imported_processing = list(protocol_fragments.get("ProcessingWorkflowSteps", [])) if protocol_fragments and isinstance(protocol_fragments.get("ProcessingWorkflowSteps"), list) and protocol_fragments.get("ProcessingWorkflowSteps") else None
 
         method, method_merge = self._merge_method_information(built_method, gui_method, imported_method, defaults.get("method_information", {}), builtin_method_defaults)
-        assay_info = built_assay
-        assay_merge = {
-            "path": "AssayInformation",
-            "source": "generated",
-            "value": assay_info,
-            "conflict": False,
-            "conflict_sources": [],
-        }
+        assay_info, assay_merge = self._resolve_section("AssayInformation", gui_assay, imported_assay, built_assay, [{"Type": "A"}], allow_empty=False)
         loading, loading_merge = self._resolve_section("LoadingWorkflowSteps", gui_loading, imported_loading, self._build_loading_workflow_steps(addon, defaults.get("loading_workflow_steps", [])), [], allow_empty=False)
         processing, processing_merge = self._resolve_section("ProcessingWorkflowSteps", gui_processing, imported_processing, self._build_processing_workflow_steps(addon, defaults.get("processing_workflow_steps", [])), [], allow_empty=False)
 
@@ -112,9 +105,15 @@ class ProtocolJsonGenerator:
             assay_type = projection.protocol_type or assay.key
             if not self._has_value(assay_type):
                 continue
-            assays.append({"Type": assay_type})
+            assay_record = dict(defaults)
+            assay_record["Type"] = assay_type
+            if self._has_value(projection.protocol_display_name):
+                assay_record["DisplayName"] = projection.protocol_display_name
+            assays.append(assay_record)
         if not assays:
-            assays.append({"Type": "A"})
+            fallback_record = dict(defaults)
+            fallback_record["Type"] = "A"
+            assays.append(fallback_record)
         return assays
 
     def _build_loading_workflow_steps(self, addon: AddonModel, defaults: list[dict[str, Any]]) -> list[dict[str, Any]]:

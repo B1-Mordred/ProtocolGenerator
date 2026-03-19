@@ -138,7 +138,10 @@ def test_generate_all_derives_protocol_defaults_from_manual_metadata() -> None:
 
     result = service.generate_all(addon)
 
-    assert result.protocol_json["AssayInformation"] == [{"Type": "assay:1"}]
+    assay_info = result.protocol_json["AssayInformation"]
+    assert len(assay_info) == 1
+    assert assay_info[0]["Type"] == "assay:1"
+    assert assay_info[0]["DisplayName"] == "assay:1"
     assert result.resolved_mapping_snapshot["protocol_defaults"]["loading_workflow_steps"][0]["StepParameters"]["FullFilename"] == "default-loading-template"
     assert result.resolved_mapping_snapshot["protocol_defaults"]["processing_workflow_steps"][0]["GroupDisplayName"] == "Calibrator Assay"
 

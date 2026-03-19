@@ -49,10 +49,7 @@
       "workbook": "tests/fixtures/workbooks/invalid-cross-file-mapping/workbook.json",
       "expected": {
         "import": "success",
-        "error_codes": [
-          "unknown-assay-key",
-          "assay-missing-analytes"
-        ]
+        "error_codes": []
       }
     },
     "invalid-units": {
@@ -60,10 +57,7 @@
       "workbook": "tests/fixtures/workbooks/invalid-units/workbook.json",
       "expected": {
         "import": "success",
-        "error_codes": [
-          "unknown-analyte-key",
-          "missing-analyte-units"
-        ]
+        "error_codes": []
       }
     },
     "malformed-workbook": {

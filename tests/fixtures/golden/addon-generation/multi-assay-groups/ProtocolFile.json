@@ -1,10 +1,84 @@
 {
   "AssayInformation": [
     {
-      "Type": "assay:chem"
+      "CalibratorLayoutRules": [
+        {
+          "AppendToPatientSamples": false,
+          "DisplayName": "C",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": true
+        }
+      ],
+      "ControlLayoutRules": [
+        {
+          "AppendToPatientSamples": true,
+          "DisplayName": "K",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": false
+        }
+      ],
+      "DerivedComponentCount": 0,
+      "DilutionFactors": [
+        {
+          "AspirationVolumeEluate": 0,
+          "DilutionFactor": "1x",
+          "DispensationVolumeDilutionBuffer1": 0,
+          "DispensationVolumeDilutionBuffer2": 0,
+          "DispensationVolumeDilutionBuffer3": 0,
+          "DispensationVolumeEluate": 0,
+          "IsUsed": true
+        }
+      ],
+      "DisplayName": "assay:chem",
+      "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
+      "StopPreparationWithFailedCalibrator": false,
+      "StopPreparationWithFailedControl": false,
+      "Type": "assay:chem",
+      "ValidDurationInDays": 0
     },
     {
-      "Type": "assay:immuno"
+      "CalibratorLayoutRules": [
+        {
+          "AppendToPatientSamples": false,
+          "DisplayName": "C",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": true
+        }
+      ],
+      "ControlLayoutRules": [
+        {
+          "AppendToPatientSamples": true,
+          "DisplayName": "K",
+          "FrequencyOfInterspersal": 0,
+          "Level": 0,
+          "OffsetOfInterspersal": 0,
+          "PrependToPatientSamples": false
+        }
+      ],
+      "DerivedComponentCount": 0,
+      "DilutionFactors": [
+        {
+          "AspirationVolumeEluate": 0,
+          "DilutionFactor": "1x",
+          "DispensationVolumeDilutionBuffer1": 0,
+          "DispensationVolumeDilutionBuffer2": 0,
+          "DispensationVolumeDilutionBuffer3": 0,
+          "DispensationVolumeEluate": 0,
+          "IsUsed": true
+        }
+      ],
+      "DisplayName": "assay:immuno",
+      "MinimumNumberOfPatientSamplesOnFirstPlate": 0,
+      "StopPreparationWithFailedCalibrator": false,
+      "StopPreparationWithFailedControl": false,
+      "Type": "assay:immuno",
+      "ValidDurationInDays": 0
     }
   ],
   "LoadingWorkflowSteps": [
