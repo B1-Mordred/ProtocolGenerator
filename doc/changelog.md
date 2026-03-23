@@ -12,6 +12,8 @@
 
 
 ### Changed
+- Changed `Analytes.xml` projection to align with AddOn mapping requirements: `<MethodId>` uses AddOn Product Number, `<MethodVersion>` uses AddOn Version fallback behavior, and assay/analyte/unit serialization now deduplicates by business names while forcing `<Id>`, `<AddOnRef>`, `<AssayRef>`, and `<AnalyteRef>` to `0`.
+- Expanded `doc/mapping-config-reference.md` to enumerate all currently supported mapping definitions (including optional keys like `assay_mapping.protocol.display_name`, `assay_mapping.analytes_xml.id/addon_ref`, and `analyte_mapping.analytes_xml.assay_information_type`) and to document current runtime behavior where `Analytes.xml` linkage IDs/refs are intentionally fixed to `0`.
 - Changed docs to clarify Basics `AddOn Version`, MethodId/Version source precedence with `0.0.0.0` fallback, unique assay derivation from Analytes `Assay`, and current blank `AssayInformationType` output behavior.
 - Changed method identity/version projection consistency: `resolve_method_projection` now uses AddOn `product_number` for protocol/XML method IDs when available, and canonical AddOn version for method versions with blank values defaulted to `0.0.0.0`; `Analytes.xml` now emits this same method-version fallback in `<MethodVersion>`.
 - Changed canonical assay derivation to a single deterministic source: unique normalized analyte `assay_key` values (blank skipped) now define assay groups, preserve first-seen display values, and drive both `ProtocolFile.AssayInformation[].Type` and `Analytes.xml` assay names without cross-source field injection.

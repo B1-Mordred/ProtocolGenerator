@@ -97,12 +97,45 @@ def test_generate_analytes_xml_forces_zero_ids_and_refs_for_preview_and_export()
     result = generate_analytes_addon_xml(addon, xsd_path="AddOn.xsd")
     root = ET.fromstring(result.xml_content)
 
-    assert root.findtext("./Assays/Assay/Id") == "7"
-    assert root.findtext("./Assays/Assay/AddOnRef") == "99"
-    assert root.findtext("./Assays/Assay/Analytes/Analyte/Id") == "8"
-    assert root.findtext("./Assays/Assay/Analytes/Analyte/AssayRef") == "7"
-    assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/Id") == "9"
-    assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/AnalyteRef") == "8"
+    assert root.findtext("./Assays/Assay/Id") == "0"
+    assert root.findtext("./Assays/Assay/AddOnRef") == "0"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/Id") == "0"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/AssayRef") == "0"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/Id") == "0"
+    assert root.findtext("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit/AnalyteRef") == "0"
+
+
+def test_generate_analytes_xml_uses_assay_abbreviation_and_deduplicates_analytes_and_units() -> None:
+    addon = AddonModel(
+        method=MethodModel(key="method:k", method_id="M-300", method_version="1.1", product_number="PN-300"),
+        assays=[
+            AssayModel(key="assay:chem:1", xml_name="Chemistry", metadata={"assay_abbreviation": "CHEM"}),
+            AssayModel(key="assay:chem:2", xml_name="Chem Panel", metadata={"assay_abbreviation": "CHEM"}),
+        ],
+        analytes=[
+            AnalyteModel(key="analyte:glu:1", name="Glucose", assay_key="assay:chem:1"),
+            AnalyteModel(key="analyte:glu:2", name=" glucose ", assay_key="assay:chem:1"),
+        ],
+        units=[
+            AnalyteUnitModel(key="unit:mgdl:1", name="mg/dL", analyte_key="analyte:glu:1"),
+            AnalyteUnitModel(key="unit:mgdl:2", name=" mg/dl ", analyte_key="analyte:glu:1"),
+            AnalyteUnitModel(key="unit:mmol", name="mmol/L", analyte_key="analyte:glu:1"),
+        ],
+    )
+
+    result = generate_analytes_addon_xml(addon, xsd_path="AddOn.xsd")
+    root = ET.fromstring(result.xml_content)
+
+    assay_nodes = root.findall("./Assays/Assay")
+    assert len(assay_nodes) == 1
+    assert assay_nodes[0].findtext("Name") == "CHEM"
+
+    analyte_nodes = root.findall("./Assays/Assay/Analytes/Analyte")
+    assert len(analyte_nodes) == 1
+    assert analyte_nodes[0].findtext("Name") == "Glucose"
+
+    unit_names = [node.findtext("Name") for node in root.findall("./Assays/Assay/Analytes/Analyte/AnalyteUnits/AnalyteUnit")]
+    assert unit_names == ["mg/dL", "mmol/L"]
 
 def test_default_ruleset_generation_normalizes_manual_analyte_assay_references_with_units() -> None:
     service = GenerationService()
