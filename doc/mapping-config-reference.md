@@ -16,7 +16,7 @@ This reference documents the mapping config contract consumed by:
 `ids` (required)
 - Type: object
 - Required child sections: `assay`, `analyte`, `analyte_unit`
-- `ids.addon` may exist in YAML for readability, but loader/validators currently do not consume it.
+- Optional child section: `addon` (`fixed` integer, validated by config schema parser)
 
 `method_mapping` (required)
 - Type: object
@@ -65,7 +65,10 @@ Lookup behavior (`get_field_value`) for a valid field path:
 `assay_mapping`
 - `internal_identity`
 - `protocol.type`
+- `protocol.display_name` (allowed key; optional value)
+- `analytes_xml.id`
 - `analytes_xml.name`
+- `analytes_xml.addon_ref`
 - `cross_file_match.protocol_field` (required only in `explicit_key` mode)
 - `cross_file_match.analytes_xml_field` (required only in `explicit_key` mode)
 
@@ -73,13 +76,58 @@ Lookup behavior (`get_field_value`) for a valid field path:
 - `id`
 - `name`
 - `assay_ref`
+- `assay_information_type` (allowed key; optional value)
 
 `unit_mapping.analytes_xml`
 - `id`
 - `name`
 - `analyte_ref`
 
-Note: additional YAML keys (for example `assay_mapping.protocol.display_name` or `analyte_mapping.analytes_xml.assay_information_type`) may exist and be consumed elsewhere, but they are not syntax-validated by `validate_mapping_config`.
+## 2.1) Complete mapping definitions in `config/mapping.v1.yaml` (current)
+
+This section lists the full mapping definitions (including optional/allowed keys) so they are documented for future configurability work.
+
+`ids`
+- `addon.fixed`
+- `assay.strategy`, `assay.start`
+- `analyte.strategy`, `analyte.start`
+- `analyte_unit.strategy`, `analyte_unit.start`
+
+`method_mapping`
+- `protocol.id`
+- `protocol.version`
+- `analytes_xml.method_id`
+- `analytes_xml.method_version`
+
+`assay_mapping`
+- `internal_identity`
+- `protocol.type`
+- `protocol.display_name` (optional)
+- `analytes_xml.id`
+- `analytes_xml.name`
+- `analytes_xml.addon_ref`
+- `cross_file_match.mode`
+- `cross_file_match.alias_map` (required when `mode=alias_map`)
+- `cross_file_match.protocol_field` (required when `mode=explicit_key`)
+- `cross_file_match.analytes_xml_field` (required when `mode=explicit_key`)
+
+`analyte_mapping`
+- `internal_identity`
+- `analytes_xml.id`
+- `analytes_xml.name`
+- `analytes_xml.assay_ref`
+- `analytes_xml.assay_information_type` (optional)
+
+`unit_mapping`
+- `analytes_xml.id`
+- `analytes_xml.name`
+- `analytes_xml.analyte_ref`
+
+`protocol_defaults`
+- `method_information`
+- `assay_information`
+- `loading_workflow_steps`
+- `processing_workflow_steps`
 
 ## 3) Section-by-section value shapes
 
@@ -108,8 +156,11 @@ Required sub-objects and constraints:
 - `assay_mapping.internal_identity`: non-empty field-path string
 - `assay_mapping.protocol`: object
   - `type`: non-empty field-path string
+  - `display_name`: optional field-path string
 - `assay_mapping.analytes_xml`: object
+  - `id`: non-empty field-path string
   - `name`: non-empty field-path string
+  - `addon_ref`: non-empty field-path string
 - `assay_mapping.cross_file_match`: object (optional)
   - `mode`: one of `exact | normalized | alias_map | explicit_key` (default `exact`)
   - if `mode == alias_map`:
@@ -121,10 +172,12 @@ Required sub-objects and constraints:
 
 ## `analyte_mapping`
 
+- `analyte_mapping.internal_identity`: non-empty field-path string
 - `analyte_mapping.analytes_xml`: object
   - `id`: non-empty field-path string
   - `name`: non-empty field-path string
   - `assay_ref`: non-empty field-path string
+  - `assay_information_type`: optional field-path string
 
 ## `unit_mapping`
 
@@ -174,10 +227,24 @@ Required single-field fallback helper behavior:
 
 - `exact`: protocol assay type must equal XML assay name exactly.
 - `normalized`: values are compared after normalization (`normalize_for_matching`).
-- `alias_map`: loader validates alias-map shape; runtime linkage currently does not apply alias substitutions in `LinkResolver.validate_cross_file_linkage`.
+- `alias_map`: loader validates alias-map shape and runtime linkage applies alias substitutions in `LinkResolver.validate_cross_file_linkage`.
 - `explicit_key`: loader validates explicit key-field paths; runtime linkage currently compares protocol type vs XML name and does not yet switch to explicit-field extraction in `LinkResolver.validate_cross_file_linkage`.
 
-Because of current implementation, only `exact` and `normalized` are actively enforced during cross-file linkage validation.
+Current runtime behavior:
+- `exact`, `normalized`, and `alias_map` are enforced in cross-file linkage checks.
+- `explicit_key` is accepted/validated in config, but linkage currently still compares protocol type vs XML name.
+
+## 5.1) `Analytes.xml` mapping behavior vs config (current implementation)
+
+Even though config defines analyte XML mapping fields (`assay_mapping.analytes_xml.*`, `analyte_mapping.analytes_xml.*`, `unit_mapping.analytes_xml.*`), the current XML generator intentionally applies fixed output semantics for compatibility:
+
+- `<MethodId>` comes from method product number (fallback method id).
+- `<MethodVersion>` comes from method version (fallback `0.0.0.0`).
+- Assay display name prefers assay metadata `assay_abbreviation`, then falls back to assay identity fields.
+- Assays/analytes/units are deduplicated by normalized display names.
+- `<Id>`, `<AddOnRef>`, `<AssayRef>`, and `<AnalyteRef>` are currently forced to `0`.
+
+This is intentionally documented because these fields may become fully config-driven in a future iteration.
 
 ## 6) ID generation rules
 
